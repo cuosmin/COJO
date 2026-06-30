@@ -110,3 +110,5 @@ This is your personalized app. If anything breaks or you want to customize it, j
 ---
 
 **Made with intention for you and your partner.** 💕
+
+
