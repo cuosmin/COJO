@@ -85,13 +85,6 @@ npm start
 npm run build
 ```
 
-## 📱 Use on iPhone/Android
-
-- Visit the Vercel URL in Safari or Chrome
-- Bookmark it to your home screen
-- Use like a native app
-- Works fully offline (stores data locally, syncs when online)
-
 ## 🎯 Future Enhancements
 
 Ready to add:
