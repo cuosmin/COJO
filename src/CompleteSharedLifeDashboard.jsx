@@ -1,23 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import {
   Leaf, UtensilsCrossed, Wallet, Heart, MapPin, Plus, Trash2, Check,
-  AlertCircle, LogOut, Settings, Camera, TrendingUp, BarChart3, Calendar,
-  Home, Share2, Eye, EyeOff, Mail, Bell
+  AlertCircle, LogOut, Settings, Camera, BarChart3, Calendar,
+  Home, Mail, Bell
 } from 'lucide-react';
-import { auth, db } from './firebaseConfig';
+import { auth } from './firebaseConfig';
 import { signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
 import { ref, onValue, set } from 'firebase/database';
 import { getDatabase } from 'firebase/database';
 
 import { calculatePlantHealth, calculateSpendingTrends, calculateIntimacyInsights, generateWeeklyInsight } from './analyticsUtils';
-import { requestNotificationPermission, notifyPlantWatering, setupNotificationScheduler } from './notificationUtils';
+import { setupNotificationScheduler } from './notificationUtils';
 import { getPlantPhotos, capturePhotoFromCamera, compressImage, savePhotoToStorage } from './photoJournalUtils';
-import { generateWeeklyEmailHTML } from './emailDigestUtils';
 
 const provider = new GoogleAuthProvider();
 const database = getDatabase();
 
-export default function SharedLifeDashboard() {
+export default function COJO() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('home');
@@ -34,9 +33,7 @@ export default function SharedLifeDashboard() {
 
   // UI state
   const [newItem, setNewItem] = useState('');
-  const [selectedPlant, setSelectedPlant] = useState(null);
   const [selectedMood, setSelectedMood] = useState('neutral');
-  const [editingIntimacy, setEditingIntimacy] = useState(null);
 
   // Auth
   useEffect(() => {
@@ -44,7 +41,6 @@ export default function SharedLifeDashboard() {
       setUser(currentUser);
       if (currentUser) {
         loadSharedData(currentUser.uid);
-        requestNotificationPermission().then(setNotificationsEnabled);
       } else {
         setLoading(false);
       }
@@ -303,7 +299,7 @@ export default function SharedLifeDashboard() {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'var(--bg-primary)' }}>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '28px', fontWeight: '600', marginBottom: '8px', color: 'var(--text-primary)' }}>Our Shared Life</div>
+          <div style={{ fontSize: '28px', fontWeight: '600', marginBottom: '8px', color: 'var(--text-primary)' }}>COJO</div>
           <div style={{ color: 'var(--text-tertiary)', fontSize: '14px' }}>Loading...</div>
         </div>
       </div>
@@ -314,7 +310,7 @@ export default function SharedLifeDashboard() {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'var(--bg-primary)', padding: '20px' }}>
         <div style={{ maxWidth: '400px', textAlign: 'center' }}>
-          <div style={{ fontSize: '32px', fontWeight: '600', marginBottom: '12px', color: 'var(--text-primary)' }}>Our Shared Life</div>
+          <div style={{ fontSize: '32px', fontWeight: '600', marginBottom: '12px', color: 'var(--text-primary)' }}>COJO</div>
           <p style={{ color: 'var(--text-secondary)', marginBottom: '32px' }}>A beautiful dashboard for couples to organize plants, meals, budgets, and intimacy together.</p>
           <button onClick={handleLogin} className="btn btn-primary" style={{ width: '100%', padding: '12px' }}>
             Sign in with Google
@@ -333,7 +329,7 @@ export default function SharedLifeDashboard() {
       <header style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-color)', padding: '20px', position: 'sticky', top: 0, zIndex: 50 }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <h1 style={{ fontSize: '24px', fontWeight: '600', margin: 0 }}>Our Shared Life</h1>
+            <h1 style={{ fontSize: '24px', fontWeight: '600', margin: 0 }}>COJO</h1>
             <p style={{ fontSize: '12px', color: 'var(--text-tertiary)', margin: '4px 0 0' }}>Real-time sync • Both connected</p>
           </div>
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
@@ -774,9 +770,7 @@ export default function SharedLifeDashboard() {
             <div>
               <h4 style={{ fontSize: '14px', fontWeight: '600', margin: '0 0 8px', color: 'var(--text-tertiary)' }}>NOTIFICATIONS</h4>
               <button
-                onClick={() => {
-                  requestNotificationPermission().then(setNotificationsEnabled);
-                }}
+                onClick={() => setNotificationsEnabled(!notificationsEnabled)}
                 className={`btn ${notificationsEnabled ? 'btn-success' : 'btn-secondary'}`}
                 style={{ width: '100%' }}
               >
