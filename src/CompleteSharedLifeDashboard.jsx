@@ -299,7 +299,7 @@ export default function COJO() {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'var(--bg-primary)' }}>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '28px', fontWeight: '600', marginBottom: '8px', color: 'var(--text-primary)' }}>COJO</div>
+          <img src="/cojo_logo.svg" alt="COJO" style={{ height: '40px', width: 'auto', marginBottom: '8px' }} />
           <div style={{ color: 'var(--text-tertiary)', fontSize: '14px' }}>Loading...</div>
         </div>
       </div>
@@ -310,7 +310,7 @@ export default function COJO() {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'var(--bg-primary)', padding: '20px' }}>
         <div style={{ maxWidth: '400px', textAlign: 'center' }}>
-          <div style={{ fontSize: '32px', fontWeight: '600', marginBottom: '12px', color: 'var(--text-primary)' }}>COJO</div>
+          <img src="/cojo_logo.svg" alt="COJO" style={{ height: '48px', width: 'auto', marginBottom: '12px' }} />
           <p style={{ color: 'var(--text-secondary)', marginBottom: '32px' }}>A beautiful dashboard for couples to organize plants, meals, budgets, and intimacy together.</p>
           <button onClick={handleLogin} className="btn btn-primary" style={{ width: '100%', padding: '12px' }}>
             Sign in with Google
@@ -329,7 +329,7 @@ export default function COJO() {
       <header style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-color)', padding: '20px', position: 'sticky', top: 0, zIndex: 50 }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <h1 style={{ fontSize: '24px', fontWeight: '600', margin: 0 }}>COJO</h1>
+            <img src="/cojo_logo.svg" alt="COJO" style={{ height: '28px', width: 'auto' }} />
             <p style={{ fontSize: '12px', color: 'var(--text-tertiary)', margin: '4px 0 0' }}>Real-time sync • Both connected</p>
           </div>
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>

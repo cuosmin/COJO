@@ -1,0 +1,23 @@
+{
+  "name": "COJO - Shared Life",
+  "short_name": "COJO",
+  "description": "A beautiful dashboard for Co & Jo to organize plants, meals, budgets, and intimacy together",
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#000000",
+  "background_color": "#ffffff",
+  "icons": [
+    {
+      "src": "/cojo_icon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/cojo_icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
