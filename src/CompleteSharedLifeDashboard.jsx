@@ -286,6 +286,7 @@ export default function CompleteSharedLifeDashboard() {
       }
     });
     return () => unsubscribe();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const initializeUser = async (currentUser) => {
