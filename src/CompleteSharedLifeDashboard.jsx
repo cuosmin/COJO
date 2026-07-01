@@ -24,6 +24,11 @@ const BUDGET_CATEGORIES = [
   { name: 'Other', icon: Wind, color: '#999' },
 ];
 
+const TRAVEL_CATEGORIES = [
+  { name: 'Business', color: '#1234ff' },
+  { name: 'Holiday', color: '#34c759' },
+];
+
 // Major cities for autocomplete
 const MAJOR_CITIES = [
   { name: 'Paris', country: 'France' },
@@ -257,7 +262,8 @@ export default function CompleteSharedLifeDashboard() {
   const [newTravelStart, setNewTravelStart] = useState('');
   const [newTravelEnd, setNewTravelEnd] = useState('');
   const [newTravelLocation, setNewTravelLocation] = useState('');
-  const [newTravelUserId, setNewTravelUserId] = useState('');
+  const [newTravelUserIds, setNewTravelUserIds] = useState([]);
+  const [newTravelCategory, setNewTravelCategory] = useState('Holiday');
   const [newExpenseCategory, setNewExpenseCategory] = useState('Groceries');
   const [newExpenseAmount, setNewExpenseAmount] = useState('');
   const [newExpenseDate, setNewExpenseDate] = useState(new Date().toISOString().split('T')[0]);
@@ -502,13 +508,14 @@ export default function CompleteSharedLifeDashboard() {
 
   // ==================== TRAVELS ====================
   const addTravel = () => {
-    if (newTravelStart && newTravelEnd && newTravelLocation && newTravelUserId) {
+    if (newTravelStart && newTravelEnd && newTravelLocation && newTravelUserIds.length > 0) {
       const travel = {
         id: editingId || Date.now().toString(),
         startDate: newTravelStart,
         endDate: newTravelEnd,
         location: newTravelLocation,
-        userId: newTravelUserId,
+        userIds: newTravelUserIds,
+        category: newTravelCategory,
       };
       
       let updated;
@@ -539,8 +546,13 @@ export default function CompleteSharedLifeDashboard() {
     travels.forEach(travel => {
       const start = new Date(travel.startDate);
       const end = new Date(travel.endDate);
+      const travelUserIds = travel.userIds || [travel.userId];
 
-      if (start.getMonth() === month && start.getFullYear() === year) {
+      // Only count as days apart if not both users are traveling together
+      const bothTraveling = travelUserIds.length > 1 && travelUserIds.includes(user?.uid) && 
+                           travelUserIds.find(uid => uid !== user?.uid && users.find(u => u.uid === uid));
+
+      if (start.getMonth() === month && start.getFullYear() === year && !bothTraveling) {
         days += Math.ceil((end - start) / (1000 * 60 * 60 * 24));
       }
     });
@@ -559,6 +571,11 @@ export default function CompleteSharedLifeDashboard() {
     }
     const otherUser = users.find(u => u.uid === userId);
     return { name: otherUser?.displayName || 'Partner', avatar: otherUser?.photoURL };
+  };
+
+  const getFirstName = (fullName) => {
+    if (!fullName) return 'You';
+    return fullName.split(' ')[0];
   };
 
   const getExpensesForMonth = (date) => {
@@ -603,7 +620,8 @@ export default function CompleteSharedLifeDashboard() {
     setNewTravelStart('');
     setNewTravelEnd('');
     setNewTravelLocation('');
-    setNewTravelUserId('');
+    setNewTravelUserIds([]);
+    setNewTravelCategory('Holiday');
     setNewExpenseCategory('Groceries');
     setNewExpenseAmount('');
     setNewExpenseDate(new Date().toISOString().split('T')[0]);
@@ -631,7 +649,8 @@ export default function CompleteSharedLifeDashboard() {
       setNewTravelStart(item.startDate);
       setNewTravelEnd(item.endDate);
       setNewTravelLocation(item.location);
-      setNewTravelUserId(item.userId);
+      setNewTravelUserIds(item.userIds || [item.userId] || []);
+      setNewTravelCategory(item.category || 'Holiday');
     }
   };
 
@@ -754,7 +773,16 @@ export default function CompleteSharedLifeDashboard() {
             <div style={{ display: 'grid', gap: '12px' }}>
               {/* Currently traveling card - FIRST */}
               {currentTraveler && (() => {
-                const info = getTravelerInfo(currentTraveler.userId);
+                const travelersNames = (currentTraveler.userIds || [currentTraveler.userId || '']).map(uid => {
+                  if (uid === user?.uid) return getFirstName(user?.displayName);
+                  const otherUser = users.find(u => u.uid === uid);
+                  return getFirstName(otherUser?.displayName) || 'Guest';
+                }).join(' & ');
+                
+                const avatar = currentTraveler.userIds && currentTraveler.userIds[0] === user?.uid ? user?.photoURL : 
+                               currentTraveler.userIds && currentTraveler.userIds[0] ? users.find(u => u.uid === currentTraveler.userIds[0])?.photoURL :
+                               currentTraveler.userId === user?.uid ? user?.photoURL : users.find(u => u.uid === currentTraveler.userId)?.photoURL;
+                
                 return (
                   <div
                     style={{
@@ -775,13 +803,13 @@ export default function CompleteSharedLifeDashboard() {
                           width: '48px',
                           height: '48px',
                           borderRadius: '50%',
-                          background: `url(${info.avatar}) no-repeat center / cover`,
+                          background: `url(${avatar}) no-repeat center / cover`,
                           border: `2px solid ${ACCENT_COLOR}`,
                         }}
                       />
                       <div>
                         <div style={{ fontSize: '14px', color: '#999', marginBottom: '2px' }}>
-                          is currently in
+                          {currentTraveler.userIds && currentTraveler.userIds.length > 1 ? 'are currently in' : 'is currently in'}
                         </div>
                         <div style={{ fontSize: '24px', fontWeight: '700', color: ACCENT_COLOR }}>
                           {currentTraveler.location}
@@ -1243,13 +1271,19 @@ export default function CompleteSharedLifeDashboard() {
                   <h3 style={{ fontSize: '16px', fontWeight: '600', margin: '0 0 12px' }}>Trips this month</h3>
                   <div style={{ display: 'grid', gap: '12px' }}>
                     {getTravelsForMonth(currentMonth).map(travel => {
-                      const info = getTravelerInfo(travel.userId);
+                      const categoryInfo = TRAVEL_CATEGORIES.find(c => c.name === travel.category) || TRAVEL_CATEGORIES[1];
+                      const travelersNames = (travel.userIds || [travel.userId || '']).map(uid => {
+                        if (uid === user?.uid) return getFirstName(user?.displayName);
+                        const otherUser = users.find(u => u.uid === uid);
+                        return getFirstName(otherUser?.displayName) || 'Guest';
+                      }).join(' & ');
+                      
                       return (
                         <div
                           key={travel.id}
                           style={{
-                            background: `rgba(18, 52, 255, 0.08)`,
-                            border: `1px solid rgba(18, 52, 255, 0.15)`,
+                            background: `${categoryInfo.color}15`,
+                            border: `1px solid ${categoryInfo.color}40`,
                             borderRadius: '16px',
                             padding: '16px',
                           }}
@@ -1257,15 +1291,20 @@ export default function CompleteSharedLifeDashboard() {
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
                             <div>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                                <MapPin size={16} style={{ color: ACCENT_COLOR }} />
+                                <MapPin size={16} style={{ color: categoryInfo.color }} />
                                 <h3 style={{ fontSize: '16px', fontWeight: '600', margin: 0 }}>{travel.location}</h3>
                               </div>
                               <p style={{ fontSize: '12px', color: '#666', margin: '0 0 4px' }}>
                                 {travel.startDate} → {travel.endDate}
                               </p>
-                              <p style={{ fontSize: '12px', color: '#999', margin: 0 }}>
-                                {info.name}
-                              </p>
+                              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                <p style={{ fontSize: '12px', color: '#999', margin: 0 }}>
+                                  {travelersNames}
+                                </p>
+                                <span style={{ fontSize: '11px', color: categoryInfo.color, fontWeight: '600', background: `${categoryInfo.color}25`, padding: '2px 8px', borderRadius: '6px' }}>
+                                  {travel.category}
+                                </span>
+                              </div>
                             </div>
                             <button
                               onClick={() => openEditModal('travel', travel)}
@@ -1416,24 +1455,35 @@ export default function CompleteSharedLifeDashboard() {
             ) : (
               <div style={{ display: 'grid', gap: '12px' }}>
                 {getTravelsForMonth(archiveMonth).map(travel => {
-                  const info = getTravelerInfo(travel.userId);
+                  const categoryInfo = TRAVEL_CATEGORIES.find(c => c.name === travel.category) || TRAVEL_CATEGORIES[1];
+                  const travelersNames = (travel.userIds || [travel.userId || '']).map(uid => {
+                    if (uid === user?.uid) return getFirstName(user?.displayName);
+                    const otherUser = users.find(u => u.uid === uid);
+                    return getFirstName(otherUser?.displayName) || 'Guest';
+                  }).join(' & ');
+                  
                   return (
                     <div key={travel.id} style={{
-                      background: `rgba(18, 52, 255, 0.08)`,
-                      border: `1px solid rgba(18, 52, 255, 0.15)`,
+                      background: `${categoryInfo.color}15`,
+                      border: `1px solid ${categoryInfo.color}40`,
                       borderRadius: '16px',
                       padding: '16px',
                     }}>
-                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '12px' }}>
-                        <MapPin size={20} style={{ color: ACCENT_COLOR, marginTop: '2px', flexShrink: 0 }} />
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                        <MapPin size={20} style={{ color: categoryInfo.color, marginTop: '2px', flexShrink: 0 }} />
                         <div style={{ flex: 1 }}>
                           <h3 style={{ fontSize: '16px', fontWeight: '600', margin: '0 0 4px' }}>{travel.location}</h3>
                           <p style={{ fontSize: '12px', color: '#666', margin: '0 0 4px' }}>
                             {travel.startDate} → {travel.endDate}
                           </p>
-                          <p style={{ fontSize: '12px', color: '#999', margin: 0 }}>
-                            {info.name}
-                          </p>
+                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                            <p style={{ fontSize: '12px', color: '#999', margin: 0 }}>
+                              {travelersNames}
+                            </p>
+                            <span style={{ fontSize: '11px', color: categoryInfo.color, fontWeight: '600', background: `${categoryInfo.color}25`, padding: '2px 8px', borderRadius: '6px' }}>
+                              {travel.category}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -1546,7 +1596,7 @@ export default function CompleteSharedLifeDashboard() {
                 style={{ width: '48px', height: '48px', borderRadius: '50%' }}
               />
               <div>
-                <p style={{ margin: '0 0 4px', fontWeight: '600' }}>{user?.displayName}</p>
+                <p style={{ margin: '0 0 4px', fontWeight: '600' }}>{getFirstName(user?.displayName)}</p>
                 <p style={{ margin: 0, fontSize: '12px', color: '#666' }}>{user?.email}</p>
               </div>
             </div>
@@ -1763,18 +1813,24 @@ export default function CompleteSharedLifeDashboard() {
             <label style={{ fontSize: '12px', color: '#666', marginBottom: '6px', display: 'block' }}>Who is traveling?</label>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
               {[
-                { id: user?.uid, name: user?.displayName || 'You', avatar: user?.photoURL },
-                ...users.filter(u => u.uid !== user?.uid),
+                { id: user?.uid, name: getFirstName(user?.displayName) || 'You', avatar: user?.photoURL },
+                ...users.filter(u => u.uid !== user?.uid).map(u => ({ id: u.uid, name: getFirstName(u.displayName), avatar: u.photoURL })),
               ].map(person => (
                 <button
                   key={person.id}
-                  onClick={() => setNewTravelUserId(person.id)}
+                  onClick={() => {
+                    if (newTravelUserIds.includes(person.id)) {
+                      setNewTravelUserIds(newTravelUserIds.filter(id => id !== person.id));
+                    } else {
+                      setNewTravelUserIds([...newTravelUserIds, person.id]);
+                    }
+                  }}
                   style={{
-                    background: newTravelUserId === person.id ? `${ACCENT_COLOR}40` : `rgba(255, 255, 255, 0.05)`,
-                    border: `1px solid rgba(${newTravelUserId === person.id ? '18, 52, 255' : '255, 255, 255'}, ${newTravelUserId === person.id ? 0.4 : 0.1})`,
+                    background: newTravelUserIds.includes(person.id) ? `${ACCENT_COLOR}40` : `rgba(255, 255, 255, 0.05)`,
+                    border: `1px solid rgba(${newTravelUserIds.includes(person.id) ? '18, 52, 255' : '255, 255, 255'}, ${newTravelUserIds.includes(person.id) ? 0.4 : 0.1})`,
                     borderRadius: '12px',
                     padding: '12px',
-                    color: newTravelUserId === person.id ? ACCENT_COLOR : '#999',
+                    color: newTravelUserIds.includes(person.id) ? ACCENT_COLOR : '#999',
                     cursor: 'pointer',
                     fontSize: '14px',
                     fontWeight: '600',
@@ -1786,6 +1842,30 @@ export default function CompleteSharedLifeDashboard() {
                 >
                   <img src={person.avatar} alt="" style={{ width: '24px', height: '24px', borderRadius: '50%' }} />
                   {person.name}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label style={{ fontSize: '12px', color: '#666', marginBottom: '6px', display: 'block' }}>Category</label>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+              {TRAVEL_CATEGORIES.map(cat => (
+                <button
+                  key={cat.name}
+                  onClick={() => setNewTravelCategory(cat.name)}
+                  style={{
+                    background: newTravelCategory === cat.name ? `${cat.color}40` : `rgba(255, 255, 255, 0.05)`,
+                    border: `1px solid rgba(${newTravelCategory === cat.name ? cat.color.slice(1) : '255, 255, 255'}, ${newTravelCategory === cat.name ? 0.4 : 0.1})`,
+                    borderRadius: '12px',
+                    padding: '12px',
+                    color: newTravelCategory === cat.name ? cat.color : '#999',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                  }}
+                >
+                  {cat.name}
                 </button>
               ))}
             </div>
