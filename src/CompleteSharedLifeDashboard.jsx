@@ -261,6 +261,7 @@ export default function CompleteSharedLifeDashboard() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('home');
+  const [showSettings, setShowSettings] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showRecipeModal, setShowRecipeModal] = useState(false);
   const [showRecipeDetail, setShowRecipeDetail] = useState(false);
@@ -779,19 +780,20 @@ export default function CompleteSharedLifeDashboard() {
     }
   };
 
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      setShowSettings(false);
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
+
   const handleLogin = async () => {
     try {
       await signInWithPopup(auth, provider);
     } catch (error) {
       console.error('Login error:', error);
-    }
-  };
-
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-    } catch (error) {
-      console.error('Logout error:', error);
     }
   };
 
@@ -912,12 +914,14 @@ export default function CompleteSharedLifeDashboard() {
         zIndex: 50,
       }}>
         <div
+          onClick={() => setShowSettings(true)}
           style={{
             width: '40px',
             height: '40px',
             borderRadius: '50%',
             background: `url(${user?.photoURL}) no-repeat center / cover`,
             border: `2px solid ${ACCENT_COLOR}`,
+            cursor: 'pointer',
           }}
         />
 
@@ -1964,7 +1968,113 @@ export default function CompleteSharedLifeDashboard() {
         })}
       </div>
 
-      {/* Settings Panel */}
+      {/* Settings Modal */}
+      {showSettings && (
+        <div
+          style={{
+            position: 'fixed',
+            top: '0',
+            left: '0',
+            right: '0',
+            bottom: '0',
+            background: `rgba(0, 0, 0, 0.6)`,
+            backdropFilter: 'blur(10px)',
+            zIndex: 200,
+            display: 'flex',
+            alignItems: 'flex-end',
+          }}
+          onClick={() => setShowSettings(false)}
+        >
+          <div
+            style={{
+              width: '100%',
+              background: BG_COLOR,
+              borderTop: `1px solid rgba(18, 52, 255, 0.2)`,
+              borderRadius: '20px 20px 0 0',
+              padding: '20px',
+              maxHeight: '80vh',
+              overflowY: 'auto',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h3 style={{ fontSize: '20px', fontWeight: '600', margin: 0 }}>Settings</h3>
+              <button
+                onClick={() => setShowSettings(false)}
+                style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '24px' }}
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            {/* User Info */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px', padding: '16px', background: `rgba(18, 52, 255, 0.1)`, borderRadius: '12px' }}>
+              <img
+                src={user?.photoURL}
+                alt="Avatar"
+                style={{ width: '48px', height: '48px', borderRadius: '50%' }}
+              />
+              <div>
+                <p style={{ margin: '0 0 4px', fontWeight: '600' }}>{getFirstName(user?.displayName)}</p>
+                <p style={{ margin: 0, fontSize: '12px', color: '#666' }}>{user?.email}</p>
+              </div>
+            </div>
+
+            {/* Notifications */}
+            <div style={{ marginBottom: '24px' }}>
+              <h4 style={{ fontSize: '14px', fontWeight: '600', margin: '0 0 12px', color: '#666', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Bell size={16} /> Notifications
+              </h4>
+
+              {!notificationsEnabled ? (
+                <button
+                  onClick={handleEnableNotifications}
+                  style={{
+                    width: '100%',
+                    background: ACCENT_COLOR,
+                    border: 'none',
+                    borderRadius: '12px',
+                    padding: '12px',
+                    color: '#fff',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                  }}
+                >
+                  🔔 Enable Notifications
+                </button>
+              ) : (
+                <div style={{ padding: '12px', background: `rgba(52, 199, 89, 0.1)`, borderRadius: '12px', border: `1px solid rgba(52, 199, 89, 0.2)` }}>
+                  <p style={{ margin: 0, fontSize: '12px', color: '#34c759' }}>✓ Notifications enabled</p>
+                </div>
+              )}
+            </div>
+
+            {/* Sign Out */}
+            <button
+              onClick={handleLogout}
+              style={{
+                width: '100%',
+                background: 'rgba(255, 59, 48, 0.2)',
+                border: `1px solid rgba(255, 59, 48, 0.3)`,
+                borderRadius: '12px',
+                padding: '12px',
+                color: '#ff3b30',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                fontSize: '16px',
+                fontWeight: '600',
+              }}
+            >
+              <LogOut size={18} /> Sign Out
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Chat Modal */}
       {showChat && (
         <div
