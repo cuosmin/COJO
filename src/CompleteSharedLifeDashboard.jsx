@@ -149,88 +149,7 @@ const AddModal = ({ isOpen, title, onClose, children }) => {
 };
 
 // Calendar Component for Travel Tab
-const CalendarMonth = ({ travels, currentMonth, onMonthChange }) => {
-  const year = currentMonth.getFullYear();
-  const month = currentMonth.getMonth();
-
-  const firstDay = new Date(year, month, 1);
-  const lastDay = new Date(year, month + 1, 0);
-  const daysInMonth = lastDay.getDate();
-  let startingDayOfWeek = firstDay.getDay() - 1;
-  if (startingDayOfWeek === -1) startingDayOfWeek = 6;
-
-  const days = [];
-  for (let i = 0; i < startingDayOfWeek; i++) {
-    days.push(null);
-  }
-  for (let i = 1; i <= daysInMonth; i++) {
-    days.push(i);
-  }
-
-  const getTravelIndicators = (day) => {
-    if (!day) return [];
-    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    return travels.filter(travel => {
-      const start = new Date(travel.startDate);
-      const end = new Date(travel.endDate);
-      const current = new Date(dateStr);
-      return current >= start && current <= end;
-    });
-  };
-
-  const weekDays = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-  return (
-    <div style={{ background: `rgba(255, 255, 255, 0.02)`, borderRadius: '16px', padding: '20px', border: `1px solid rgba(18, 52, 255, 0.15)` }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <button onClick={() => onMonthChange(-1)} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '18px' }}>←</button>
-        <h3 style={{ fontSize: '18px', fontWeight: '600', margin: 0 }}>{monthNames[month]} {year}</h3>
-        <button onClick={() => onMonthChange(1)} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '18px' }}>→</button>
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px', marginBottom: '12px' }}>
-        {weekDays.map(day => (
-          <div key={day} style={{ textAlign: 'center', fontSize: '12px', fontWeight: '600', color: '#666', padding: '8px' }}>{day}</div>
-        ))}
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px' }}>
-        {days.map((day, idx) => {
-          const indicators = day ? getTravelIndicators(day) : [];
-          return (
-            <div
-              key={idx}
-              style={{
-                aspectRatio: '1',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                borderRadius: '12px',
-                background: day ? `rgba(255, 255, 255, 0.02)` : 'transparent',
-                border: day && indicators.length > 0 ? `2px solid ${ACCENT_COLOR}` : `1px solid rgba(255, 255, 255, 0.05)`,
-                cursor: day ? 'pointer' : 'default',
-                position: 'relative',
-                fontSize: '14px',
-                fontWeight: day ? '500' : '400',
-                color: day ? '#fff' : '#333',
-              }}
-            >
-              {day}
-              {indicators.length > 0 && (
-                <div style={{ position: 'absolute', bottom: '4px', left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: '2px' }}>
-                  {indicators.map((_, i) => (
-                    <div key={i} style={{ width: '4px', height: '4px', borderRadius: '50%', background: ACCENT_COLOR }} />
-                  ))}
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-};
+// Travel categories - no longer using CalendarMonth component
 
 export default function CompleteSharedLifeDashboard() {
   const [user, setUser] = useState(null);
@@ -252,7 +171,7 @@ export default function CompleteSharedLifeDashboard() {
   const [expenses, setExpenses] = useState([]);
   const [travels, setTravels] = useState([]);
   const [users, setUsers] = useState([]);
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [currentMonth] = useState(new Date()); // Used for filtering expenses/travels by month
   const [archiveMonth, setArchiveMonth] = useState(new Date());
   const [expandedCategory, setExpandedCategory] = useState(null);
 
