@@ -1158,21 +1158,20 @@ export default function CompleteSharedLifeDashboard() {
                     
                     {/* Top Left - Time Label */}
                     {randomMeal.cookTime && (
-                      <div style={{ position: 'absolute', top: '12px', left: '12px', zIndex: 10 }}>
-                        <div style={{
-                          background: 'rgba(0, 0, 0, 0.4)',
-                          backdropFilter: 'blur(10px)',
-                          padding: '6px 12px',
-                          borderRadius: '8px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          fontSize: '12px',
-                          fontWeight: '600',
-                          color: '#fff',
-                        }}>
-                          <Clock size={12} /> {randomMeal.cookTime} min
-                        </div>
+                      <div style={{
+                        position: 'absolute',
+                        top: '12px',
+                        left: '12px',
+                        zIndex: 10,
+                        background: ACCENT_COLOR,
+                        borderRadius: '20px',
+                        padding: '6px 12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                      }}>
+                        <Clock size={14} style={{ color: '#fff' }} />
+                        <span style={{ fontSize: '12px', fontWeight: '600', color: '#fff' }}>{randomMeal.cookTime} min</span>
                       </div>
                     )}
 
