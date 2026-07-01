@@ -565,14 +565,6 @@ export default function CompleteSharedLifeDashboard() {
     return travels.find(t => t.startDate <= today && t.endDate >= today);
   };
 
-  const getTravelerInfo = (userId) => {
-    if (userId === user?.uid) {
-      return { name: user?.displayName || 'You', avatar: user?.photoURL };
-    }
-    const otherUser = users.find(u => u.uid === userId);
-    return { name: otherUser?.displayName || 'Partner', avatar: otherUser?.photoURL };
-  };
-
   const getFirstName = (fullName) => {
     if (!fullName) return 'You';
     return fullName.split(' ')[0];
@@ -773,12 +765,6 @@ export default function CompleteSharedLifeDashboard() {
             <div style={{ display: 'grid', gap: '12px' }}>
               {/* Currently traveling card - FIRST */}
               {currentTraveler && (() => {
-                const travelersNames = (currentTraveler.userIds || [currentTraveler.userId || '']).map(uid => {
-                  if (uid === user?.uid) return getFirstName(user?.displayName);
-                  const otherUser = users.find(u => u.uid === uid);
-                  return getFirstName(otherUser?.displayName) || 'Guest';
-                }).join(' & ');
-                
                 const avatar = currentTraveler.userIds && currentTraveler.userIds[0] === user?.uid ? user?.photoURL : 
                                currentTraveler.userIds && currentTraveler.userIds[0] ? users.find(u => u.uid === currentTraveler.userIds[0])?.photoURL :
                                currentTraveler.userId === user?.uid ? user?.photoURL : users.find(u => u.uid === currentTraveler.userId)?.photoURL;
