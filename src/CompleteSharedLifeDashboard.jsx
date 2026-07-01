@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Home, Leaf, UtensilsCrossed, Wallet, LogOut,
   X, Bell, Plus, Plane, Edit2, MapPin, Droplet, Archive, ChevronDown, Briefcase, Palmtree,
-  ShoppingCart as ShoppingBag, Heart, Wind, Smile, Clock, Shuffle, MessageCircle, Send,
+  ShoppingCart as ShoppingBag, Heart, Wind, Smile, Clock, Shuffle, MessageCircle, Send, Calendar,
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import LinkifyIt from 'linkify-it';
@@ -29,6 +29,7 @@ const BUDGET_CATEGORIES = [
 const TRAVEL_CATEGORIES = [
   { name: 'Business', color: '#1234ff', icon: Briefcase },
   { name: 'Holiday', color: '#34c759', icon: Palmtree },
+  { name: 'Events', color: '#ff3b30', icon: Heart },
 ];
 
 // Major cities for autocomplete
@@ -993,12 +994,17 @@ export default function CompleteSharedLifeDashboard() {
             <div style={{ display: 'grid', gap: '12px' }}>
               {/* Currently traveling card - Hero card */}
               {currentTraveler && (() => {
+                const avatar = currentTraveler.userIds && currentTraveler.userIds[0] === user?.uid ? user?.photoURL : 
+                               currentTraveler.userIds && currentTraveler.userIds[0] ? users.find(u => u.uid === currentTraveler.userIds[0])?.photoURL :
+                               currentTraveler.userId === user?.uid ? user?.photoURL : users.find(u => u.uid === currentTraveler.userId)?.photoURL;
+                
                 return (
                   <div
                     style={{
-                      background: `linear-gradient(135deg, rgba(52, 199, 89, 0.15) 0%, rgba(0, 0, 0, 0.8) 100%)`,
+                      background: `linear-gradient(135deg, rgba(100, 100, 100, 0.12) 0%, rgba(0, 0, 0, 0.6) 100%)`,
                       borderRadius: '16px',
                       padding: '24px',
+                      border: `1px solid rgba(255, 255, 255, 0.08)`,
                       backdropFilter: 'blur(10px)',
                       minHeight: '160px',
                       display: 'flex',
@@ -1007,12 +1013,20 @@ export default function CompleteSharedLifeDashboard() {
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-                      <Palmtree size={32} color="#34c759" />
+                      <div
+                        style={{
+                          width: '40px',
+                          height: '40px',
+                          borderRadius: '50%',
+                          background: `url(${avatar}) no-repeat center / cover`,
+                          border: `1.5px solid ${ACCENT_COLOR}`,
+                        }}
+                      />
                       <div>
-                        <div style={{ fontSize: '14px', color: '#999', marginBottom: '2px' }}>
-                          {currentTraveler.userIds && currentTraveler.userIds.length > 1 ? '✈️ are currently in' : '✈️ is currently in'}
+                        <div style={{ fontSize: '12px', color: '#999', marginBottom: '2px' }}>
+                          Currently in
                         </div>
-                        <div style={{ fontSize: '24px', fontWeight: '700', color: '#34c759' }}>
+                        <div style={{ fontSize: '22px', fontWeight: '700', color: '#fff' }}>
                           {currentTraveler.location}
                         </div>
                       </div>
@@ -1034,6 +1048,7 @@ export default function CompleteSharedLifeDashboard() {
                     background: `linear-gradient(135deg, rgba(52, 199, 89, 0.15) 0%, rgba(0, 0, 0, 0.8) 100%)`,
                     borderRadius: '16px',
                     padding: '16px 12px',
+                    border: `1px solid rgba(52, 199, 89, 0.12)`,
                     textAlign: 'center',
                     display: 'flex',
                     flexDirection: 'column',
@@ -1065,6 +1080,7 @@ export default function CompleteSharedLifeDashboard() {
                     background: `linear-gradient(135deg, rgba(18, 52, 255, 0.15) 0%, rgba(0, 0, 0, 0.8) 100%)`,
                     borderRadius: '16px',
                     padding: '16px 12px',
+                    border: `1px solid rgba(18, 52, 255, 0.12)`,
                     textAlign: 'center',
                     display: 'flex',
                     flexDirection: 'column',
@@ -1142,6 +1158,28 @@ export default function CompleteSharedLifeDashboard() {
                     }}
                   >
                     <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.8), rgba(0,0,0,0.2))' }} />
+                    
+                    {/* Top Left - Time Label */}
+                    {randomMeal.cookTime && (
+                      <div style={{ position: 'absolute', top: '12px', left: '12px', zIndex: 10 }}>
+                        <div style={{
+                          background: 'rgba(0, 0, 0, 0.4)',
+                          backdropFilter: 'blur(10px)',
+                          padding: '6px 12px',
+                          borderRadius: '8px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          fontSize: '12px',
+                          fontWeight: '600',
+                          color: '#fff',
+                        }}>
+                          <Clock size={12} /> {randomMeal.cookTime} min
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Top Right - Shuffle Button */}
                     <div style={{ position: 'absolute', top: '12px', right: '12px', zIndex: 10 }}>
                       <button
                         onClick={(e) => {
@@ -1164,12 +1202,28 @@ export default function CompleteSharedLifeDashboard() {
                         <Shuffle size={20} />
                       </button>
                     </div>
+
+                    {/* Bottom Content */}
                     <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '20px', zIndex: 5 }}>
                       <div style={{ fontSize: '14px', color: '#ccc', marginBottom: '6px' }}>Today's Inspiration</div>
-                      <div style={{ fontSize: '22px', fontWeight: '700', color: '#fff' }}>{randomMeal.name}</div>
-                      {randomMeal.cookTime && (
-                        <div style={{ fontSize: '12px', color: '#999', marginTop: '8px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <Clock size={14} /> {randomMeal.cookTime} min
+                      <div style={{ fontSize: '22px', fontWeight: '700', color: '#fff', marginBottom: '8px' }}>{randomMeal.name}</div>
+                      
+                      {/* Dietary Labels */}
+                      {randomMeal.dietaryLabels && randomMeal.dietaryLabels.length > 0 && (
+                        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                          {randomMeal.dietaryLabels.map((label, idx) => (
+                            <span key={idx} style={{
+                              background: 'rgba(255, 255, 255, 0.15)',
+                              backdropFilter: 'blur(10px)',
+                              padding: '3px 8px',
+                              borderRadius: '6px',
+                              fontSize: '10px',
+                              fontWeight: '600',
+                              color: '#fff',
+                            }}>
+                              {label}
+                            </span>
+                          ))}
                         </div>
                       )}
                     </div>
@@ -1202,6 +1256,7 @@ export default function CompleteSharedLifeDashboard() {
                         background: `linear-gradient(135deg, rgba(255, 149, 0, 0.15) 0%, rgba(0, 0, 0, 0.8) 100%)`,
                         borderRadius: '16px',
                         padding: '20px',
+                        border: `1px solid rgba(255, 149, 0, 0.12)`,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
@@ -1229,6 +1284,7 @@ export default function CompleteSharedLifeDashboard() {
                         background: `linear-gradient(135deg, rgba(255, 149, 0, 0.15) 0%, rgba(0, 0, 0, 0.8) 100%)`,
                         borderRadius: '16px',
                         padding: '20px',
+                        border: `1px solid rgba(255, 149, 0, 0.12)`,
                         cursor: 'pointer',
                         transition: 'transform 0.2s',
                       }}
@@ -1281,6 +1337,7 @@ export default function CompleteSharedLifeDashboard() {
                       background: `linear-gradient(135deg, rgba(18, 52, 255, 0.15) 0%, rgba(0, 0, 0, 0.8) 100%)`,
                       borderRadius: '16px',
                       padding: '24px',
+                      border: `1px solid rgba(18, 52, 255, 0.12)`,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
