@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import {
   Home, Leaf, UtensilsCrossed, Wallet, LogOut,
-  X, Sliders, Bell, Plus, Plane, Edit2, MapPin, ChefHat, Droplet, Archive,
+  X, Sliders, Bell, Plus, Plane, Edit2, MapPin, ChefHat, Droplet, Archive, ChevronDown,
   ShoppingCart as ShoppingBag, Heart, Wind, Smile
 } from 'lucide-react';
+import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { auth } from './firebaseConfig';
 import { signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
 import { ref, onValue, set } from 'firebase/database';
@@ -253,6 +254,7 @@ export default function CompleteSharedLifeDashboard() {
   const [users, setUsers] = useState([]);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [archiveMonth, setArchiveMonth] = useState(new Date());
+  const [expandedCategory, setExpandedCategory] = useState(null);
 
   // Modal states
   const [newItemName, setNewItemName] = useState('');
@@ -1248,46 +1250,105 @@ export default function CompleteSharedLifeDashboard() {
             {getExpensesForMonth(currentMonth).length === 0 ? (
               <EmptyState icon={Wallet} title="No expenses this month" subtitle="Track your spending together" />
             ) : (
-              <div style={{ display: 'grid', gap: '12px' }}>
-                {BUDGET_CATEGORIES.map(category => {
-                  const categoryExpenses = getExpensesByCategoryForMonth(currentMonth)[category.name];
-                  const total = categoryExpenses.reduce((sum, exp) => sum + exp.amount, 0);
-                  
-                  if (categoryExpenses.length === 0) return null;
-                  
-                  const Icon = category.icon;
-                  return (
-                    <div key={category.name} style={{ background: `rgba(255, 255, 255, 0.02)`, borderRadius: '16px', padding: '16px', border: `1px solid rgba(18, 52, 255, 0.15)` }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-                        <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: `${category.color}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: category.color }}>
-                          <Icon size={20} />
-                        </div>
-                        <div style={{ flex: 1 }}>
-                          <h3 style={{ fontSize: '16px', fontWeight: '600', margin: 0 }}>{category.name}</h3>
-                          <p style={{ fontSize: '12px', color: '#666', margin: 0 }}>{categoryExpenses.length} items</p>
-                        </div>
-                        <div style={{ fontSize: '18px', fontWeight: '700', color: category.color }}>€{total.toFixed(2)}</div>
-                      </div>
-
-                      <div style={{ display: 'grid', gap: '8px' }}>
-                        {categoryExpenses.map(exp => (
-                          <div key={exp.id} style={{ background: `rgba(255, 255, 255, 0.02)`, borderRadius: '12px', padding: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: `1px solid rgba(255, 255, 255, 0.05)` }}>
-                            <div style={{ flex: 1 }}>
-                              <p style={{ fontSize: '14px', margin: 0, fontWeight: '500' }}>{exp.title}</p>
-                              <p style={{ fontSize: '12px', color: '#666', margin: '2px 0 0' }}>{exp.date}</p>
-                            </div>
-                            <div style={{ marginRight: '12px', textAlign: 'right' }}>
-                              <p style={{ fontSize: '14px', margin: 0, fontWeight: '600' }}>€{exp.amount.toFixed(2)}</p>
-                            </div>
-                            <button onClick={() => openEditModal('expense', exp)} style={{ background: '#1234ff', border: 'none', borderRadius: '8px', padding: '8px', color: '#fff', cursor: 'pointer' }}>
-                              <Edit2 size={16} />
-                            </button>
-                          </div>
+              <div style={{ display: 'grid', gap: '24px' }}>
+                {/* CIRCULAR CHART */}
+                <div style={{ background: `rgba(255, 255, 255, 0.02)`, borderRadius: '20px', padding: '24px', border: `1px solid rgba(18, 52, 255, 0.1)`, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  <ResponsiveContainer width="100%" height={280}>
+                    <PieChart>
+                      <Pie
+                        data={BUDGET_CATEGORIES.map(cat => {
+                          const catExpenses = getExpensesByCategoryForMonth(currentMonth)[cat.name];
+                          const total = catExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+                          return { name: cat.name, value: total, color: cat.color };
+                        }).filter(item => item.value > 0)}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={70}
+                        outerRadius={100}
+                        startAngle={90}
+                        endAngle={-270}
+                        dataKey="value"
+                      >
+                        {BUDGET_CATEGORIES.map((cat, index) => (
+                          <Cell key={`cell-${index}`} fill={cat.color} />
                         ))}
+                      </Pie>
+                    </PieChart>
+                  </ResponsiveContainer>
+                  
+                  <div style={{ textAlign: 'center', marginTop: '-80px', position: 'relative', zIndex: 10 }}>
+                    <p style={{ fontSize: '32px', fontWeight: '700', margin: 0, color: '#fff' }}>
+                      €{getExpensesForMonth(currentMonth).reduce((sum, e) => sum + e.amount, 0).toFixed(2)}
+                    </p>
+                    <p style={{ fontSize: '12px', color: '#999', margin: '4px 0 0', marginBottom: '20px' }}>
+                      {currentMonth.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                    </p>
+                  </div>
+                </div>
+
+                {/* ACCORDION CATEGORIES */}
+                <div style={{ display: 'grid', gap: '8px' }}>
+                  {BUDGET_CATEGORIES.map(category => {
+                    const categoryExpenses = getExpensesByCategoryForMonth(currentMonth)[category.name];
+                    const total = categoryExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+                    
+                    if (categoryExpenses.length === 0) return null;
+                    
+                    const Icon = category.icon;
+                    const isExpanded = expandedCategory === category.name;
+                    
+                    return (
+                      <div key={category.name}>
+                        <button
+                          onClick={() => setExpandedCategory(isExpanded ? null : category.name)}
+                          style={{
+                            width: '100%',
+                            background: `rgba(255, 255, 255, 0.02)`,
+                            border: `1px solid rgba(18, 52, 255, 0.1)`,
+                            borderRadius: '12px',
+                            padding: '16px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '12px',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                          }}
+                          onMouseEnter={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.04)'}
+                          onMouseLeave={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.02)'}
+                        >
+                          <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: `${category.color}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: category.color }}>
+                            <Icon size={20} />
+                          </div>
+                          <div style={{ flex: 1, textAlign: 'left' }}>
+                            <p style={{ fontSize: '16px', fontWeight: '600', margin: 0, color: '#fff' }}>{category.name}</p>
+                            <p style={{ fontSize: '12px', color: '#666', margin: 0 }}>{categoryExpenses.length} transaction{categoryExpenses.length !== 1 ? 's' : ''}</p>
+                          </div>
+                          <div style={{ fontSize: '16px', fontWeight: '700', color: category.color, marginRight: '8px' }}>€{total.toFixed(2)}</div>
+                          <ChevronDown size={20} color="#666" style={{ transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
+                        </button>
+                        
+                        {isExpanded && (
+                          <div style={{ background: `rgba(18, 52, 255, 0.05)`, borderRadius: '0 0 12px 12px', borderLeft: `1px solid rgba(18, 52, 255, 0.1)`, borderRight: `1px solid rgba(18, 52, 255, 0.1)`, borderBottom: `1px solid rgba(18, 52, 255, 0.1)`, padding: '12px 16px', display: 'grid', gap: '8px' }}>
+                            {categoryExpenses.map(exp => (
+                              <div key={exp.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '8px', borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                                <div style={{ flex: 1 }}>
+                                  <p style={{ fontSize: '14px', margin: 0, fontWeight: '500', color: '#fff' }}>{exp.title}</p>
+                                  <p style={{ fontSize: '12px', color: '#999', margin: '2px 0 0' }}>{exp.date}</p>
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginRight: '8px' }}>
+                                  <p style={{ fontSize: '14px', margin: 0, fontWeight: '600', color: '#fff' }}>€{exp.amount.toFixed(2)}</p>
+                                  <button onClick={() => openEditModal('expense', exp)} style={{ background: '#1234ff', border: 'none', borderRadius: '8px', padding: '6px', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <Edit2 size={14} />
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
             )}
           </div>
@@ -1469,7 +1530,7 @@ export default function CompleteSharedLifeDashboard() {
                 <p>No expenses in this month</p>
               </div>
             ) : (
-              <div style={{ display: 'grid', gap: '12px' }}>
+              <div style={{ display: 'grid', gap: '8px' }}>
                 {BUDGET_CATEGORIES.map(category => {
                   const categoryExpenses = getExpensesByCategoryForMonth(archiveMonth)[category.name];
                   const total = categoryExpenses.reduce((sum, exp) => sum + exp.amount, 0);
@@ -1477,29 +1538,56 @@ export default function CompleteSharedLifeDashboard() {
                   if (categoryExpenses.length === 0) return null;
                   
                   const Icon = category.icon;
+                  const isExpanded = expandedCategory === `archive-${category.name}`;
+                  
                   return (
-                    <div key={category.name} style={{ background: `rgba(255, 255, 255, 0.02)`, borderRadius: '16px', padding: '16px', border: `1px solid rgba(18, 52, 255, 0.15)` }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+                    <div key={category.name}>
+                      <button
+                        onClick={() => setExpandedCategory(isExpanded ? null : `archive-${category.name}`)}
+                        style={{
+                          width: '100%',
+                          background: `rgba(255, 255, 255, 0.02)`,
+                          border: `1px solid rgba(18, 52, 255, 0.1)`,
+                          borderRadius: '12px',
+                          padding: '16px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '12px',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s',
+                        }}
+                        onMouseEnter={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.04)'}
+                        onMouseLeave={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.02)'}
+                      >
                         <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: `${category.color}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: category.color }}>
                           <Icon size={20} />
                         </div>
-                        <div style={{ flex: 1 }}>
-                          <h3 style={{ fontSize: '16px', fontWeight: '600', margin: 0 }}>{category.name}</h3>
-                          <p style={{ fontSize: '12px', color: '#666', margin: 0 }}>{categoryExpenses.length} items</p>
+                        <div style={{ flex: 1, textAlign: 'left' }}>
+                          <p style={{ fontSize: '16px', fontWeight: '600', margin: 0, color: '#fff' }}>{category.name}</p>
+                          <p style={{ fontSize: '12px', color: '#666', margin: 0 }}>{categoryExpenses.length} transaction{categoryExpenses.length !== 1 ? 's' : ''}</p>
                         </div>
-                        <div style={{ fontSize: '18px', fontWeight: '700', color: category.color }}>€{total.toFixed(2)}</div>
-                      </div>
-
-                      <div style={{ display: 'grid', gap: '8px' }}>
-                        {categoryExpenses.map(exp => (
-                          <div key={exp.id} style={{ background: `rgba(255, 255, 255, 0.02)`, borderRadius: '12px', padding: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: `1px solid rgba(255, 255, 255, 0.05)` }}>
-                            <div>
-                              <p style={{ fontSize: '14px', margin: 0, fontWeight: '500' }}>€{exp.amount.toFixed(2)}</p>
-                              <p style={{ fontSize: '12px', color: '#666', margin: '2px 0 0' }}>{exp.date}</p>
+                        <div style={{ fontSize: '16px', fontWeight: '700', color: category.color, marginRight: '8px' }}>€{total.toFixed(2)}</div>
+                        <ChevronDown size={20} color="#666" style={{ transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
+                      </button>
+                      
+                      {isExpanded && (
+                        <div style={{ background: `rgba(18, 52, 255, 0.05)`, borderRadius: '0 0 12px 12px', borderLeft: `1px solid rgba(18, 52, 255, 0.1)`, borderRight: `1px solid rgba(18, 52, 255, 0.1)`, borderBottom: `1px solid rgba(18, 52, 255, 0.1)`, padding: '12px 16px', display: 'grid', gap: '8px' }}>
+                          {categoryExpenses.map(exp => (
+                            <div key={exp.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '8px', borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                              <div style={{ flex: 1 }}>
+                                <p style={{ fontSize: '14px', margin: 0, fontWeight: '500', color: '#fff' }}>{exp.title}</p>
+                                <p style={{ fontSize: '12px', color: '#999', margin: '2px 0 0' }}>{exp.date}</p>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginRight: '8px' }}>
+                                <p style={{ fontSize: '14px', margin: 0, fontWeight: '600', color: '#fff' }}>€{exp.amount.toFixed(2)}</p>
+                                <button onClick={() => openEditModal('expense', exp)} style={{ background: '#1234ff', border: 'none', borderRadius: '8px', padding: '6px', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                  <Edit2 size={14} />
+                                </button>
+                              </div>
                             </div>
-                          </div>
-                        ))}
-                      </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
