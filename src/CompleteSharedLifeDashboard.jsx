@@ -1300,7 +1300,7 @@ export default function CompleteSharedLifeDashboard() {
                     </PieChart>
                   </ResponsiveContainer>
                   
-                  <div style={{ textAlign: 'center', marginTop: '-100px', position: 'absolute', zIndex: 10 }}>
+                  <div style={{ textAlign: 'center', position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 10 }}>
                     <p style={{ fontSize: '20px', fontWeight: '700', margin: 0, color: '#fff', lineHeight: '1' }}>
                       €{getExpensesForMonth(currentMonth).reduce((sum, e) => sum + e.amount, 0).toFixed(2)}
                     </p>
