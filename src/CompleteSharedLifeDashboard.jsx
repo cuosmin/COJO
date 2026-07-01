@@ -1176,36 +1176,35 @@ export default function CompleteSharedLifeDashboard() {
                       </div>
                     )}
 
-                    {/* Top Right - Dietary Labels + Shuffle Button */}
-                    <div style={{ position: 'absolute', top: '12px', right: '12px', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
-                      {/* Dietary Labels */}
-                      {randomMeal.dietaryLabels && randomMeal.dietaryLabels.length > 0 && (
-                        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                          {randomMeal.dietaryLabels.map(label => {
-                            const colors = {
-                              'vegetarian': '#34c759',
-                              'vegan': '#00c7be',
-                              'gluten-free': '#ff9500',
-                              'lactose-free': '#ff3b30',
-                            };
-                            return (
-                              <div key={label} style={{
-                                background: `${colors[label]}40`,
-                                borderRadius: '12px',
-                                padding: '4px 8px',
-                                border: `1px solid ${colors[label]}`,
-                                fontSize: '10px',
-                                fontWeight: '600',
-                                color: colors[label],
-                              }}>
-                                {label}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
+                    {/* Top Right - Dietary Labels */}
+                    {randomMeal.dietaryLabels && randomMeal.dietaryLabels.length > 0 && (
+                      <div style={{ position: 'absolute', top: '12px', right: '12px', zIndex: 10, display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                        {randomMeal.dietaryLabels.map(label => {
+                          const colors = {
+                            'vegetarian': '#34c759',
+                            'vegan': '#00c7be',
+                            'gluten-free': '#ff9500',
+                            'lactose-free': '#ff3b30',
+                          };
+                          return (
+                            <div key={label} style={{
+                              background: `${colors[label]}40`,
+                              borderRadius: '12px',
+                              padding: '4px 8px',
+                              border: `1px solid ${colors[label]}`,
+                              fontSize: '10px',
+                              fontWeight: '600',
+                              color: colors[label],
+                            }}>
+                              {label}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
 
-                      {/* Shuffle Button */}
+                    {/* Bottom Right - Shuffle Button */}
+                    <div style={{ position: 'absolute', bottom: '12px', right: '12px', zIndex: 10 }}>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
