@@ -1157,17 +1157,17 @@ export default function CompleteSharedLifeDashboard() {
                       background: 'rgba(255, 255, 255, 0.1)',
                       border: '1px solid rgba(255, 255, 255, 0.2)',
                       borderRadius: '12px',
-                      padding: '10px 16px',
+                      padding: '10px 12px',
                       color: '#fff',
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '6px',
+                      justifyContent: 'center',
                       fontSize: '14px',
                       fontWeight: '600',
                     }}
                   >
-                    <Shuffle size={18} /> Shuffle
+                    <Shuffle size={18} />
                   </button>
                 )}
                 <button
@@ -1219,7 +1219,7 @@ export default function CompleteSharedLifeDashboard() {
                       backgroundSize: 'cover',
                       backgroundPosition: 'center',
                       borderRadius: '16px',
-                      minHeight: '160px',
+                      minHeight: '240px',
                       position: 'relative',
                       overflow: 'hidden',
                       boxShadow: `0 0 0 1px rgba(18, 52, 255, 0.15)`,
@@ -1251,16 +1251,14 @@ export default function CompleteSharedLifeDashboard() {
                         top: '12px',
                         left: '12px',
                         zIndex: 2,
-                        background: 'rgba(0, 0, 0, 0.6)',
-                        backdropFilter: 'blur(10px)',
+                        background: ACCENT_COLOR,
                         borderRadius: '20px',
                         padding: '6px 12px',
-                        border: '1px solid rgba(255, 255, 255, 0.2)',
                         display: 'flex',
                         alignItems: 'center',
                         gap: '6px',
                       }}>
-                        <Clock size={14} style={{ color: ACCENT_COLOR }} />
+                        <Clock size={14} style={{ color: '#fff' }} />
                         <span style={{ fontSize: '12px', fontWeight: '600', color: '#fff' }}>{meal.cookTime} min</span>
                       </div>
                     )}
@@ -1306,7 +1304,7 @@ export default function CompleteSharedLifeDashboard() {
                       position: 'relative',
                       zIndex: 1,
                       padding: '12px',
-                      minHeight: '160px',
+                      minHeight: '240px',
                       display: 'flex',
                       flexDirection: 'column',
                       justifyContent: 'flex-end',
@@ -2217,9 +2215,13 @@ export default function CompleteSharedLifeDashboard() {
                     cursor: 'pointer',
                     fontSize: '16px',
                     fontWeight: '600',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
                   }}
                 >
-                  Edit Recipe
+                  <Edit2 size={18} /> Edit
                 </button>
                 <button
                   onClick={() => {
@@ -2235,9 +2237,13 @@ export default function CompleteSharedLifeDashboard() {
                     cursor: 'pointer',
                     fontSize: '16px',
                     fontWeight: '600',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
                   }}
                 >
-                  Delete
+                  <X size={18} /> Delete
                 </button>
               </div>
             </div>
