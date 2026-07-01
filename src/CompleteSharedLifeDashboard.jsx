@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Home, Leaf, UtensilsCrossed, Wallet, LogOut,
   X, Sliders, Bell, Plus, Plane, Edit2, MapPin, ChefHat, Droplet, Archive, ChevronDown, Briefcase, Palmtree,
-  ShoppingCart as ShoppingBag, Heart, Wind, Smile
+  ShoppingCart as ShoppingBag, Heart, Wind, Smile, Clock, Shuffle,
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { auth } from './firebaseConfig';
@@ -263,8 +263,7 @@ export default function CompleteSharedLifeDashboard() {
   const [showSettings, setShowSettings] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showRecipeModal, setShowRecipeModal] = useState(false);
-  const [showArchive, setShowArchive] = useState(false);
-  const [archiveType, setArchiveType] = useState(null);
+  const [showRecipeDetail, setShowRecipeDetail] = useState(false);
   const [selectedRecipe, setSelectedRecipe] = useState(null);
   const [modalType, setModalType] = useState(null);
   const [editingId, setEditingId] = useState(null);
@@ -284,6 +283,11 @@ export default function CompleteSharedLifeDashboard() {
   const [newItemName, setNewItemName] = useState('');
   const [newItemRecipe, setNewItemRecipe] = useState('');
   const [newItemPhoto, setNewItemPhoto] = useState(null);
+  const [newItemCookTime, setNewItemCookTime] = useState('');
+  const [newItemIngredients, setNewItemIngredients] = useState('');
+  const [newItemInstructions, setNewItemInstructions] = useState('');
+  const [newItemRecipeUrl, setNewItemRecipeUrl] = useState('');
+  const [newItemDietaryLabels, setNewItemDietaryLabels] = useState([]);
   const [newItemWateringDays, setNewItemWateringDays] = useState(7);
   const [newTravelStart, setNewTravelStart] = useState('');
   const [newTravelEnd, setNewTravelEnd] = useState('');
@@ -483,6 +487,13 @@ export default function CompleteSharedLifeDashboard() {
   const addMeal = () => {
     if (newItemName.trim()) {
       const mealDate = new Date().toISOString().split('T')[0];
+      
+      // Parse ingredients - can be comma-separated or line-separated
+      const ingredientsList = newItemIngredients
+        .split('\n')
+        .map(i => i.trim())
+        .filter(i => i.length > 0);
+      
       const meal = {
         id: editingId || Date.now().toString(),
         name: newItemName,
@@ -490,6 +501,11 @@ export default function CompleteSharedLifeDashboard() {
         plannedDate: mealDate,
         shoppingNeeded: false,
         photo: newItemPhoto || `https://images.unsplash.com/photo-1495575621581-20dbe3ce2bad?w=400&h=400&fit=crop&v=${Date.now()}`,
+        cookTime: newItemCookTime ? parseInt(newItemCookTime) : null,
+        ingredients: ingredientsList,
+        instructions: newItemInstructions,
+        recipeUrl: newItemRecipeUrl,
+        dietaryLabels: newItemDietaryLabels,
       };
       
       let updated;
@@ -654,6 +670,11 @@ export default function CompleteSharedLifeDashboard() {
     setNewItemName('');
     setNewItemRecipe('');
     setNewItemPhoto(null);
+    setNewItemCookTime('');
+    setNewItemIngredients('');
+    setNewItemInstructions('');
+    setNewItemRecipeUrl('');
+    setNewItemDietaryLabels([]);
     setNewItemWateringDays(7);
     setNewTravelStart('');
     setNewTravelEnd('');
@@ -680,6 +701,11 @@ export default function CompleteSharedLifeDashboard() {
       setNewItemName(item.name);
       setNewItemRecipe(item.recipe || '');
       setNewItemPhoto(item.photo);
+      setNewItemCookTime(item.cookTime ? item.cookTime.toString() : '');
+      setNewItemIngredients((item.ingredients || []).join('\n'));
+      setNewItemInstructions(item.instructions || '');
+      setNewItemRecipeUrl(item.recipeUrl || '');
+      setNewItemDietaryLabels(item.dietaryLabels || []);
     } else if (type === 'expense') {
       setNewExpenseCategory(item.category);
       setNewExpenseTitle(item.title || '');
@@ -1116,50 +1142,93 @@ export default function CompleteSharedLifeDashboard() {
         {activeTab === 'food' && (
           <div style={{ padding: '20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-              <h2 style={{ fontSize: '28px', fontWeight: '700', margin: 0 }}>Meals</h2>
-              <button
-                onClick={() => {
-                  setModalType('meal');
-                  setEditingId(null);
-                  setShowAddModal(true);
-                  setNewItemName('');
-                  setNewItemRecipe('');
-                  setNewItemPhoto(null);
-                }}
-                style={{
-                  background: ACCENT_COLOR,
-                  border: 'none',
-                  borderRadius: '12px',
-                  padding: '10px 16px',
-                  color: '#fff',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                }}
-              >
-                <Plus size={18} /> Add
-              </button>
+              <h2 style={{ fontSize: '28px', fontWeight: '700', margin: 0 }}>Recipes</h2>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                {meals.length > 0 && (
+                  <button
+                    onClick={() => {
+                      const randomMeal = meals[Math.floor(Math.random() * meals.length)];
+                      setSelectedRecipe(randomMeal);
+                      setShowRecipeDetail(true);
+                    }}
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.1)',
+                      border: '1px solid rgba(255, 255, 255, 0.2)',
+                      borderRadius: '12px',
+                      padding: '10px 16px',
+                      color: '#fff',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                    }}
+                  >
+                    <Shuffle size={18} /> Shuffle
+                  </button>
+                )}
+                <button
+                  onClick={() => {
+                    setModalType('meal');
+                    setEditingId(null);
+                    setShowAddModal(true);
+                    setNewItemName('');
+                    setNewItemRecipe('');
+                    setNewItemPhoto(null);
+                    setNewItemCookTime('');
+                    setNewItemIngredients('');
+                    setNewItemInstructions('');
+                    setNewItemRecipeUrl('');
+                    setNewItemDietaryLabels([]);
+                  }}
+                  style={{
+                    background: ACCENT_COLOR,
+                    border: 'none',
+                    borderRadius: '12px',
+                    padding: '10px 16px',
+                    color: '#fff',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                  }}
+                >
+                  <Plus size={18} /> Add
+                </button>
+              </div>
             </div>
 
             {meals.length === 0 ? (
-              <EmptyState icon={UtensilsCrossed} title="No meals planned" subtitle="Let's start planning together" />
+              <EmptyState icon={UtensilsCrossed} title="No recipes yet" subtitle="Add your favorite recipes" />
             ) : (
               <div style={{ display: 'grid', gap: '12px' }}>
                 {meals.map(meal => (
                   <div
                     key={meal.id}
+                    onClick={() => {
+                      setSelectedRecipe(meal);
+                      setShowRecipeDetail(true);
+                    }}
                     style={{
                       backgroundImage: `url(${meal.photo}?w=400&h=300&fit=crop)`,
                       backgroundSize: 'cover',
                       backgroundPosition: 'center',
                       borderRadius: '16px',
-                      minHeight: '200px',
+                      minHeight: '160px',
                       position: 'relative',
                       overflow: 'hidden',
                       boxShadow: `0 0 0 1px rgba(18, 52, 255, 0.15)`,
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.boxShadow = '0 0 0 1px rgba(18, 52, 255, 0.3)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.boxShadow = '0 0 0 1px rgba(18, 52, 255, 0.15)';
                     }}
                   >
                     {/* Gradient overlay */}
@@ -1169,63 +1238,79 @@ export default function CompleteSharedLifeDashboard() {
                       left: 0,
                       right: 0,
                       bottom: 0,
-                      background: 'linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.5) 50%, rgba(0,0,0,0.95) 100%)',
+                      background: 'linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0.9) 100%)',
                       pointerEvents: 'none',
                     }} />
                     
-                    {/* Content */}
+                    {/* Cook Time Pill (top left) */}
+                    {meal.cookTime && (
+                      <div style={{
+                        position: 'absolute',
+                        top: '12px',
+                        left: '12px',
+                        zIndex: 2,
+                        background: 'rgba(0, 0, 0, 0.6)',
+                        backdropFilter: 'blur(10px)',
+                        borderRadius: '20px',
+                        padding: '6px 12px',
+                        border: '1px solid rgba(255, 255, 255, 0.2)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                      }}>
+                        <Clock size={14} style={{ color: ACCENT_COLOR }} />
+                        <span style={{ fontSize: '12px', fontWeight: '600', color: '#fff' }}>{meal.cookTime} min</span>
+                      </div>
+                    )}
+
+                    {/* Dietary Labels (top right) */}
+                    {meal.dietaryLabels && meal.dietaryLabels.length > 0 && (
+                      <div style={{
+                        position: 'absolute',
+                        top: '12px',
+                        right: '12px',
+                        zIndex: 2,
+                        display: 'flex',
+                        gap: '6px',
+                        flexWrap: 'wrap',
+                        justifyContent: 'flex-end',
+                      }}>
+                        {meal.dietaryLabels.map(label => {
+                          const colors = {
+                            'vegetarian': '#34c759',
+                            'vegan': '#00c7be',
+                            'gluten-free': '#ff9500',
+                            'lactose-free': '#ff3b30',
+                          };
+                          return (
+                            <div key={label} style={{
+                              background: `${colors[label]}40`,
+                              borderRadius: '12px',
+                              padding: '4px 8px',
+                              border: `1px solid ${colors[label]}`,
+                              fontSize: '10px',
+                              fontWeight: '600',
+                              color: colors[label],
+                            }}>
+                              {label}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                    
+                    {/* Content (bottom) */}
                     <div style={{
                       position: 'relative',
                       zIndex: 1,
-                      padding: '16px',
-                      minHeight: '200px',
+                      padding: '12px',
+                      minHeight: '160px',
                       display: 'flex',
                       flexDirection: 'column',
                       justifyContent: 'flex-end',
                       height: '100%',
                     }}>
-                      <div style={{ marginBottom: '12px' }}>
-                        <h3 style={{ fontSize: '18px', fontWeight: '600', margin: 0 }}>{meal.name}</h3>
-                      </div>
-
-                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        <button
-                          onClick={() => {
-                            setSelectedRecipe(meal);
-                            setShowRecipeModal(true);
-                          }}
-                          style={{
-                            flex: 1,
-                            background: 'rgba(255, 255, 255, 0.08)',
-                            border: '1px solid rgba(255, 255, 255, 0.1)',
-                            borderRadius: '12px',
-                            padding: '10px 12px',
-                            color: '#fff',
-                            cursor: 'pointer',
-                            fontSize: '14px',
-                            fontWeight: '600',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '6px',
-                          }}
-                        >
-                          <ChefHat size={16} /> View Recipe
-                        </button>
-                        <button
-                          onClick={() => openEditModal('meal', meal)}
-                          style={{
-                            background: '#1234ff',
-                            border: 'none',
-                            borderRadius: '12px',
-                            padding: '10px 12px',
-                            color: '#fff',
-                            cursor: 'pointer',
-                          }}
-                        >
-                          <Edit2 size={18} />
-                        </button>
-                      </div>
+                      <h3 style={{ fontSize: '16px', fontWeight: '600', margin: 0, color: '#fff' }}>{meal.name}</h3>
                     </div>
                   </div>
                 ))}
@@ -1939,7 +2024,226 @@ export default function CompleteSharedLifeDashboard() {
         </div>
       )}
 
-      {/* Recipe Modal */}
+      {/* Recipe Detail Page */}
+      {showRecipeDetail && selectedRecipe && (
+        <div
+          style={{
+            position: 'fixed',
+            top: '0',
+            left: '0',
+            right: '0',
+            bottom: '0',
+            background: `rgba(0, 0, 0, 0.6)`,
+            backdropFilter: 'blur(10px)',
+            zIndex: 300,
+            display: 'flex',
+            alignItems: 'flex-end',
+            overflowY: 'auto',
+          }}
+          onClick={() => setShowRecipeDetail(false)}
+        >
+          <div
+            style={{
+              width: '100%',
+              background: BG_COLOR,
+              borderTop: `1px solid rgba(18, 52, 255, 0.2)`,
+              borderRadius: '24px 24px 0 0',
+              padding: '0',
+              maxHeight: '95vh',
+              overflowY: 'auto',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Recipe Image Header */}
+            <div
+              style={{
+                backgroundImage: `url(${selectedRecipe.photo}?w=600&h=400&fit=crop)`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                height: '280px',
+                position: 'relative',
+              }}
+            >
+              {/* Gradient overlay */}
+              <div style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                background: 'linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.8) 100%)',
+              }} />
+
+              {/* Close button */}
+              <button
+                onClick={() => setShowRecipeDetail(false)}
+                style={{
+                  position: 'absolute',
+                  top: '16px',
+                  right: '16px',
+                  background: 'rgba(0, 0, 0, 0.5)',
+                  border: 'none',
+                  borderRadius: '50%',
+                  width: '40px',
+                  height: '40px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  zIndex: 10,
+                }}
+              >
+                <X size={24} />
+              </button>
+
+              {/* Recipe Title */}
+              <div style={{
+                position: 'absolute',
+                bottom: '20px',
+                left: '20px',
+                right: '20px',
+                zIndex: 5,
+              }}>
+                <h2 style={{ fontSize: '28px', fontWeight: '700', margin: 0, color: '#fff' }}>{selectedRecipe.name}</h2>
+              </div>
+            </div>
+
+            {/* Content Section */}
+            <div style={{ padding: '24px', display: 'grid', gap: '24px' }}>
+              {/* Meta Info: Cook Time, Dietary Labels */}
+              {(selectedRecipe.cookTime || (selectedRecipe.dietaryLabels && selectedRecipe.dietaryLabels.length > 0)) && (
+                <div style={{ display: 'grid', gap: '16px' }}>
+                  {selectedRecipe.cookTime && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <Clock size={20} color={ACCENT_COLOR} />
+                      <span style={{ fontSize: '16px', color: '#ccc' }}>{selectedRecipe.cookTime} minutes</span>
+                    </div>
+                  )}
+                  
+                  {selectedRecipe.dietaryLabels && selectedRecipe.dietaryLabels.length > 0 && (
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      {selectedRecipe.dietaryLabels.map(label => {
+                        const colors = {
+                          'vegetarian': '#34c759',
+                          'vegan': '#00c7be',
+                          'gluten-free': '#ff9500',
+                          'lactose-free': '#ff3b30',
+                        };
+                        return (
+                          <div key={label} style={{
+                            background: `${colors[label]}15`,
+                            borderRadius: '12px',
+                            padding: '6px 12px',
+                            border: `1px solid ${colors[label]}`,
+                            fontSize: '12px',
+                            fontWeight: '600',
+                            color: colors[label],
+                          }}>
+                            {label}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Ingredients (Shopping List) */}
+              {selectedRecipe.ingredients && selectedRecipe.ingredients.length > 0 && (
+                <div>
+                  <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '12px', color: '#fff' }}>Ingredients</h3>
+                  <div style={{ display: 'grid', gap: '8px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '12px', padding: '16px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
+                    {selectedRecipe.ingredients.map((ingredient, idx) => (
+                      <div key={idx} style={{ fontSize: '14px', color: '#ccc', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                        <span style={{ color: ACCENT_COLOR, flexShrink: 0 }}>•</span>
+                        <span>{ingredient}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Instructions */}
+              {selectedRecipe.instructions && (
+                <div>
+                  <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '12px', color: '#fff' }}>Instructions</h3>
+                  <div style={{ background: 'rgba(255, 255, 255, 0.02)', borderRadius: '12px', padding: '16px', border: '1px solid rgba(255, 255, 255, 0.06)', lineHeight: '1.6', color: '#ccc', whiteSpace: 'pre-wrap', fontSize: '14px' }}>
+                    {selectedRecipe.instructions}
+                  </div>
+                </div>
+              )}
+
+              {/* Recipe URL */}
+              {selectedRecipe.recipeUrl && (
+                <a
+                  href={selectedRecipe.recipeUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '12px',
+                    background: `rgba(18, 52, 255, 0.08)`,
+                    border: `1px solid ${ACCENT_COLOR}`,
+                    borderRadius: '12px',
+                    color: ACCENT_COLOR,
+                    textDecoration: 'none',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                  }}
+                >
+                  View Full Recipe →
+                </a>
+              )}
+
+              {/* Edit/Delete Actions */}
+              <div style={{ display: 'grid', gap: '8px', gridTemplateColumns: '1fr 1fr' }}>
+                <button
+                  onClick={() => {
+                    setShowRecipeDetail(false);
+                    openEditModal('meal', selectedRecipe);
+                  }}
+                  style={{
+                    background: ACCENT_COLOR,
+                    border: 'none',
+                    borderRadius: '12px',
+                    padding: '14px',
+                    color: '#fff',
+                    cursor: 'pointer',
+                    fontSize: '16px',
+                    fontWeight: '600',
+                  }}
+                >
+                  Edit Recipe
+                </button>
+                <button
+                  onClick={() => {
+                    deleteMeal(selectedRecipe.id);
+                    setShowRecipeDetail(false);
+                  }}
+                  style={{
+                    background: 'rgba(255, 59, 48, 0.2)',
+                    border: '1px solid rgba(255, 59, 48, 0.3)',
+                    borderRadius: '12px',
+                    padding: '14px',
+                    color: '#ff3b30',
+                    cursor: 'pointer',
+                    fontSize: '16px',
+                    fontWeight: '600',
+                  }}
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Recipe Modal (Old - keeping for backward compatibility) */}
       {showRecipeModal && selectedRecipe && (
         <div
           style={{
@@ -2026,29 +2330,95 @@ export default function CompleteSharedLifeDashboard() {
       </AddModal>
 
       {/* Add Meal Modal */}
-      <AddModal isOpen={showAddModal && modalType === 'meal'} title={editingId ? "Edit Meal" : "Add Meal"} onClose={resetModal}>
+      <AddModal isOpen={showAddModal && modalType === 'meal'} title={editingId ? "Edit Recipe" : "Add Recipe"} onClose={resetModal}>
         <div style={{ display: 'grid', gap: '16px' }}>
-          <input type="text" value={newItemName} onChange={(e) => setNewItemName(e.target.value)} placeholder="Meal name..." style={{ background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px' }} />
-          <textarea value={newItemRecipe} onChange={(e) => setNewItemRecipe(e.target.value)} placeholder="Add recipe (optional)..." style={{ background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px', minHeight: '100px', fontFamily: 'inherit' }} />
+          {/* Recipe Name */}
+          <input type="text" value={newItemName} onChange={(e) => setNewItemName(e.target.value)} placeholder="Recipe name..." style={{ background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px' }} />
           
+          {/* Cook Time */}
           <div>
-            <label style={{ fontSize: '14px', color: '#666', marginBottom: '8px', display: 'block' }}>Search photo</label>
+            <label style={{ fontSize: '14px', color: '#666', marginBottom: '8px', display: 'block' }}>Cook time (minutes)</label>
+            <input type="number" value={newItemCookTime} onChange={(e) => setNewItemCookTime(e.target.value)} placeholder="30" style={{ width: '100%', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px' }} />
+          </div>
+
+          {/* Ingredients */}
+          <div>
+            <label style={{ fontSize: '14px', color: '#666', marginBottom: '8px', display: 'block' }}>Ingredients <span style={{ color: '#999', fontSize: '12px' }}>(one per line)</span></label>
+            <textarea value={newItemIngredients} onChange={(e) => setNewItemIngredients(e.target.value)} placeholder="2 cups flour&#10;1 egg&#10;Salt to taste..." style={{ width: '100%', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px', minHeight: '100px', fontFamily: 'inherit' }} />
+          </div>
+
+          {/* Instructions */}
+          <div>
+            <label style={{ fontSize: '14px', color: '#666', marginBottom: '8px', display: 'block' }}>Instructions</label>
+            <textarea value={newItemInstructions} onChange={(e) => setNewItemInstructions(e.target.value)} placeholder="Step-by-step cooking instructions..." style={{ width: '100%', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px', minHeight: '80px', fontFamily: 'inherit' }} />
+          </div>
+
+          {/* Recipe URL */}
+          <div>
+            <label style={{ fontSize: '14px', color: '#666', marginBottom: '8px', display: 'block' }}>Recipe URL <span style={{ color: '#999', fontSize: '12px' }}>(optional)</span></label>
+            <input type="url" value={newItemRecipeUrl} onChange={(e) => setNewItemRecipeUrl(e.target.value)} placeholder="https://..." style={{ width: '100%', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px' }} />
+          </div>
+
+          {/* Dietary Labels */}
+          <div>
+            <label style={{ fontSize: '14px', color: '#666', marginBottom: '12px', display: 'block' }}>Dietary labels</label>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
+              {['vegetarian', 'vegan', 'gluten-free', 'lactose-free'].map(label => {
+                const colors = {
+                  'vegetarian': '#34c759',
+                  'vegan': '#00c7be',
+                  'gluten-free': '#ff9500',
+                  'lactose-free': '#ff3b30',
+                };
+                const isSelected = newItemDietaryLabels.includes(label);
+                return (
+                  <button
+                    key={label}
+                    onClick={() => {
+                      if (isSelected) {
+                        setNewItemDietaryLabels(newItemDietaryLabels.filter(l => l !== label));
+                      } else {
+                        setNewItemDietaryLabels([...newItemDietaryLabels, label]);
+                      }
+                    }}
+                    style={{
+                      padding: '10px',
+                      borderRadius: '12px',
+                      border: `2px solid ${colors[label]}`,
+                      background: isSelected ? `${colors[label]}20` : 'rgba(255, 255, 255, 0.02)',
+                      color: colors[label],
+                      cursor: 'pointer',
+                      fontSize: '13px',
+                      fontWeight: '600',
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Photo Search */}
+          <div>
+            <label style={{ fontSize: '14px', color: '#666', marginBottom: '8px', display: 'block' }}>Recipe photo</label>
             <input type="text" placeholder="e.g. pasta, salad..." onChange={(e) => searchUnsplash(e.target.value)} style={{ width: '100%', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px', marginBottom: '12px' }} />
             {unsplashSearchResults.length > 0 && (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
                 {unsplashSearchResults.map((photo) => (
-                  <img key={photo.id} src={`${photo.urls.thumb}?w=120&h=120&fit=crop`} alt="" onClick={() => setNewItemPhoto(photo.urls.regular)} style={{ width: '100%', height: '100px', borderRadius: '8px', cursor: 'pointer', border: newItemPhoto === photo.urls.regular ? `2px solid ${ACCENT_COLOR}` : 'none' }} />
+                  <img key={photo.id} src={`${photo.urls.thumb}?w=120&h=120&fit=crop`} alt="" onClick={() => setNewItemPhoto(photo.urls.regular)} style={{ width: '100%', height: '100px', borderRadius: '8px', cursor: 'pointer', border: newItemPhoto === photo.urls.regular ? `2px solid ${ACCENT_COLOR}` : 'none', transition: 'all 0.2s' }} />
                 ))}
               </div>
             )}
           </div>
 
           <button onClick={addMeal} style={{ width: '100%', background: ACCENT_COLOR, border: 'none', borderRadius: '12px', padding: '14px', color: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: '600' }}>
-            {editingId ? 'Update Meal' : 'Add Meal'}
+            {editingId ? 'Update Recipe' : 'Add Recipe'}
           </button>
           {editingId && (
             <button onClick={() => { deleteMeal(editingId); resetModal(); }} style={{ width: '100%', background: 'rgba(255, 59, 48, 0.2)', border: '1px solid rgba(255, 59, 48, 0.3)', borderRadius: '12px', padding: '14px', color: '#ff3b30', cursor: 'pointer', fontSize: '16px', fontWeight: '600' }}>
-              Delete Meal
+              Delete Recipe
             </button>
           )}
         </div>
