@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
   Home, Leaf, UtensilsCrossed, Wallet, LogOut,
-  Trash2, Check, X, Sliders, Bell, Plus, Plane, Edit2, MapPin, ChefHat, ShoppingCart
+  Trash2, X, Sliders, Bell, Plus, Plane, Edit2, MapPin, ChefHat, Droplet,
+  ShoppingCart as ShoppingBag, Heart, Zap, Wind, Smile
 } from 'lucide-react';
 import { auth } from './firebaseConfig';
 import { signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
@@ -14,15 +15,110 @@ const database = getDatabase();
 const ACCENT_COLOR = '#1234ff';
 const BG_COLOR = '#000000';
 
+const LANGUAGES = {
+  EN: {
+    home: 'Home',
+    plants: 'Plants',
+    meals: 'Meals',
+    budget: 'Budget',
+    travel: 'Travel',
+    plantsNeedingWater: 'plants need watering today',
+    noPlantsNeedingWater: 'No plants need watering today',
+    daysApart: 'days apart this month',
+    spentTogether: 'spent together this month',
+    addPlant: 'Add Plant',
+    editPlant: 'Edit Plant',
+    markAsWatered: 'Mark as watered',
+    viewRecipe: 'View Recipe',
+    addMeal: 'Add Meal',
+    editMeal: 'Edit Meal',
+    mealName: 'Meal name...',
+    recipe: 'Add recipe (optional)...',
+    searchPhoto: 'Search photo',
+    addExpense: 'Add Expense',
+    editExpense: 'Edit Expense',
+    category: 'Category',
+    date: 'Date',
+    amount: 'Amount (€)',
+    addTravel: 'Add Travel',
+    editTravel: 'Edit Travel',
+    whoTraveling: 'Who is traveling?',
+    location: 'Location',
+    searchCity: 'Search city...',
+    startDate: 'Start date',
+    endDate: 'End date',
+    delete: 'Delete',
+    update: 'Update',
+    add: 'Add',
+    settings: 'Settings',
+    language: 'Language',
+    notifications: 'Notifications',
+    enableNotifications: 'Enable Notifications',
+    signOut: 'Sign Out',
+    isCurrentlyIn: 'is currently in',
+    plantName: 'Plant name...',
+    wateringFrequency: 'Watering frequency (days)',
+    currentMonth: 'Current Month',
+    archive: 'Archive',
+    summaryTotal: 'Total',
+  },
+  FR: {
+    home: 'Accueil',
+    plants: 'Plantes',
+    meals: 'Repas',
+    budget: 'Budget',
+    travel: 'Voyage',
+    plantsNeedingWater: 'plantes à arroser aujourd\'hui',
+    noPlantsNeedingWater: 'Aucune plante à arroser aujourd\'hui',
+    daysApart: 'jours séparés ce mois',
+    spentTogether: 'dépensé ensemble ce mois',
+    addPlant: 'Ajouter une plante',
+    editPlant: 'Modifier la plante',
+    markAsWatered: 'Marquer comme arrosée',
+    viewRecipe: 'Voir la recette',
+    addMeal: 'Ajouter un repas',
+    editMeal: 'Modifier le repas',
+    mealName: 'Nom du repas...',
+    recipe: 'Ajouter une recette (optionnel)...',
+    searchPhoto: 'Rechercher une photo',
+    addExpense: 'Ajouter une dépense',
+    editExpense: 'Modifier la dépense',
+    category: 'Catégorie',
+    date: 'Date',
+    amount: 'Montant (€)',
+    addTravel: 'Ajouter un voyage',
+    editTravel: 'Modifier le voyage',
+    whoTraveling: 'Qui voyage?',
+    location: 'Localisation',
+    searchCity: 'Rechercher une ville...',
+    startDate: 'Date de début',
+    endDate: 'Date de fin',
+    delete: 'Supprimer',
+    update: 'Mettre à jour',
+    add: 'Ajouter',
+    settings: 'Paramètres',
+    language: 'Langue',
+    notifications: 'Notifications',
+    enableNotifications: 'Activer les notifications',
+    signOut: 'Déconnexion',
+    isCurrentlyIn: 'est actuellement à',
+    plantName: 'Nom de la plante...',
+    wateringFrequency: 'Fréquence d\'arrosage (jours)',
+    currentMonth: 'Mois actuel',
+    archive: 'Archive',
+    summaryTotal: 'Total',
+  },
+};
+
 const BUDGET_CATEGORIES = [
-  { name: 'Groceries', icon: '🛒', color: '#ff3b30' },
-  { name: 'Travel', icon: '✈️', color: '#34c759' },
-  { name: 'Clothes', icon: '👕', color: '#ff9500' },
-  { name: 'House', icon: '🏠', color: '#5856d6' },
-  { name: 'Other', icon: '•', color: '#999' },
+  { name: 'Groceries', icon: ShoppingBag, color: '#ff3b30' },
+  { name: 'Travel', icon: Plane, color: '#34c759' },
+  { name: 'Clothes', icon: Heart, color: '#ff9500' },
+  { name: 'House', icon: Home, color: '#5856d6' },
+  { name: 'Personal Care', icon: Smile, color: '#00b4d8' },
+  { name: 'Other', icon: Wind, color: '#999' },
 ];
 
-// Major cities for autocomplete
 const MAJOR_CITIES = [
   { name: 'Paris', country: 'France' },
   { name: 'London', country: 'United Kingdom' },
@@ -54,7 +150,6 @@ const MAJOR_CITIES = [
   { name: 'Grenoble', country: 'France' },
 ];
 
-// Request notification permission
 const requestNotificationPermission = async () => {
   if (!('Notification' in window)) return false;
   if (Notification.permission === 'granted') return true;
@@ -65,7 +160,6 @@ const requestNotificationPermission = async () => {
   return false;
 };
 
-// Send notification
 const sendNotification = (title, options = {}) => {
   if ('Notification' in window && Notification.permission === 'granted') {
     new Notification(title, {
@@ -76,7 +170,6 @@ const sendNotification = (title, options = {}) => {
   }
 };
 
-// Export to iOS Calendar
 const exportToCalendar = (title, date) => {
   const ics = `BEGIN:VCALENDAR
 VERSION:2.0
@@ -111,7 +204,6 @@ END:VCALENDAR`;
   link.parentNode.removeChild(link);
 };
 
-// Empty state
 const EmptyState = ({ icon: Icon, title, subtitle }) => (
   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '400px', padding: '40px 20px' }}>
     <div style={{ background: `rgba(18, 52, 255, 0.1)`, borderRadius: '60px', padding: '40px', marginBottom: '20px' }}>
@@ -122,7 +214,6 @@ const EmptyState = ({ icon: Icon, title, subtitle }) => (
   </div>
 );
 
-// Modal overlay
 const AddModal = ({ isOpen, title, onClose, children }) => {
   if (!isOpen) return null;
   return (
@@ -140,7 +231,6 @@ const AddModal = ({ isOpen, title, onClose, children }) => {
   );
 };
 
-// Calendar Component for Travel Tab
 const CalendarMonth = ({ travels, currentMonth, onMonthChange }) => {
   const year = currentMonth.getFullYear();
   const month = currentMonth.getMonth();
@@ -148,7 +238,8 @@ const CalendarMonth = ({ travels, currentMonth, onMonthChange }) => {
   const firstDay = new Date(year, month, 1);
   const lastDay = new Date(year, month + 1, 0);
   const daysInMonth = lastDay.getDate();
-  const startingDayOfWeek = firstDay.getDay();
+  let startingDayOfWeek = firstDay.getDay() - 1;
+  if (startingDayOfWeek === -1) startingDayOfWeek = 6;
 
   const days = [];
   for (let i = 0; i < startingDayOfWeek; i++) {
@@ -169,7 +260,7 @@ const CalendarMonth = ({ travels, currentMonth, onMonthChange }) => {
     });
   };
 
-  const weekDays = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+  const weekDays = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
   const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
   return (
@@ -230,10 +321,13 @@ export default function CompleteSharedLifeDashboard() {
   const [showSettings, setShowSettings] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showRecipeModal, setShowRecipeModal] = useState(false);
+  const [showArchive, setShowArchive] = useState(false);
+  const [archiveType, setArchiveType] = useState(null);
   const [selectedRecipe, setSelectedRecipe] = useState(null);
   const [modalType, setModalType] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const [language, setLanguage] = useState('EN');
 
   // Data
   const [plants, setPlants] = useState([]);
@@ -242,6 +336,7 @@ export default function CompleteSharedLifeDashboard() {
   const [travels, setTravels] = useState([]);
   const [users, setUsers] = useState([]);
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [archiveMonth, setArchiveMonth] = useState(new Date());
 
   // Modal states
   const [newItemName, setNewItemName] = useState('');
@@ -257,6 +352,8 @@ export default function CompleteSharedLifeDashboard() {
   const [newExpenseDate, setNewExpenseDate] = useState(new Date().toISOString().split('T')[0]);
   const [citySuggestions, setCitySuggestions] = useState([]);
   const [unsplashSearchResults, setUnsplashSearchResults] = useState([]);
+
+  const t = LANGUAGES[language];
 
   // Auth
   useEffect(() => {
@@ -345,6 +442,16 @@ export default function CompleteSharedLifeDashboard() {
       localStorage.setItem('cojoBackup', JSON.stringify(data));
     } catch (error) {
       console.error('❌ Error saving:', error);
+    }
+  };
+
+  const saveLanguage = async (lang) => {
+    setLanguage(lang);
+    try {
+      const userRef = ref(database, `shared-data/users/${user.uid}/language`);
+      await set(userRef, lang);
+    } catch (error) {
+      console.error('Error saving language:', error);
     }
   };
 
@@ -440,8 +547,6 @@ export default function CompleteSharedLifeDashboard() {
         id: editingId || Date.now().toString(),
         name: newItemName,
         recipe: newItemRecipe,
-        plannedDate: mealDate,
-        shoppingNeeded: false,
         photo: newItemPhoto || `https://images.unsplash.com/photo-1495575621581-20dbe3ce2bad?w=400&h=400&fit=crop&v=${Date.now()}`,
       };
       
@@ -494,6 +599,27 @@ export default function CompleteSharedLifeDashboard() {
     saveData(plants, meals, updated, travels);
   };
 
+  const getExpensesForMonth = (date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    return expenses.filter(e => {
+      const expDate = new Date(e.date);
+      return expDate.getFullYear() === year && expDate.getMonth() === month;
+    });
+  };
+
+  const getExpenseTotal = (exps) => {
+    return exps.reduce((sum, e) => sum + e.amount, 0);
+  };
+
+  const getExpensesByCategory = (exps) => {
+    const grouped = {};
+    BUDGET_CATEGORIES.forEach(cat => {
+      grouped[cat.name] = exps.filter(e => e.category === cat.name);
+    });
+    return grouped;
+  };
+
   // ==================== TRAVELS ====================
   const addTravel = () => {
     if (newTravelStart && newTravelEnd && newTravelLocation && newTravelUserId) {
@@ -524,19 +650,33 @@ export default function CompleteSharedLifeDashboard() {
     saveData(plants, meals, expenses, updated);
   };
 
-  const getTravelDaysThisMonth = () => {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth();
+  const getTravelsForMonth = (date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    return travels.filter(t => {
+      const start = new Date(t.startDate);
+      const end = new Date(t.endDate);
+      return (start.getMonth() === month && start.getFullYear() === year) ||
+             (end.getMonth() === month && end.getFullYear() === year) ||
+             (start < new Date(year, month, 1) && end > new Date(year, month + 1, 0));
+    });
+  };
+
+  const getTravelDaysThisMonth = (monthDate) => {
+    const year = monthDate.getFullYear();
+    const month = monthDate.getMonth();
     let days = 0;
 
-    travels.forEach(travel => {
+    getTravelsForMonth(monthDate).forEach(travel => {
       const start = new Date(travel.startDate);
       const end = new Date(travel.endDate);
+      const monthStart = new Date(year, month, 1);
+      const monthEnd = new Date(year, month + 1, 0);
 
-      if (start.getMonth() === month && start.getFullYear() === year) {
-        days += Math.ceil((end - start) / (1000 * 60 * 60 * 24));
-      }
+      const effStart = start > monthStart ? start : monthStart;
+      const effEnd = end < monthEnd ? end : monthEnd;
+      
+      days += Math.ceil((effEnd - effStart) / (1000 * 60 * 60 * 24)) + 1;
     });
 
     return days;
@@ -553,14 +693,6 @@ export default function CompleteSharedLifeDashboard() {
     }
     const otherUser = users.find(u => u.uid === userId);
     return { name: otherUser?.displayName || 'Partner', avatar: otherUser?.photoURL };
-  };
-
-  const getExpensesByCategory = () => {
-    const grouped = {};
-    BUDGET_CATEGORIES.forEach(cat => {
-      grouped[cat.name] = expenses.filter(e => e.category === cat.name);
-    });
-    return grouped;
   };
 
   // ==================== HELPERS ====================
@@ -637,7 +769,7 @@ export default function CompleteSharedLifeDashboard() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: BG_COLOR }}>
         <div style={{ textAlign: 'center' }}>
           <img src={`/cojo_logo.svg?v=${Date.now()}`} alt="COJO" style={{ height: '60px', marginBottom: '20px' }} />
-          <div style={{ color: '#fff', fontSize: '14px' }}>Loading your data...</div>
+          <div style={{ color: '#fff', fontSize: '14px' }}>Loading...</div>
         </div>
       </div>
     );
@@ -649,20 +781,7 @@ export default function CompleteSharedLifeDashboard() {
         <div style={{ maxWidth: '400px', textAlign: 'center' }}>
           <img src={`/cojo_logo.svg?v=${Date.now()}`} alt="COJO" style={{ height: '80px', marginBottom: '30px' }} />
           <p style={{ color: '#999', marginBottom: '40px', fontSize: '16px' }}>Sharing life together.</p>
-          <button
-            onClick={handleLogin}
-            style={{
-              width: '100%',
-              padding: '14px',
-              background: ACCENT_COLOR,
-              color: '#fff',
-              border: 'none',
-              borderRadius: '12px',
-              fontSize: '16px',
-              fontWeight: '600',
-              cursor: 'pointer',
-            }}
-          >
+          <button onClick={handleLogin} style={{ width: '100%', padding: '14px', background: ACCENT_COLOR, color: '#fff', border: 'none', borderRadius: '12px', fontSize: '16px', fontWeight: '600', cursor: 'pointer' }}>
             Sign in
           </button>
         </div>
@@ -671,7 +790,10 @@ export default function CompleteSharedLifeDashboard() {
   }
 
   const currentTraveler = getCurrentTraveler();
-  const expensesByCategory = getExpensesByCategory();
+  const monthExpenses = getExpensesForMonth(currentMonth);
+  const monthExpensesByCategory = getExpensesByCategory(monthExpenses);
+  const monthTravels = getTravelsForMonth(currentMonth);
+  const monthTravelDays = getTravelDaysThisMonth(currentMonth);
 
   return (
     <div style={{ background: BG_COLOR, minHeight: '100vh', color: '#fff' }}>
@@ -717,15 +839,41 @@ export default function CompleteSharedLifeDashboard() {
         </button>
       </div>
 
-      {/* Content Area with top padding for sticky header */}
+      {/* Content Area */}
       <div style={{ paddingTop: '80px', paddingBottom: '120px' }}>
         {/* HOME TAB */}
         {activeTab === 'home' && (
           <div style={{ padding: '20px' }}>
-            <h2 style={{ fontSize: '28px', fontWeight: '700', margin: '0 0 24px' }}>Home</h2>
+            <h2 style={{ fontSize: '28px', fontWeight: '700', margin: '0 0 24px' }}>{t.home}</h2>
 
             <div style={{ display: 'grid', gap: '12px' }}>
-              {/* Currently traveling card - FIRST */}
+              {/* Plants needing water - FIRST */}
+              <div
+                style={{
+                  background: `linear-gradient(135deg, ${plantsNeedingWater > 0 ? 'rgba(255, 59, 48, 0.15)' : 'rgba(18, 52, 255, 0.15)'} 0%, rgba(0, 0, 0, 0.8) 100%)`,
+                  borderRadius: '16px',
+                  padding: '32px 24px',
+                  border: `1px solid rgba(${plantsNeedingWater > 0 ? '255, 59, 48' : '18, 52, 255'}, 0.15)`,
+                  backdropFilter: 'blur(10px)',
+                  minHeight: '160px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'flex-end',
+                }}
+              >
+                {plantsNeedingWater > 0 ? (
+                  <>
+                    <div style={{ fontSize: '48px', fontWeight: '700', marginBottom: '8px', color: '#ff3b30' }}>{plantsNeedingWater}</div>
+                    <div style={{ fontSize: '14px', color: '#999' }}>{t.plantsNeedingWater}</div>
+                  </>
+                ) : (
+                  <>
+                    <div style={{ fontSize: '24px', fontWeight: '600', marginBottom: '0px' }}>{t.noPlantsNeedingWater}</div>
+                  </>
+                )}
+              </div>
+
+              {/* Currently traveling - if exists */}
               {currentTraveler && (() => {
                 const info = getTravelerInfo(currentTraveler.userId);
                 return (
@@ -754,7 +902,7 @@ export default function CompleteSharedLifeDashboard() {
                       />
                       <div>
                         <div style={{ fontSize: '14px', color: '#999', marginBottom: '2px' }}>
-                          {info.name} is currently in
+                          {t.isCurrentlyIn}
                         </div>
                         <div style={{ fontSize: '24px', fontWeight: '700', color: ACCENT_COLOR }}>
                           {currentTraveler.location}
@@ -765,7 +913,7 @@ export default function CompleteSharedLifeDashboard() {
                 );
               })()}
 
-              {/* Main dashboard card */}
+              {/* Days apart this month */}
               <div
                 style={{
                   background: `linear-gradient(135deg, rgba(18, 52, 255, 0.15) 0%, rgba(0, 0, 0, 0.8) 100%)`,
@@ -779,29 +927,11 @@ export default function CompleteSharedLifeDashboard() {
                   justifyContent: 'flex-end',
                 }}
               >
-                <div style={{ fontSize: '48px', fontWeight: '700', marginBottom: '8px' }}>{plants.length}</div>
-                <div style={{ fontSize: '14px', color: '#999' }}>plants to care for</div>
+                <div style={{ fontSize: '48px', fontWeight: '700', marginBottom: '8px' }}>{monthTravelDays}</div>
+                <div style={{ fontSize: '14px', color: '#999' }}>{t.daysApart}</div>
               </div>
 
-              {/* Plants needing water */}
-              <div
-                style={{
-                  background: `linear-gradient(135deg, rgba(255, 59, 48, 0.15) 0%, rgba(0, 0, 0, 0.8) 100%)`,
-                  borderRadius: '16px',
-                  padding: '32px 24px',
-                  border: `1px solid rgba(255, 59, 48, 0.15)`,
-                  backdropFilter: 'blur(10px)',
-                  minHeight: '160px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'flex-end',
-                }}
-              >
-                <div style={{ fontSize: '48px', fontWeight: '700', marginBottom: '8px', color: '#ff3b30' }}>{plantsNeedingWater}</div>
-                <div style={{ fontSize: '14px', color: '#999' }}>plants need watering</div>
-              </div>
-
-              {/* Travel days */}
+              {/* Total spent this month */}
               <div
                 style={{
                   background: `linear-gradient(135deg, rgba(18, 52, 255, 0.15) 0%, rgba(0, 0, 0, 0.8) 100%)`,
@@ -815,26 +945,8 @@ export default function CompleteSharedLifeDashboard() {
                   justifyContent: 'flex-end',
                 }}
               >
-                <div style={{ fontSize: '48px', fontWeight: '700', marginBottom: '8px' }}>{getTravelDaysThisMonth()}</div>
-                <div style={{ fontSize: '14px', color: '#999' }}>travel days this month</div>
-              </div>
-
-              {/* Meals */}
-              <div
-                style={{
-                  background: `linear-gradient(135deg, rgba(18, 52, 255, 0.15) 0%, rgba(0, 0, 0, 0.8) 100%)`,
-                  borderRadius: '16px',
-                  padding: '32px 24px',
-                  border: `1px solid rgba(18, 52, 255, 0.15)`,
-                  backdropFilter: 'blur(10px)',
-                  minHeight: '160px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'flex-end',
-                }}
-              >
-                <div style={{ fontSize: '48px', fontWeight: '700', marginBottom: '8px' }}>{meals.length}</div>
-                <div style={{ fontSize: '14px', color: '#999' }}>meals planned</div>
+                <div style={{ fontSize: '48px', fontWeight: '700', marginBottom: '8px' }}>€{getExpenseTotal(monthExpenses).toFixed(2)}</div>
+                <div style={{ fontSize: '14px', color: '#999' }}>{t.spentTogether}</div>
               </div>
             </div>
           </div>
@@ -844,7 +956,7 @@ export default function CompleteSharedLifeDashboard() {
         {activeTab === 'plants' && (
           <div style={{ padding: '20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-              <h2 style={{ fontSize: '28px', fontWeight: '700', margin: 0 }}>Plants</h2>
+              <h2 style={{ fontSize: '28px', fontWeight: '700', margin: 0 }}>{t.plants}</h2>
               <button
                 onClick={() => {
                   setModalType('plant');
@@ -868,7 +980,7 @@ export default function CompleteSharedLifeDashboard() {
                   fontWeight: '600',
                 }}
               >
-                <Plus size={18} /> Add
+                <Plus size={18} /> {t.add}
               </button>
             </div>
 
@@ -882,7 +994,7 @@ export default function CompleteSharedLifeDashboard() {
                     <div
                       key={plant.id}
                       style={{
-                        background: `linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.9) 100%), url(${plant.photo}?w=400&h=300&fit=crop)`,
+                        background: `linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.95) 100%), url(${plant.photo}?w=400&h=300&fit=crop)`,
                         backgroundSize: 'cover',
                         backgroundPosition: 'center',
                         borderRadius: '16px',
@@ -905,53 +1017,37 @@ export default function CompleteSharedLifeDashboard() {
                         <button
                           onClick={() => openEditModal('plant', plant)}
                           style={{
-                            background: 'none',
-                            border: 'none',
+                            background: `rgba(18, 52, 255, 0.2)`,
+                            border: '1px solid rgba(18, 52, 255, 0.3)',
+                            borderRadius: '12px',
+                            padding: '8px',
                             color: ACCENT_COLOR,
                             cursor: 'pointer',
-                            padding: '4px',
                           }}
                         >
-                          <Edit2 size={20} />
+                          <Edit2 size={18} />
                         </button>
                       </div>
 
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        <button
-                          onClick={() => waterPlant(plant.id)}
-                          style={{
-                            flex: 1,
-                            background: status.needsWatering ? '#ff3b30' : '#34c759',
-                            border: 'none',
-                            borderRadius: '12px',
-                            padding: '10px',
-                            color: '#fff',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '6px',
-                            fontSize: '14px',
-                            fontWeight: '600',
-                          }}
-                        >
-                          <Check size={16} /> Water
-                        </button>
-                        <button
-                          onClick={() => deletePlant(plant.id)}
-                          style={{
-                            background: 'rgba(255, 59, 48, 0.2)',
-                            border: '1px solid rgba(255, 59, 48, 0.3)',
-                            borderRadius: '12px',
-                            padding: '10px 12px',
-                            color: '#ff3b30',
-                            cursor: 'pointer',
-                            fontWeight: '600',
-                          }}
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
+                      <button
+                        onClick={() => waterPlant(plant.id)}
+                        style={{
+                          background: 'rgba(255, 255, 255, 0.08)',
+                          border: '1px solid rgba(255, 255, 255, 0.1)',
+                          borderRadius: '12px',
+                          padding: '10px',
+                          color: '#fff',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '6px',
+                          fontSize: '14px',
+                          fontWeight: '600',
+                        }}
+                      >
+                        <Droplet size={16} /> {t.markAsWatered}
+                      </button>
                     </div>
                   );
                 })}
@@ -964,7 +1060,7 @@ export default function CompleteSharedLifeDashboard() {
         {activeTab === 'food' && (
           <div style={{ padding: '20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-              <h2 style={{ fontSize: '28px', fontWeight: '700', margin: 0 }}>Meals</h2>
+              <h2 style={{ fontSize: '28px', fontWeight: '700', margin: 0 }}>{t.meals}</h2>
               <button
                 onClick={() => {
                   setModalType('meal');
@@ -988,19 +1084,19 @@ export default function CompleteSharedLifeDashboard() {
                   fontWeight: '600',
                 }}
               >
-                <Plus size={18} /> Add
+                <Plus size={18} /> {t.add}
               </button>
             </div>
 
             {meals.length === 0 ? (
-              <EmptyState icon={UtensilsCrossed} title="No meals planned" subtitle="Let's start planning together" />
+              <EmptyState icon={UtensilsCrossed} title="No meals" subtitle="Let's start collecting recipes" />
             ) : (
               <div style={{ display: 'grid', gap: '12px' }}>
                 {meals.map(meal => (
                   <div
                     key={meal.id}
                     style={{
-                      background: `linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.9) 100%), url(${meal.photo}?w=400&h=300&fit=crop)`,
+                      background: `linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.95) 100%), url(${meal.photo}?w=400&h=300&fit=crop)`,
                       backgroundSize: 'cover',
                       backgroundPosition: 'center',
                       borderRadius: '16px',
@@ -1013,82 +1109,47 @@ export default function CompleteSharedLifeDashboard() {
                       justifyContent: 'flex-end',
                     }}
                   >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
                       <div>
-                        <h3 style={{ fontSize: '18px', fontWeight: '600', margin: '0 0 4px' }}>{meal.name}</h3>
-                        <p style={{ fontSize: '12px', color: '#999', margin: 0 }}>{meal.plannedDate}</p>
+                        <h3 style={{ fontSize: '18px', fontWeight: '600', margin: 0 }}>{meal.name}</h3>
                       </div>
                       <button
                         onClick={() => openEditModal('meal', meal)}
                         style={{
-                          background: 'none',
-                          border: 'none',
+                          background: `rgba(18, 52, 255, 0.2)`,
+                          border: '1px solid rgba(18, 52, 255, 0.3)`,
+                          borderRadius: '12px',
+                          padding: '8px',
                           color: ACCENT_COLOR,
                           cursor: 'pointer',
-                          padding: '4px',
                         }}
                       >
-                        <Edit2 size={20} />
+                        <Edit2 size={18} />
                       </button>
                     </div>
 
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <button
-                        onClick={() => {
-                          setSelectedRecipe(meal);
-                          setShowRecipeModal(true);
-                        }}
-                        style={{
-                          flex: 1,
-                          background: meal.recipe ? `rgba(18, 52, 255, 0.3)` : 'rgba(255, 255, 255, 0.1)',
-                          border: `1px solid rgba(18, 52, 255, ${meal.recipe ? 0.4 : 0.15})`,
-                          borderRadius: '12px',
-                          padding: '10px 12px',
-                          color: '#fff',
-                          cursor: 'pointer',
-                          fontSize: '14px',
-                          fontWeight: '600',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: '6px',
-                        }}
-                      >
-                        <ChefHat size={16} /> Recipe
-                      </button>
-                      <button
-                        onClick={() => {
-                          const updated = meals.map(m => m.id === meal.id ? { ...m, shoppingNeeded: !m.shoppingNeeded } : m);
-                          setMeals(updated);
-                          saveData(plants, updated, expenses, travels);
-                        }}
-                        style={{
-                          background: meal.shoppingNeeded ? `rgba(52, 199, 89, 0.3)` : 'rgba(255, 255, 255, 0.1)',
-                          border: `1px solid rgba(${meal.shoppingNeeded ? '52, 199, 89' : '255, 255, 255'}, ${meal.shoppingNeeded ? 0.4 : 0.15})`,
-                          borderRadius: '12px',
-                          padding: '10px 12px',
-                          color: meal.shoppingNeeded ? '#34c759' : '#999',
-                          cursor: 'pointer',
-                          fontWeight: '600',
-                        }}
-                      >
-                        <ShoppingCart size={16} />
-                      </button>
-                      <button
-                        onClick={() => deleteMeal(meal.id)}
-                        style={{
-                          background: 'rgba(255, 59, 48, 0.2)',
-                          border: '1px solid rgba(255, 59, 48, 0.3)',
-                          borderRadius: '12px',
-                          padding: '10px 12px',
-                          color: '#ff3b30',
-                          cursor: 'pointer',
-                          fontWeight: '600',
-                        }}
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
+                    <button
+                      onClick={() => {
+                        setSelectedRecipe(meal);
+                        setShowRecipeModal(true);
+                      }}
+                      style={{
+                        background: 'rgba(255, 255, 255, 0.08)',
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        borderRadius: '12px',
+                        padding: '10px 12px',
+                        color: '#fff',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                      }}
+                    >
+                      <ChefHat size={16} /> {t.viewRecipe}
+                    </button>
                   </div>
                 ))}
               </div>
@@ -1100,59 +1161,86 @@ export default function CompleteSharedLifeDashboard() {
         {activeTab === 'budget' && (
           <div style={{ padding: '20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-              <h2 style={{ fontSize: '28px', fontWeight: '700', margin: 0 }}>Budget</h2>
-              <button
-                onClick={() => {
-                  setModalType('expense');
-                  setEditingId(null);
-                  setShowAddModal(true);
-                  setNewExpenseCategory('Groceries');
-                  setNewExpenseAmount('');
-                  setNewExpenseDate(new Date().toISOString().split('T')[0]);
-                }}
-                style={{
-                  background: ACCENT_COLOR,
-                  border: 'none',
-                  borderRadius: '12px',
-                  padding: '10px 16px',
-                  color: '#fff',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                }}
-              >
-                <Plus size={18} /> Add
-              </button>
+              <h2 style={{ fontSize: '28px', fontWeight: '700', margin: 0 }}>{t.budget}</h2>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button onClick={() => { setShowArchive(true); setArchiveType('budget'); }} style={{ background: 'rgba(255, 255, 255, 0.1)', border: '1px solid rgba(255, 255, 255, 0.15)', borderRadius: '12px', padding: '8px 12px', color: '#999', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>
+                  {t.archive}
+                </button>
+                <button
+                  onClick={() => {
+                    setModalType('expense');
+                    setEditingId(null);
+                    setShowAddModal(true);
+                    setNewExpenseCategory('Groceries');
+                    setNewExpenseAmount('');
+                    setNewExpenseDate(new Date().toISOString().split('T')[0]);
+                  }}
+                  style={{
+                    background: ACCENT_COLOR,
+                    border: 'none',
+                    borderRadius: '12px',
+                    padding: '8px 12px',
+                    color: '#fff',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                  }}
+                >
+                  <Plus size={18} />
+                </button>
+              </div>
             </div>
 
-            {expenses.length === 0 ? (
-              <EmptyState icon={Wallet} title="No expenses logged" subtitle="Track your spending together" />
+            {monthExpenses.length > 0 && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '12px', marginBottom: '24px' }}>
+                {BUDGET_CATEGORIES.map(category => {
+                  const catExpenses = monthExpensesByCategory[category.name] || [];
+                  const total = catExpenses.reduce((sum, e) => sum + e.amount, 0);
+                  if (total === 0) return null;
+                  
+                  const Icon = category.icon;
+                  return (
+                    <div key={category.name} style={{ background: `rgba(255, 255, 255, 0.02)`, borderRadius: '16px', padding: '16px', border: `1px solid rgba(18, 52, 255, 0.15)`, textAlign: 'center' }}>
+                      <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: `${category.color}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 8px', color: category.color }}>
+                        <Icon size={20} />
+                      </div>
+                      <p style={{ fontSize: '12px', color: '#666', margin: '0 0 4px', textTransform: 'capitalize' }}>{category.name}</p>
+                      <p style={{ fontSize: '18px', fontWeight: '700', margin: 0, color: category.color }}>€{total.toFixed(2)}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {monthExpenses.length === 0 ? (
+              <EmptyState icon={Wallet} title="No expenses" subtitle="Track your spending together" />
             ) : (
               <div style={{ display: 'grid', gap: '12px' }}>
                 {BUDGET_CATEGORIES.map(category => {
-                  const categoryExpenses = expensesByCategory[category.name];
-                  const total = categoryExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+                  const catExpenses = monthExpensesByCategory[category.name] || [];
+                  if (catExpenses.length === 0) return null;
                   
-                  if (categoryExpenses.length === 0) return null;
+                  const Icon = category.icon;
+                  const total = catExpenses.reduce((sum, e) => sum + e.amount, 0);
                   
                   return (
                     <div key={category.name} style={{ background: `rgba(255, 255, 255, 0.02)`, borderRadius: '16px', padding: '16px', border: `1px solid rgba(18, 52, 255, 0.15)` }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-                        <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: `${category.color}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>
-                          {category.icon}
+                        <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: `${category.color}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: category.color }}>
+                          <Icon size={20} />
                         </div>
                         <div style={{ flex: 1 }}>
-                          <h3 style={{ fontSize: '16px', fontWeight: '600', margin: 0 }}>{category.name}</h3>
-                          <p style={{ fontSize: '12px', color: '#666', margin: 0 }}>{categoryExpenses.length} items</p>
+                          <h3 style={{ fontSize: '16px', fontWeight: '600', margin: 0, textTransform: 'capitalize' }}>{category.name}</h3>
+                          <p style={{ fontSize: '12px', color: '#666', margin: 0 }}>{catExpenses.length} items</p>
                         </div>
                         <div style={{ fontSize: '18px', fontWeight: '700', color: category.color }}>€{total.toFixed(2)}</div>
                       </div>
 
                       <div style={{ display: 'grid', gap: '8px' }}>
-                        {categoryExpenses.map(exp => (
+                        {catExpenses.map(exp => (
                           <div key={exp.id} style={{ background: `rgba(255, 255, 255, 0.02)`, borderRadius: '12px', padding: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: `1px solid rgba(255, 255, 255, 0.05)` }}>
                             <div>
                               <p style={{ fontSize: '14px', margin: 0, fontWeight: '500' }}>€{exp.amount.toFixed(2)}</p>
@@ -1161,9 +1249,6 @@ export default function CompleteSharedLifeDashboard() {
                             <div style={{ display: 'flex', gap: '8px' }}>
                               <button onClick={() => openEditModal('expense', exp)} style={{ background: 'none', border: 'none', color: ACCENT_COLOR, cursor: 'pointer', padding: '4px' }}>
                                 <Edit2 size={16} />
-                              </button>
-                              <button onClick={() => deleteExpense(exp.id)} style={{ background: 'none', border: 'none', color: '#ff3b30', cursor: 'pointer', padding: '4px' }}>
-                                <Trash2 size={16} />
                               </button>
                             </div>
                           </div>
@@ -1181,41 +1266,46 @@ export default function CompleteSharedLifeDashboard() {
         {activeTab === 'travel' && (
           <div style={{ padding: '20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-              <h2 style={{ fontSize: '28px', fontWeight: '700', margin: 0 }}>Travel</h2>
-              <button
-                onClick={() => {
-                  setModalType('travel');
-                  setEditingId(null);
-                  setShowAddModal(true);
-                  setNewTravelStart('');
-                  setNewTravelEnd('');
-                  setNewTravelLocation('');
-                  setNewTravelUserId(user?.uid || '');
-                }}
-                style={{
-                  background: ACCENT_COLOR,
-                  border: 'none',
-                  borderRadius: '12px',
-                  padding: '10px 16px',
-                  color: '#fff',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                }}
-              >
-                <Plus size={18} /> Add
-              </button>
+              <h2 style={{ fontSize: '28px', fontWeight: '700', margin: 0 }}>{t.travel}</h2>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button onClick={() => { setShowArchive(true); setArchiveType('travel'); }} style={{ background: 'rgba(255, 255, 255, 0.1)', border: '1px solid rgba(255, 255, 255, 0.15)', borderRadius: '12px', padding: '8px 12px', color: '#999', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>
+                  {t.archive}
+                </button>
+                <button
+                  onClick={() => {
+                    setModalType('travel');
+                    setEditingId(null);
+                    setShowAddModal(true);
+                    setNewTravelStart('');
+                    setNewTravelEnd('');
+                    setNewTravelLocation('');
+                    setNewTravelUserId(user?.uid || '');
+                  }}
+                  style={{
+                    background: ACCENT_COLOR,
+                    border: 'none',
+                    borderRadius: '12px',
+                    padding: '8px 12px',
+                    color: '#fff',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                  }}
+                >
+                  <Plus size={18} />
+                </button>
+              </div>
             </div>
 
-            {travels.length === 0 ? (
-              <EmptyState icon={Plane} title="No trips planned" subtitle="Plan your travels together" />
+            {monthTravels.length === 0 ? (
+              <EmptyState icon={Plane} title="No trips" subtitle="Plan your travels together" />
             ) : (
               <>
                 <CalendarMonth
-                  travels={travels}
+                  travels={monthTravels}
                   currentMonth={currentMonth}
                   onMonthChange={(delta) => {
                     const newMonth = new Date(currentMonth);
@@ -1227,7 +1317,7 @@ export default function CompleteSharedLifeDashboard() {
                 <div style={{ marginTop: '24px' }}>
                   <h3 style={{ fontSize: '16px', fontWeight: '600', margin: '0 0 12px' }}>Trips</h3>
                   <div style={{ display: 'grid', gap: '12px' }}>
-                    {travels.map(travel => {
+                    {monthTravels.map(travel => {
                       const info = getTravelerInfo(travel.userId);
                       return (
                         <div
@@ -1265,27 +1355,6 @@ export default function CompleteSharedLifeDashboard() {
                               <Edit2 size={18} />
                             </button>
                           </div>
-
-                          <button
-                            onClick={() => deleteTravel(travel.id)}
-                            style={{
-                              width: '100%',
-                              background: 'rgba(255, 59, 48, 0.2)',
-                              border: '1px solid rgba(255, 59, 48, 0.3)',
-                              borderRadius: '12px',
-                              padding: '10px',
-                              color: '#ff3b30',
-                              cursor: 'pointer',
-                              fontSize: '14px',
-                              fontWeight: '600',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              gap: '6px',
-                            }}
-                          >
-                            <Trash2 size={16} /> Delete
-                          </button>
                         </div>
                       );
                     })}
@@ -1298,25 +1367,7 @@ export default function CompleteSharedLifeDashboard() {
       </div>
 
       {/* Bottom Menu */}
-      <div
-        style={{
-          position: 'fixed',
-          bottom: '20px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          gap: '12px',
-          padding: '12px 16px',
-          background: `rgba(0, 0, 0, 0.8)`,
-          backdropFilter: 'blur(30px)',
-          borderRadius: '60px',
-          border: `1px solid rgba(18, 52, 255, 0.3)`,
-          zIndex: 100,
-          boxShadow: `0 8px 32px rgba(18, 52, 255, 0.1)`,
-        }}
-      >
+      <div style={{ position: 'fixed', bottom: '20px', left: '50%', transform: 'translateX(-50%)', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px', padding: '12px 16px', background: `rgba(0, 0, 0, 0.8)`, backdropFilter: 'blur(30px)', borderRadius: '60px', border: `1px solid rgba(18, 52, 255, 0.3)`, zIndex: 100, boxShadow: `0 8px 32px rgba(18, 52, 255, 0.1)` }}>
         {[
           { id: 'home', icon: Home },
           { id: 'plants', icon: Leaf },
@@ -1381,7 +1432,7 @@ export default function CompleteSharedLifeDashboard() {
             onClick={(e) => e.stopPropagation()}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-              <h3 style={{ fontSize: '20px', fontWeight: '600', margin: 0 }}>Settings</h3>
+              <h3 style={{ fontSize: '20px', fontWeight: '600', margin: 0 }}>{t.settings}</h3>
               <button
                 onClick={() => setShowSettings(false)}
                 style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '24px' }}
@@ -1403,10 +1454,35 @@ export default function CompleteSharedLifeDashboard() {
               </div>
             </div>
 
+            {/* Language */}
+            <div style={{ marginBottom: '24px' }}>
+              <h4 style={{ fontSize: '14px', fontWeight: '600', margin: '0 0 12px', color: '#666', textTransform: 'uppercase' }}>{t.language}</h4>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                {['EN', 'FR'].map(lang => (
+                  <button
+                    key={lang}
+                    onClick={() => saveLanguage(lang)}
+                    style={{
+                      background: language === lang ? ACCENT_COLOR : `rgba(255, 255, 255, 0.05)`,
+                      border: `1px solid rgba(${language === lang ? '18, 52, 255' : '255, 255, 255'}, ${language === lang ? 0.4 : 0.1})`,
+                      borderRadius: '12px',
+                      padding: '12px',
+                      color: language === lang ? '#fff' : '#999',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                    }}
+                  >
+                    {lang}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* Notifications */}
             <div style={{ marginBottom: '24px' }}>
               <h4 style={{ fontSize: '14px', fontWeight: '600', margin: '0 0 12px', color: '#666', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Bell size={16} /> Notifications
+                <Bell size={16} /> {t.notifications}
               </h4>
 
               {!notificationsEnabled ? (
@@ -1424,7 +1500,7 @@ export default function CompleteSharedLifeDashboard() {
                     fontWeight: '600',
                   }}
                 >
-                  🔔 Enable Notifications
+                  🔔 {t.enableNotifications}
                 </button>
               ) : (
                 <div style={{ padding: '12px', background: `rgba(52, 199, 89, 0.1)`, borderRadius: '12px', border: `1px solid rgba(52, 199, 89, 0.2)` }}>
@@ -1452,7 +1528,7 @@ export default function CompleteSharedLifeDashboard() {
                 fontWeight: '600',
               }}
             >
-              <LogOut size={18} /> Sign Out
+              <LogOut size={18} /> {t.signOut}
             </button>
           </div>
         </div>
@@ -1510,19 +1586,142 @@ export default function CompleteSharedLifeDashboard() {
         </div>
       )}
 
+      {/* Archive Modal */}
+      {showArchive && archiveType && (
+        <div
+          style={{
+            position: 'fixed',
+            top: '0',
+            left: '0',
+            right: '0',
+            bottom: '0',
+            background: `rgba(0, 0, 0, 0.6)`,
+            backdropFilter: 'blur(10px)',
+            zIndex: 300,
+            display: 'flex',
+            alignItems: 'flex-end',
+          }}
+          onClick={() => setShowArchive(false)}
+        >
+          <div
+            style={{
+              width: '100%',
+              background: BG_COLOR,
+              borderTop: `1px solid rgba(18, 52, 255, 0.2)`,
+              borderRadius: '24px 24px 0 0',
+              padding: '24px',
+              maxHeight: '80vh',
+              overflowY: 'auto',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h3 style={{ fontSize: '20px', fontWeight: '600', margin: 0 }}>{t.archive}</h3>
+              <button
+                onClick={() => setShowArchive(false)}
+                style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '24px' }}
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h4 style={{ fontSize: '16px', fontWeight: '600', margin: 0 }}>
+                {archiveMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}
+              </h4>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button onClick={() => { const m = new Date(archiveMonth); m.setMonth(m.getMonth() - 1); setArchiveMonth(m); }} style={{ background: 'rgba(255, 255, 255, 0.1)', border: 'none', borderRadius: '8px', padding: '8px 12px', color: '#999', cursor: 'pointer' }}>←</button>
+                <button onClick={() => { const m = new Date(archiveMonth); m.setMonth(m.getMonth() + 1); setArchiveMonth(m); }} style={{ background: 'rgba(255, 255, 255, 0.1)', border: 'none', borderRadius: '8px', padding: '8px 12px', color: '#999', cursor: 'pointer' }}>→</button>
+              </div>
+            </div>
+
+            {archiveType === 'budget' ? (
+              <>
+                {getExpensesForMonth(archiveMonth).length === 0 ? (
+                  <p style={{ textAlign: 'center', color: '#666' }}>No expenses for this month</p>
+                ) : (
+                  <div style={{ display: 'grid', gap: '12px' }}>
+                    {BUDGET_CATEGORIES.map(category => {
+                      const archExpenses = getExpensesByCategory(getExpensesForMonth(archiveMonth))[category.name] || [];
+                      if (archExpenses.length === 0) return null;
+                      
+                      const Icon = category.icon;
+                      const total = archExpenses.reduce((sum, e) => sum + e.amount, 0);
+                      
+                      return (
+                        <div key={category.name} style={{ background: `rgba(255, 255, 255, 0.02)`, borderRadius: '16px', padding: '16px', border: `1px solid rgba(18, 52, 255, 0.15)` }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+                            <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: `${category.color}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: category.color }}>
+                              <Icon size={20} />
+                            </div>
+                            <div style={{ flex: 1 }}>
+                              <h3 style={{ fontSize: '16px', fontWeight: '600', margin: 0, textTransform: 'capitalize' }}>{category.name}</h3>
+                              <p style={{ fontSize: '12px', color: '#666', margin: 0 }}>{archExpenses.length} items</p>
+                            </div>
+                            <div style={{ fontSize: '18px', fontWeight: '700', color: category.color }}>€{total.toFixed(2)}</div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                {getTravelsForMonth(archiveMonth).length === 0 ? (
+                  <p style={{ textAlign: 'center', color: '#666' }}>No trips for this month</p>
+                ) : (
+                  <div style={{ display: 'grid', gap: '12px' }}>
+                    {getTravelsForMonth(archiveMonth).map(travel => {
+                      const info = getTravelerInfo(travel.userId);
+                      return (
+                        <div
+                          key={travel.id}
+                          style={{
+                            background: `rgba(18, 52, 255, 0.08)`,
+                            border: `1px solid rgba(18, 52, 255, 0.15)`,
+                            borderRadius: '16px',
+                            padding: '16px',
+                          }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                            <div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                                <MapPin size={16} style={{ color: ACCENT_COLOR }} />
+                                <h3 style={{ fontSize: '16px', fontWeight: '600', margin: 0 }}>{travel.location}</h3>
+                              </div>
+                              <p style={{ fontSize: '12px', color: '#666', margin: '0 0 4px' }}>
+                                {travel.startDate} → {travel.endDate}
+                              </p>
+                              <p style={{ fontSize: '12px', color: '#999', margin: 0 }}>
+                                {info.name}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* MODALS */}
       {/* Add Plant Modal */}
-      <AddModal isOpen={showAddModal && modalType === 'plant'} title={editingId ? "Edit Plant" : "Add Plant"} onClose={resetModal}>
+      <AddModal isOpen={showAddModal && modalType === 'plant'} title={editingId ? t.editPlant : t.addPlant} onClose={resetModal}>
         <div style={{ display: 'grid', gap: '16px' }}>
-          <input type="text" value={newItemName} onChange={(e) => setNewItemName(e.target.value)} placeholder="Plant name..." style={{ background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px' }} />
+          <input type="text" value={newItemName} onChange={(e) => setNewItemName(e.target.value)} placeholder={t.plantName} style={{ background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px' }} />
           
           <div>
-            <label style={{ fontSize: '14px', color: '#666', marginBottom: '8px', display: 'block' }}>Watering frequency (days)</label>
+            <label style={{ fontSize: '14px', color: '#666', marginBottom: '8px', display: 'block' }}>{t.wateringFrequency}</label>
             <input type="number" min="1" max="60" value={newItemWateringDays} onChange={(e) => setNewItemWateringDays(e.target.value)} style={{ width: '100%', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px' }} />
           </div>
 
           <div>
-            <label style={{ fontSize: '14px', color: '#666', marginBottom: '8px', display: 'block' }}>Search photo</label>
+            <label style={{ fontSize: '14px', color: '#666', marginBottom: '8px', display: 'block' }}>{t.searchPhoto}</label>
             <input type="text" placeholder="e.g. monstera, cactus..." onChange={(e) => searchUnsplash(e.target.value)} style={{ width: '100%', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px', marginBottom: '12px' }} />
             {unsplashSearchResults.length > 0 && (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
@@ -1534,19 +1733,24 @@ export default function CompleteSharedLifeDashboard() {
           </div>
 
           <button onClick={addPlant} style={{ width: '100%', background: ACCENT_COLOR, border: 'none', borderRadius: '12px', padding: '14px', color: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: '600' }}>
-            {editingId ? 'Update Plant' : 'Add Plant'}
+            {editingId ? t.update : t.add}
           </button>
+          {editingId && (
+            <button onClick={() => { deletePlant(editingId); resetModal(); }} style={{ width: '100%', background: 'rgba(255, 59, 48, 0.2)', border: '1px solid rgba(255, 59, 48, 0.3)', borderRadius: '12px', padding: '14px', color: '#ff3b30', cursor: 'pointer', fontSize: '16px', fontWeight: '600' }}>
+              {t.delete}
+            </button>
+          )}
         </div>
       </AddModal>
 
       {/* Add Meal Modal */}
-      <AddModal isOpen={showAddModal && modalType === 'meal'} title={editingId ? "Edit Meal" : "Add Meal"} onClose={resetModal}>
+      <AddModal isOpen={showAddModal && modalType === 'meal'} title={editingId ? t.editMeal : t.addMeal} onClose={resetModal}>
         <div style={{ display: 'grid', gap: '16px' }}>
-          <input type="text" value={newItemName} onChange={(e) => setNewItemName(e.target.value)} placeholder="Meal name..." style={{ background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px' }} />
-          <textarea value={newItemRecipe} onChange={(e) => setNewItemRecipe(e.target.value)} placeholder="Add recipe (optional)..." style={{ background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px', minHeight: '100px', fontFamily: 'inherit' }} />
+          <input type="text" value={newItemName} onChange={(e) => setNewItemName(e.target.value)} placeholder={t.mealName} style={{ background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px' }} />
+          <textarea value={newItemRecipe} onChange={(e) => setNewItemRecipe(e.target.value)} placeholder={t.recipe} style={{ background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px', minHeight: '100px', fontFamily: 'inherit' }} />
           
           <div>
-            <label style={{ fontSize: '14px', color: '#666', marginBottom: '8px', display: 'block' }}>Search photo</label>
+            <label style={{ fontSize: '14px', color: '#666', marginBottom: '8px', display: 'block' }}>{t.searchPhoto}</label>
             <input type="text" placeholder="e.g. pasta, salad..." onChange={(e) => searchUnsplash(e.target.value)} style={{ width: '100%', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px', marginBottom: '12px' }} />
             {unsplashSearchResults.length > 0 && (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
@@ -1558,46 +1762,56 @@ export default function CompleteSharedLifeDashboard() {
           </div>
 
           <button onClick={addMeal} style={{ width: '100%', background: ACCENT_COLOR, border: 'none', borderRadius: '12px', padding: '14px', color: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: '600' }}>
-            {editingId ? 'Update Meal' : 'Add Meal'}
+            {editingId ? t.update : t.add}
           </button>
+          {editingId && (
+            <button onClick={() => { deleteMeal(editingId); resetModal(); }} style={{ width: '100%', background: 'rgba(255, 59, 48, 0.2)', border: '1px solid rgba(255, 59, 48, 0.3)', borderRadius: '12px', padding: '14px', color: '#ff3b30', cursor: 'pointer', fontSize: '16px', fontWeight: '600' }}>
+              {t.delete}
+            </button>
+          )}
         </div>
       </AddModal>
 
       {/* Add Expense Modal */}
-      <AddModal isOpen={showAddModal && modalType === 'expense'} title={editingId ? "Edit Expense" : "Add Expense"} onClose={resetModal}>
+      <AddModal isOpen={showAddModal && modalType === 'expense'} title={editingId ? t.editExpense : t.addExpense} onClose={resetModal}>
         <div style={{ display: 'grid', gap: '16px' }}>
           <div>
-            <label style={{ fontSize: '14px', color: '#666', marginBottom: '8px', display: 'block' }}>Category</label>
+            <label style={{ fontSize: '14px', color: '#666', marginBottom: '8px', display: 'block' }}>{t.category}</label>
             <select value={newExpenseCategory} onChange={(e) => setNewExpenseCategory(e.target.value)} style={{ width: '100%', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px' }}>
               {BUDGET_CATEGORIES.map(cat => (
                 <option key={cat.name} value={cat.name} style={{ background: BG_COLOR }}>
-                  {cat.icon} {cat.name}
+                  {cat.name}
                 </option>
               ))}
             </select>
           </div>
 
           <div>
-            <label style={{ fontSize: '14px', color: '#666', marginBottom: '8px', display: 'block' }}>Date</label>
+            <label style={{ fontSize: '14px', color: '#666', marginBottom: '8px', display: 'block' }}>{t.date}</label>
             <input type="date" value={newExpenseDate} onChange={(e) => setNewExpenseDate(e.target.value)} style={{ width: '100%', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px' }} />
           </div>
 
           <div>
-            <label style={{ fontSize: '14px', color: '#666', marginBottom: '8px', display: 'block' }}>Amount (€)</label>
+            <label style={{ fontSize: '14px', color: '#666', marginBottom: '8px', display: 'block' }}>{t.amount}</label>
             <input type="number" value={newExpenseAmount} onChange={(e) => setNewExpenseAmount(e.target.value)} placeholder="0.00" step="0.01" style={{ width: '100%', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px' }} />
           </div>
 
           <button onClick={addExpense} style={{ width: '100%', background: ACCENT_COLOR, border: 'none', borderRadius: '12px', padding: '14px', color: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: '600' }}>
-            {editingId ? 'Update Expense' : 'Add Expense'}
+            {editingId ? t.update : t.add}
           </button>
+          {editingId && (
+            <button onClick={() => { deleteExpense(editingId); resetModal(); }} style={{ width: '100%', background: 'rgba(255, 59, 48, 0.2)', border: '1px solid rgba(255, 59, 48, 0.3)', borderRadius: '12px', padding: '14px', color: '#ff3b30', cursor: 'pointer', fontSize: '16px', fontWeight: '600' }}>
+              {t.delete}
+            </button>
+          )}
         </div>
       </AddModal>
 
       {/* Add Travel Modal */}
-      <AddModal isOpen={showAddModal && modalType === 'travel'} title={editingId ? "Edit Travel" : "Add Travel"} onClose={resetModal}>
+      <AddModal isOpen={showAddModal && modalType === 'travel'} title={editingId ? t.editTravel : t.addTravel} onClose={resetModal}>
         <div style={{ display: 'grid', gap: '16px' }}>
           <div>
-            <label style={{ fontSize: '12px', color: '#666', marginBottom: '6px', display: 'block' }}>Who is traveling?</label>
+            <label style={{ fontSize: '12px', color: '#666', marginBottom: '6px', display: 'block' }}>{t.whoTraveling}</label>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
               {[
                 { id: user?.uid, name: user?.displayName || 'You', avatar: user?.photoURL },
@@ -1629,8 +1843,8 @@ export default function CompleteSharedLifeDashboard() {
           </div>
 
           <div>
-            <label style={{ fontSize: '12px', color: '#666', marginBottom: '6px', display: 'block' }}>Location</label>
-            <input type="text" value={newTravelLocation} onChange={(e) => handleCitySearch(e.target.value)} placeholder="Search city..." style={{ width: '100%', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px', boxSizing: 'border-box' }} />
+            <label style={{ fontSize: '12px', color: '#666', marginBottom: '6px', display: 'block' }}>{t.location}</label>
+            <input type="text" value={newTravelLocation} onChange={(e) => handleCitySearch(e.target.value)} placeholder={t.searchCity} style={{ width: '100%', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px', boxSizing: 'border-box' }} />
             {citySuggestions.length > 0 && (
               <div style={{ marginTop: '8px', display: 'grid', gap: '4px' }}>
                 {citySuggestions.map((city, idx) => (
@@ -1659,18 +1873,23 @@ export default function CompleteSharedLifeDashboard() {
           </div>
           
           <div>
-            <label style={{ fontSize: '12px', color: '#666', marginBottom: '6px', display: 'block' }}>Start date</label>
+            <label style={{ fontSize: '12px', color: '#666', marginBottom: '6px', display: 'block' }}>{t.startDate}</label>
             <input type="date" value={newTravelStart} onChange={(e) => setNewTravelStart(e.target.value)} style={{ width: '100%', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px', boxSizing: 'border-box' }} />
           </div>
 
           <div>
-            <label style={{ fontSize: '12px', color: '#666', marginBottom: '6px', display: 'block' }}>End date</label>
+            <label style={{ fontSize: '12px', color: '#666', marginBottom: '6px', display: 'block' }}>{t.endDate}</label>
             <input type="date" value={newTravelEnd} onChange={(e) => setNewTravelEnd(e.target.value)} style={{ width: '100%', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px', boxSizing: 'border-box' }} />
           </div>
 
           <button onClick={addTravel} style={{ width: '100%', background: ACCENT_COLOR, border: 'none', borderRadius: '12px', padding: '14px', color: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: '600' }}>
-            {editingId ? 'Update Travel' : 'Add Travel'}
+            {editingId ? t.update : t.add}
           </button>
+          {editingId && (
+            <button onClick={() => { deleteTravel(editingId); resetModal(); }} style={{ width: '100%', background: 'rgba(255, 59, 48, 0.2)', border: '1px solid rgba(255, 59, 48, 0.3)', borderRadius: '12px', padding: '14px', color: '#ff3b30', cursor: 'pointer', fontSize: '16px', fontWeight: '600' }}>
+              {t.delete}
+            </button>
+          )}
         </div>
       </AddModal>
     </div>
