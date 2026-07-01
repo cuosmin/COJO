@@ -1,17 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import {
   Home, Leaf, UtensilsCrossed, Wallet, Heart, MapPin, Settings, LogOut,
-  Plus, Trash2, Check, Camera, X
+  Plus, Trash2, Check, X
 } from 'lucide-react';
 import { auth } from './firebaseConfig';
 import { signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
 import { ref, onValue, set } from 'firebase/database';
 import { getDatabase } from 'firebase/database';
-import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 const provider = new GoogleAuthProvider();
 const database = getDatabase();
-const storage = getStorage();
 
 const ACCENT_COLOR = '#1234ff';
 const BG_COLOR = '#0A1014';
@@ -89,20 +87,6 @@ export default function CompleteSharedLifeDashboard() {
       });
     } catch (error) {
       console.error('Error saving:', error);
-    }
-  };
-
-  // Upload photo to Firebase Storage
-  const uploadPhoto = async (file, folder) => {
-    try {
-      const fileName = `${folder}/${Date.now()}_${file.name}`;
-      const fileRef = storageRef(storage, fileName);
-      await uploadBytes(fileRef, file);
-      const url = await getDownloadURL(fileRef);
-      return url;
-    } catch (error) {
-      console.error('Failed to upload photo:', error);
-      return null;
     }
   };
 
