@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Home, Leaf, UtensilsCrossed, Wallet, Heart, LogOut,
-  Trash2, Check, X, Sliders, Bell, Plus, Palette, Droplet, Plane, Edit2, MapPin, Calendar
+  Trash2, Check, X, Sliders, Bell, Plus, Palette, Plane, Edit2, MapPin
 } from 'lucide-react';
 import { auth } from './firebaseConfig';
 import { signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
