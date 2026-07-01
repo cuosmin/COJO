@@ -922,9 +922,10 @@ export default function CompleteSharedLifeDashboard() {
                     <div
                       key={plant.id}
                       style={{
-                        background: `linear-gradient(to bottom, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.98) 100%), url(${plant.photo}?w=400&h=300&fit=crop)`,
-                        backgroundSize: 'cover',
-                        backgroundPosition: 'center',
+                        backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0.4), rgba(0,0,0,0.8), rgba(0,0,0,0.99)), url(${plant.photo}?w=400&h=300&fit=crop)`,
+                        backgroundSize: 'cover, cover',
+                        backgroundPosition: 'center, center',
+                        backgroundRepeat: 'no-repeat, no-repeat',
                         borderRadius: '16px',
                         padding: '16px',
                         border: `1px solid rgba(${status.needsWatering ? '255, 59, 48' : '18, 52, 255'}, 0.15)`,
@@ -932,6 +933,7 @@ export default function CompleteSharedLifeDashboard() {
                         display: 'flex',
                         flexDirection: 'column',
                         justifyContent: 'flex-end',
+                        position: 'relative',
                       }}
                     >
                       <div style={{ marginBottom: '12px' }}>
@@ -1024,9 +1026,10 @@ export default function CompleteSharedLifeDashboard() {
                   <div
                     key={meal.id}
                     style={{
-                      background: `linear-gradient(to bottom, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.98) 100%), url(${meal.photo}?w=400&h=300&fit=crop)`,
-                      backgroundSize: 'cover',
-                      backgroundPosition: 'center',
+                      backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0.4), rgba(0,0,0,0.8), rgba(0,0,0,0.99)), url(${meal.photo}?w=400&h=300&fit=crop)`,
+                      backgroundSize: 'cover, cover',
+                      backgroundPosition: 'center, center',
+                      backgroundRepeat: 'no-repeat, no-repeat',
                       borderRadius: '16px',
                       padding: '16px',
                       border: `1px solid rgba(18, 52, 255, 0.15)`,
@@ -1034,6 +1037,7 @@ export default function CompleteSharedLifeDashboard() {
                       display: 'flex',
                       flexDirection: 'column',
                       justifyContent: 'flex-end',
+                      position: 'relative',
                     }}
                   >
                     <div style={{ marginBottom: '12px' }}>
