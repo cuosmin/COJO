@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Home, Leaf, UtensilsCrossed, Wallet, Heart, MapPin, Settings, LogOut,
-  Plus, Trash2, Check, X, User, Sliders, Bell, Lock
+  Home, Leaf, UtensilsCrossed, Wallet, Heart, LogOut,
+  Trash2, Check, X, Sliders, Bell, Lock
 } from 'lucide-react';
 import { auth } from './firebaseConfig';
 import { signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
-import { ref, onValue, set, update } from 'firebase/database';
+import { ref, onValue, set } from 'firebase/database';
 import { getDatabase } from 'firebase/database';
 
 const provider = new GoogleAuthProvider();
@@ -105,10 +105,6 @@ export default function CompleteSharedLifeDashboard() {
   const [newItemName, setNewItemName] = useState('');
   const [newItemPhoto, setNewItemPhoto] = useState(null);
   const [unsplashSearchResults, setUnsplashSearchResults] = useState([]);
-  const [searching, setSearching] = useState(false);
-
-  // Sync status
-  const [syncStatus, setSyncStatus] = useState('synced');
 
   // Auth
   useEffect(() => {
@@ -145,12 +141,10 @@ export default function CompleteSharedLifeDashboard() {
             setIntimacy([]);
           }
           setLoading(false);
-          setSyncStatus('synced');
         },
         (error) => {
           console.error('Firebase error:', error);
           setLoading(false);
-          setSyncStatus('error');
         }
       );
       return unsubscribe;
@@ -162,7 +156,6 @@ export default function CompleteSharedLifeDashboard() {
 
   const saveData = async (newPlants, newMeals, newExpenses, newIntimacy) => {
     try {
-      setSyncStatus('syncing');
       const sharedRef = ref(database, 'shared-data/default');
       await set(sharedRef, {
         plants: newPlants,
@@ -173,10 +166,8 @@ export default function CompleteSharedLifeDashboard() {
         lastUpdatedBy: user?.email,
       });
       console.log('Data saved successfully to Firebase');
-      setSyncStatus('synced');
     } catch (error) {
       console.error('Error saving:', error);
-      setSyncStatus('error');
     }
   };
 
@@ -187,17 +178,15 @@ export default function CompleteSharedLifeDashboard() {
       return;
     }
 
-    setSearching(true);
     try {
       const response = await fetch(
-        `https://api.unsplash.com/search/photos?query=${query}&per_page=6&client_id=YOUR_UNSPLASH_ACCESS_KEY`
+        `https://api.unsplash.com/search/photos?query=${query}&per_page=6&client_id=${process.env.REACT_APP_UNSPLASH_ACCESS_KEY}`
       );
       const data = await response.json();
       setUnsplashSearchResults(data.results || []);
     } catch (error) {
       console.error('Failed to search Unsplash:', error);
     }
-    setSearching(false);
   };
 
   // ==================== PLANTS ====================
