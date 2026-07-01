@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
   Home, Leaf, UtensilsCrossed, Wallet, LogOut,
-  Trash2, Check, X, Sliders, Bell, Plus, Plane, Edit2, MapPin, ChefHat, ShoppingCart
+  Trash2, X, Sliders, Bell, Plus, Plane, Edit2, MapPin, ChefHat, Droplet,
+  ShoppingCart as ShoppingBag, Heart, Wind, Smile
 } from 'lucide-react';
 import { auth } from './firebaseConfig';
 import { signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
@@ -15,11 +16,12 @@ const ACCENT_COLOR = '#1234ff';
 const BG_COLOR = '#000000';
 
 const BUDGET_CATEGORIES = [
-  { name: 'Groceries', icon: '🛒', color: '#ff3b30' },
-  { name: 'Travel', icon: '✈️', color: '#34c759' },
-  { name: 'Clothes', icon: '👕', color: '#ff9500' },
-  { name: 'House', icon: '🏠', color: '#5856d6' },
-  { name: 'Other', icon: '•', color: '#999' },
+  { name: 'Groceries', icon: ShoppingBag, color: '#ff3b30' },
+  { name: 'Travel', icon: Plane, color: '#34c759' },
+  { name: 'Clothes', icon: Heart, color: '#ff9500' },
+  { name: 'House', icon: Home, color: '#5856d6' },
+  { name: 'Personal Care', icon: Smile, color: '#00b4d8' },
+  { name: 'Other', icon: Wind, color: '#999' },
 ];
 
 // Major cities for autocomplete
@@ -754,7 +756,7 @@ export default function CompleteSharedLifeDashboard() {
                       />
                       <div>
                         <div style={{ fontSize: '14px', color: '#999', marginBottom: '2px' }}>
-                          {info.name} is currently in
+                          is currently in
                         </div>
                         <div style={{ fontSize: '24px', fontWeight: '700', color: ACCENT_COLOR }}>
                           {currentTraveler.location}
@@ -765,13 +767,17 @@ export default function CompleteSharedLifeDashboard() {
                 );
               })()}
 
-              {/* Main dashboard card */}
+              {/* Plants needing water - FIRST CARD */}
               <div
                 style={{
-                  background: `linear-gradient(135deg, rgba(18, 52, 255, 0.15) 0%, rgba(0, 0, 0, 0.8) 100%)`,
+                  background: plantsNeedingWater > 0 
+                    ? 'linear-gradient(135deg, rgba(255, 59, 48, 0.15) 0%, rgba(0, 0, 0, 0.8) 100%)'
+                    : 'linear-gradient(135deg, rgba(18, 52, 255, 0.15) 0%, rgba(0, 0, 0, 0.8) 100%)',
                   borderRadius: '16px',
                   padding: '32px 24px',
-                  border: `1px solid rgba(18, 52, 255, 0.15)`,
+                  border: plantsNeedingWater > 0 
+                    ? '1px solid rgba(255, 59, 48, 0.15)'
+                    : '1px solid rgba(18, 52, 255, 0.15)',
                   backdropFilter: 'blur(10px)',
                   minHeight: '160px',
                   display: 'flex',
@@ -779,29 +785,17 @@ export default function CompleteSharedLifeDashboard() {
                   justifyContent: 'flex-end',
                 }}
               >
-                <div style={{ fontSize: '48px', fontWeight: '700', marginBottom: '8px' }}>{plants.length}</div>
-                <div style={{ fontSize: '14px', color: '#999' }}>plants to care for</div>
+                {plantsNeedingWater > 0 ? (
+                  <>
+                    <div style={{ fontSize: '48px', fontWeight: '700', marginBottom: '8px', color: '#ff3b30' }}>{plantsNeedingWater}</div>
+                    <div style={{ fontSize: '14px', color: '#999' }}>plants need watering today</div>
+                  </>
+                ) : (
+                  <div style={{ fontSize: '18px', fontWeight: '600' }}>No plants need watering today</div>
+                )}
               </div>
 
-              {/* Plants needing water */}
-              <div
-                style={{
-                  background: `linear-gradient(135deg, rgba(255, 59, 48, 0.15) 0%, rgba(0, 0, 0, 0.8) 100%)`,
-                  borderRadius: '16px',
-                  padding: '32px 24px',
-                  border: `1px solid rgba(255, 59, 48, 0.15)`,
-                  backdropFilter: 'blur(10px)',
-                  minHeight: '160px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'flex-end',
-                }}
-              >
-                <div style={{ fontSize: '48px', fontWeight: '700', marginBottom: '8px', color: '#ff3b30' }}>{plantsNeedingWater}</div>
-                <div style={{ fontSize: '14px', color: '#999' }}>plants need watering</div>
-              </div>
-
-              {/* Travel days */}
+              {/* Days apart this month */}
               <div
                 style={{
                   background: `linear-gradient(135deg, rgba(18, 52, 255, 0.15) 0%, rgba(0, 0, 0, 0.8) 100%)`,
@@ -816,10 +810,10 @@ export default function CompleteSharedLifeDashboard() {
                 }}
               >
                 <div style={{ fontSize: '48px', fontWeight: '700', marginBottom: '8px' }}>{getTravelDaysThisMonth()}</div>
-                <div style={{ fontSize: '14px', color: '#999' }}>travel days this month</div>
+                <div style={{ fontSize: '14px', color: '#999' }}>days apart this month</div>
               </div>
 
-              {/* Meals */}
+              {/* Spent together this month */}
               <div
                 style={{
                   background: `linear-gradient(135deg, rgba(18, 52, 255, 0.15) 0%, rgba(0, 0, 0, 0.8) 100%)`,
@@ -833,8 +827,12 @@ export default function CompleteSharedLifeDashboard() {
                   justifyContent: 'flex-end',
                 }}
               >
-                <div style={{ fontSize: '48px', fontWeight: '700', marginBottom: '8px' }}>{meals.length}</div>
-                <div style={{ fontSize: '14px', color: '#999' }}>meals planned</div>
+                <div style={{ fontSize: '48px', fontWeight: '700', marginBottom: '8px' }}>€{expenses.filter(e => {
+                  const expDate = new Date(e.date);
+                  const now = new Date();
+                  return expDate.getMonth() === now.getMonth() && expDate.getFullYear() === now.getFullYear();
+                }).reduce((sum, e) => sum + e.amount, 0).toFixed(2)}</div>
+                <div style={{ fontSize: '14px', color: '#999' }}>spent together this month</div>
               </div>
             </div>
           </div>
@@ -905,53 +903,37 @@ export default function CompleteSharedLifeDashboard() {
                         <button
                           onClick={() => openEditModal('plant', plant)}
                           style={{
-                            background: 'none',
-                            border: 'none',
+                            background: 'rgba(18, 52, 255, 0.2)',
+                            border: '1px solid rgba(18, 52, 255, 0.3)',
+                            borderRadius: '12px',
+                            padding: '8px',
                             color: ACCENT_COLOR,
                             cursor: 'pointer',
-                            padding: '4px',
                           }}
                         >
-                          <Edit2 size={20} />
+                          <Edit2 size={18} />
                         </button>
                       </div>
 
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        <button
-                          onClick={() => waterPlant(plant.id)}
-                          style={{
-                            flex: 1,
-                            background: status.needsWatering ? '#ff3b30' : '#34c759',
-                            border: 'none',
-                            borderRadius: '12px',
-                            padding: '10px',
-                            color: '#fff',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '6px',
-                            fontSize: '14px',
-                            fontWeight: '600',
-                          }}
-                        >
-                          <Check size={16} /> Water
-                        </button>
-                        <button
-                          onClick={() => deletePlant(plant.id)}
-                          style={{
-                            background: 'rgba(255, 59, 48, 0.2)',
-                            border: '1px solid rgba(255, 59, 48, 0.3)',
-                            borderRadius: '12px',
-                            padding: '10px 12px',
-                            color: '#ff3b30',
-                            cursor: 'pointer',
-                            fontWeight: '600',
-                          }}
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
+                      <button
+                        onClick={() => waterPlant(plant.id)}
+                        style={{
+                          background: 'rgba(255, 255, 255, 0.08)',
+                          border: '1px solid rgba(255, 255, 255, 0.1)',
+                          borderRadius: '12px',
+                          padding: '10px',
+                          color: '#fff',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '6px',
+                          fontSize: '14px',
+                          fontWeight: '600',
+                        }}
+                      >
+                        <Droplet size={16} /> Mark as watered
+                      </button>
                     </div>
                   );
                 })}
@@ -1013,82 +995,47 @@ export default function CompleteSharedLifeDashboard() {
                       justifyContent: 'flex-end',
                     }}
                   >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
                       <div>
-                        <h3 style={{ fontSize: '18px', fontWeight: '600', margin: '0 0 4px' }}>{meal.name}</h3>
-                        <p style={{ fontSize: '12px', color: '#999', margin: 0 }}>{meal.plannedDate}</p>
+                        <h3 style={{ fontSize: '18px', fontWeight: '600', margin: 0 }}>{meal.name}</h3>
                       </div>
                       <button
                         onClick={() => openEditModal('meal', meal)}
                         style={{
-                          background: 'none',
-                          border: 'none',
+                          background: 'rgba(18, 52, 255, 0.2)',
+                          border: '1px solid rgba(18, 52, 255, 0.3)',
+                          borderRadius: '12px',
+                          padding: '8px',
                           color: ACCENT_COLOR,
                           cursor: 'pointer',
-                          padding: '4px',
                         }}
                       >
-                        <Edit2 size={20} />
+                        <Edit2 size={18} />
                       </button>
                     </div>
 
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <button
-                        onClick={() => {
-                          setSelectedRecipe(meal);
-                          setShowRecipeModal(true);
-                        }}
-                        style={{
-                          flex: 1,
-                          background: meal.recipe ? `rgba(18, 52, 255, 0.3)` : 'rgba(255, 255, 255, 0.1)',
-                          border: `1px solid rgba(18, 52, 255, ${meal.recipe ? 0.4 : 0.15})`,
-                          borderRadius: '12px',
-                          padding: '10px 12px',
-                          color: '#fff',
-                          cursor: 'pointer',
-                          fontSize: '14px',
-                          fontWeight: '600',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: '6px',
-                        }}
-                      >
-                        <ChefHat size={16} /> Recipe
-                      </button>
-                      <button
-                        onClick={() => {
-                          const updated = meals.map(m => m.id === meal.id ? { ...m, shoppingNeeded: !m.shoppingNeeded } : m);
-                          setMeals(updated);
-                          saveData(plants, updated, expenses, travels);
-                        }}
-                        style={{
-                          background: meal.shoppingNeeded ? `rgba(52, 199, 89, 0.3)` : 'rgba(255, 255, 255, 0.1)',
-                          border: `1px solid rgba(${meal.shoppingNeeded ? '52, 199, 89' : '255, 255, 255'}, ${meal.shoppingNeeded ? 0.4 : 0.15})`,
-                          borderRadius: '12px',
-                          padding: '10px 12px',
-                          color: meal.shoppingNeeded ? '#34c759' : '#999',
-                          cursor: 'pointer',
-                          fontWeight: '600',
-                        }}
-                      >
-                        <ShoppingCart size={16} />
-                      </button>
-                      <button
-                        onClick={() => deleteMeal(meal.id)}
-                        style={{
-                          background: 'rgba(255, 59, 48, 0.2)',
-                          border: '1px solid rgba(255, 59, 48, 0.3)',
-                          borderRadius: '12px',
-                          padding: '10px 12px',
-                          color: '#ff3b30',
-                          cursor: 'pointer',
-                          fontWeight: '600',
-                        }}
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
+                    <button
+                      onClick={() => {
+                        setSelectedRecipe(meal);
+                        setShowRecipeModal(true);
+                      }}
+                      style={{
+                        background: 'rgba(255, 255, 255, 0.08)',
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        borderRadius: '12px',
+                        padding: '10px 12px',
+                        color: '#fff',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                      }}
+                    >
+                      <ChefHat size={16} /> View Recipe
+                    </button>
                   </div>
                 ))}
               </div>
@@ -1138,11 +1085,12 @@ export default function CompleteSharedLifeDashboard() {
                   
                   if (categoryExpenses.length === 0) return null;
                   
+                  const Icon = category.icon;
                   return (
                     <div key={category.name} style={{ background: `rgba(255, 255, 255, 0.02)`, borderRadius: '16px', padding: '16px', border: `1px solid rgba(18, 52, 255, 0.15)` }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-                        <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: `${category.color}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>
-                          {category.icon}
+                        <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: `${category.color}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: category.color }}>
+                          <Icon size={20} />
                         </div>
                         <div style={{ flex: 1 }}>
                           <h3 style={{ fontSize: '16px', fontWeight: '600', margin: 0 }}>{category.name}</h3>
@@ -1158,14 +1106,9 @@ export default function CompleteSharedLifeDashboard() {
                               <p style={{ fontSize: '14px', margin: 0, fontWeight: '500' }}>€{exp.amount.toFixed(2)}</p>
                               <p style={{ fontSize: '12px', color: '#666', margin: '2px 0 0' }}>{exp.date}</p>
                             </div>
-                            <div style={{ display: 'flex', gap: '8px' }}>
-                              <button onClick={() => openEditModal('expense', exp)} style={{ background: 'none', border: 'none', color: ACCENT_COLOR, cursor: 'pointer', padding: '4px' }}>
-                                <Edit2 size={16} />
-                              </button>
-                              <button onClick={() => deleteExpense(exp.id)} style={{ background: 'none', border: 'none', color: '#ff3b30', cursor: 'pointer', padding: '4px' }}>
-                                <Trash2 size={16} />
-                              </button>
-                            </div>
+                            <button onClick={() => openEditModal('expense', exp)} style={{ background: 'none', border: 'none', color: ACCENT_COLOR, cursor: 'pointer', padding: '4px' }}>
+                              <Edit2 size={16} />
+                            </button>
                           </div>
                         ))}
                       </div>
