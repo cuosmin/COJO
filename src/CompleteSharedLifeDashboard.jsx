@@ -149,7 +149,89 @@ const AddModal = ({ isOpen, title, onClose, children }) => {
 };
 
 // Calendar Component for Travel Tab
-// Travel categories - no longer using CalendarMonth component
+const CalendarMonth = ({ travels, currentMonth, onMonthChange }) => {
+  const year = currentMonth.getFullYear();
+  const month = currentMonth.getMonth();
+
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+  const daysInMonth = lastDay.getDate();
+  let startingDayOfWeek = firstDay.getDay() - 1;
+  if (startingDayOfWeek === -1) startingDayOfWeek = 6;
+
+  const days = [];
+  for (let i = 0; i < startingDayOfWeek; i++) {
+    days.push(null);
+  }
+  for (let i = 1; i <= daysInMonth; i++) {
+    days.push(i);
+  }
+
+  const getTravelIndicators = (day) => {
+    if (!day) return [];
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    return travels.filter(travel => {
+      const start = new Date(travel.startDate);
+      const end = new Date(travel.endDate);
+      const current = new Date(dateStr);
+      return current >= start && current <= end;
+    });
+  };
+
+  const weekDays = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+  return (
+    <div style={{ background: `rgba(255, 255, 255, 0.02)`, borderRadius: '16px', padding: '20px', border: `1px solid rgba(18, 52, 255, 0.15)` }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+        <button onClick={() => onMonthChange(-1)} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '18px' }}>←</button>
+        <h3 style={{ fontSize: '18px', fontWeight: '600', margin: 0 }}>{monthNames[month]} {year}</h3>
+        <button onClick={() => onMonthChange(1)} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '18px' }}>→</button>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px', marginBottom: '12px' }}>
+        {weekDays.map(day => (
+          <div key={day} style={{ textAlign: 'center', fontSize: '12px', fontWeight: '600', color: '#666', padding: '8px' }}>{day}</div>
+        ))}
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px' }}>
+        {days.map((day, idx) => {
+          const indicators = day ? getTravelIndicators(day) : [];
+          return (
+            <div
+              key={idx}
+              style={{
+                aspectRatio: '1',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: '12px',
+                background: day ? `rgba(255, 255, 255, 0.02)` : 'transparent',
+                border: day && indicators.length > 0 ? `2px solid ${ACCENT_COLOR}` : `1px solid rgba(255, 255, 255, 0.05)`,
+                cursor: day ? 'pointer' : 'default',
+                position: 'relative',
+                fontSize: '14px',
+                fontWeight: day ? '500' : '400',
+                color: day ? '#fff' : '#333',
+              }}
+            >
+              {day}
+              {indicators.length > 0 && (
+                <div style={{ position: 'absolute', bottom: '4px', left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: '2px' }}>
+                  {indicators.map((_, i) => (
+                    <div key={i} style={{ width: '4px', height: '4px', borderRadius: '50%', background: ACCENT_COLOR }} />
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
 
 export default function CompleteSharedLifeDashboard() {
   const [user, setUser] = useState(null);
@@ -171,7 +253,7 @@ export default function CompleteSharedLifeDashboard() {
   const [expenses, setExpenses] = useState([]);
   const [travels, setTravels] = useState([]);
   const [users, setUsers] = useState([]);
-  const [currentMonth] = useState(new Date()); // Used for filtering expenses/travels by month
+  const [currentMonth, setCurrentMonth] = useState(new Date());
   const [archiveMonth, setArchiveMonth] = useState(new Date());
   const [expandedCategory, setExpandedCategory] = useState(null);
 
@@ -1376,95 +1458,107 @@ export default function CompleteSharedLifeDashboard() {
             {travels.length === 0 ? (
               <EmptyState icon={Plane} title="No trips planned" subtitle="Plan your travels together" />
             ) : (
-              <div style={{ display: 'grid', gap: '12px' }}>
-                {TRAVEL_CATEGORIES.map(category => {
-                  const categoryTravels = getTravelsForMonth(currentMonth).filter(t => t.category === category.name);
-                  
-                  if (categoryTravels.length === 0) return null;
-                  
-                  const Icon = category.icon;
-                  const isExpanded = expandedCategory === category.name;
-                  
-                  return (
-                    <div key={category.name}>
-                      <button
-                        onClick={() => setExpandedCategory(isExpanded ? null : category.name)}
-                        style={{
-                          width: '100%',
-                          background: `rgba(255, 255, 255, 0.02)`,
-                          border: `1px solid rgba(18, 52, 255, 0.1)`,
-                          borderRadius: '12px',
-                          padding: '16px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '12px',
-                          cursor: 'pointer',
-                          transition: 'all 0.2s',
-                          color: 'inherit',
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)';
-                          e.currentTarget.style.borderColor = 'rgba(18, 52, 255, 0.15)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.02)';
-                          e.currentTarget.style.borderColor = 'rgba(18, 52, 255, 0.1)';
-                        }}
-                      >
-                        <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: `${category.color}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: category.color, flexShrink: 0 }}>
-                          <Icon size={20} />
-                        </div>
-                        <div style={{ flex: 1, textAlign: 'left' }}>
-                          <p style={{ fontSize: '16px', fontWeight: '600', margin: 0, color: '#fff' }}>{category.name}</p>
-                          <p style={{ fontSize: '12px', color: '#999', margin: 0 }}>{categoryTravels.length} trip{categoryTravels.length !== 1 ? 's' : ''}</p>
-                        </div>
-                        <ChevronDown size={20} color="#999" style={{ transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s', flexShrink: 0 }} />
-                      </button>
-                      
-                      {isExpanded && (
-                        <div style={{ background: 'transparent', borderRadius: '12px', padding: '12px 0 8px', display: 'grid', gap: '10px' }}>
-                          {categoryTravels.map((travel) => {
-                            const travelersNames = (travel.userIds || [travel.userId || '']).map(uid => {
-                              if (uid === user?.uid) return getFirstName(user?.displayName);
-                              const otherUser = users.find(u => u.uid === uid);
-                              return getFirstName(otherUser?.displayName) || 'Guest';
-                            }).join(' & ');
-                            
-                            return (
-                              <div key={travel.id} style={{ background: `rgba(255, 255, 255, 0.04)`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', borderRadius: '10px', border: `1px solid rgba(255, 255, 255, 0.06)`, transition: 'all 0.2s' }}
-                                onMouseEnter={(e) => {
-                                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
-                                  e.currentTarget.style.borderColor = 'rgba(18, 52, 255, 0.15)';
-                                }}
-                                onMouseLeave={(e) => {
-                                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)';
-                                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.06)';
-                                }}
-                              >
-                                <div style={{ flex: 1 }}>
-                                  <p style={{ fontSize: '13px', margin: 0, fontWeight: '500', color: '#fff' }}>{travel.location}</p>
-                                  <p style={{ fontSize: '11px', color: '#999', margin: '3px 0 0' }}>
-                                    {travel.startDate} → {travel.endDate}
-                                  </p>
-                                  <p style={{ fontSize: '11px', color: '#999', margin: '2px 0 0' }}>
-                                    {travelersNames}
-                                  </p>
-                                </div>
-                                <button onClick={() => openEditModal('travel', travel)} style={{ background: '#1234ff', border: 'none', borderRadius: '6px', padding: '5px', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}
-                                  onMouseEnter={(e) => e.target.style.background = '#0020cc'}
-                                  onMouseLeave={(e) => e.target.style.background = '#1234ff'}
+              <>
+                <CalendarMonth
+                  travels={travels}
+                  currentMonth={currentMonth}
+                  onMonthChange={(delta) => {
+                    const newMonth = new Date(currentMonth);
+                    newMonth.setMonth(newMonth.getMonth() + delta);
+                    setCurrentMonth(newMonth);
+                  }}
+                />
+
+                <div style={{ marginTop: '24px', display: 'grid', gap: '12px' }}>
+                  {TRAVEL_CATEGORIES.map(category => {
+                    const categoryTravels = getTravelsForMonth(currentMonth).filter(t => t.category === category.name);
+                    
+                    if (categoryTravels.length === 0) return null;
+                    
+                    const Icon = category.icon;
+                    const isExpanded = expandedCategory === category.name;
+                    
+                    return (
+                      <div key={category.name}>
+                        <button
+                          onClick={() => setExpandedCategory(isExpanded ? null : category.name)}
+                          style={{
+                            width: '100%',
+                            background: `rgba(255, 255, 255, 0.02)`,
+                            border: `1px solid rgba(18, 52, 255, 0.1)`,
+                            borderRadius: '12px',
+                            padding: '16px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '12px',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            color: 'inherit',
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)';
+                            e.currentTarget.style.borderColor = 'rgba(18, 52, 255, 0.15)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.02)';
+                            e.currentTarget.style.borderColor = 'rgba(18, 52, 255, 0.1)';
+                          }}
+                        >
+                          <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: `${category.color}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: category.color, flexShrink: 0 }}>
+                            <Icon size={20} />
+                          </div>
+                          <div style={{ flex: 1, textAlign: 'left' }}>
+                            <p style={{ fontSize: '16px', fontWeight: '600', margin: 0, color: '#fff' }}>{category.name}</p>
+                            <p style={{ fontSize: '12px', color: '#999', margin: 0 }}>{categoryTravels.length} trip{categoryTravels.length !== 1 ? 's' : ''}</p>
+                          </div>
+                          <ChevronDown size={20} color="#999" style={{ transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s', flexShrink: 0 }} />
+                        </button>
+                        
+                        {isExpanded && (
+                          <div style={{ background: 'transparent', borderRadius: '12px', padding: '12px 0 8px', display: 'grid', gap: '10px' }}>
+                            {categoryTravels.map((travel) => {
+                              const travelersNames = (travel.userIds || [travel.userId || '']).map(uid => {
+                                if (uid === user?.uid) return getFirstName(user?.displayName);
+                                const otherUser = users.find(u => u.uid === uid);
+                                return getFirstName(otherUser?.displayName) || 'Guest';
+                              }).join(' & ');
+                              
+                              return (
+                                <div key={travel.id} style={{ background: `rgba(255, 255, 255, 0.04)`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', borderRadius: '10px', border: `1px solid rgba(255, 255, 255, 0.06)`, transition: 'all 0.2s' }}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
+                                    e.currentTarget.style.borderColor = 'rgba(18, 52, 255, 0.15)';
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)';
+                                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.06)';
+                                  }}
                                 >
-                                  <Edit2 size={13} />
-                                </button>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+                                  <div style={{ flex: 1 }}>
+                                    <p style={{ fontSize: '13px', margin: 0, fontWeight: '500', color: '#fff' }}>{travel.location}</p>
+                                    <p style={{ fontSize: '11px', color: '#999', margin: '3px 0 0' }}>
+                                      {travel.startDate} → {travel.endDate}
+                                    </p>
+                                    <p style={{ fontSize: '11px', color: '#999', margin: '2px 0 0' }}>
+                                      {travelersNames}
+                                    </p>
+                                  </div>
+                                  <button onClick={() => openEditModal('travel', travel)} style={{ background: '#1234ff', border: 'none', borderRadius: '6px', padding: '5px', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}
+                                    onMouseEnter={(e) => e.target.style.background = '#0020cc'}
+                                    onMouseLeave={(e) => e.target.style.background = '#1234ff'}
+                                  >
+                                    <Edit2 size={13} />
+                                  </button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
             )}
           </div>
         )}
