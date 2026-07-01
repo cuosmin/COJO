@@ -982,61 +982,80 @@ export default function CompleteSharedLifeDashboard() {
                     <div
                       key={plant.id}
                       style={{
-                        backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0.4), rgba(0,0,0,0.8), rgba(0,0,0,0.99)), url(${plant.photo}?w=400&h=300&fit=crop)`,
-                        backgroundSize: 'cover, cover',
-                        backgroundPosition: 'center, center',
-                        backgroundRepeat: 'no-repeat, no-repeat',
+                        backgroundImage: `url(${plant.photo}?w=400&h=300&fit=crop)`,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
                         borderRadius: '16px',
-                        padding: '16px',
                         border: `1px solid rgba(${status.needsWatering ? '255, 59, 48' : '18, 52, 255'}, 0.15)`,
+                        minHeight: '200px',
+                        position: 'relative',
+                        overflow: 'hidden',
+                      }}
+                    >
+                      {/* Gradient overlay */}
+                      <div style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: 'linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.5) 50%, rgba(0,0,0,0.95) 100%)',
+                        pointerEvents: 'none',
+                      }} />
+                      
+                      {/* Content */}
+                      <div style={{
+                        position: 'relative',
+                        zIndex: 1,
+                        padding: '16px',
                         minHeight: '200px',
                         display: 'flex',
                         flexDirection: 'column',
                         justifyContent: 'flex-end',
-                        position: 'relative',
-                      }}
-                    >
-                      <div style={{ marginBottom: '12px' }}>
-                        <h3 style={{ fontSize: '18px', fontWeight: '600', margin: '0 0 4px' }}>{plant.name}</h3>
-                        <p style={{ fontSize: '12px', color: status.needsWatering ? '#ff3b30' : '#999', margin: 0 }}>
-                          {status.needsWatering ? 'Needs watering!' : `Next in ${status.daysUntil} days`}
-                        </p>
-                      </div>
+                        height: '100%',
+                      }}>
+                        <div style={{ marginBottom: '12px' }}>
+                          <h3 style={{ fontSize: '18px', fontWeight: '600', margin: '0 0 4px' }}>{plant.name}</h3>
+                          <p style={{ fontSize: '12px', color: status.needsWatering ? '#ff3b30' : '#999', margin: 0 }}>
+                            {status.needsWatering ? 'Needs watering!' : `Next in ${status.daysUntil} days`}
+                          </p>
+                        </div>
 
-                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        <button
-                          onClick={() => waterPlant(plant.id)}
-                          style={{
-                            flex: 1,
-                            background: 'rgba(255, 255, 255, 0.08)',
-                            border: '1px solid rgba(255, 255, 255, 0.1)',
-                            borderRadius: '12px',
-                            padding: '10px',
-                            color: '#fff',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '6px',
-                            fontSize: '14px',
-                            fontWeight: '600',
-                          }}
-                        >
-                          <Droplet size={16} /> Mark as watered
-                        </button>
-                        <button
-                          onClick={() => openEditModal('plant', plant)}
-                          style={{
-                            background: '#1234ff',
-                            border: 'none',
-                            borderRadius: '12px',
-                            padding: '10px 12px',
-                            color: '#fff',
-                            cursor: 'pointer',
-                          }}
-                        >
-                          <Edit2 size={18} />
-                        </button>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                          <button
+                            onClick={() => waterPlant(plant.id)}
+                            style={{
+                              flex: 1,
+                              background: 'rgba(255, 255, 255, 0.08)',
+                              border: '1px solid rgba(255, 255, 255, 0.1)',
+                              borderRadius: '12px',
+                              padding: '10px',
+                              color: '#fff',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '6px',
+                              fontSize: '14px',
+                              fontWeight: '600',
+                            }}
+                          >
+                            <Droplet size={16} /> Mark as watered
+                          </button>
+                          <button
+                            onClick={() => openEditModal('plant', plant)}
+                            style={{
+                              background: '#1234ff',
+                              border: 'none',
+                              borderRadius: '12px',
+                              padding: '10px 12px',
+                              color: '#fff',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            <Edit2 size={18} />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   );
@@ -1086,61 +1105,80 @@ export default function CompleteSharedLifeDashboard() {
                   <div
                     key={meal.id}
                     style={{
-                      backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0.4), rgba(0,0,0,0.8), rgba(0,0,0,0.99)), url(${meal.photo}?w=400&h=300&fit=crop)`,
-                      backgroundSize: 'cover, cover',
-                      backgroundPosition: 'center, center',
-                      backgroundRepeat: 'no-repeat, no-repeat',
+                      backgroundImage: `url(${meal.photo}?w=400&h=300&fit=crop)`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
                       borderRadius: '16px',
-                      padding: '16px',
                       border: `1px solid rgba(18, 52, 255, 0.15)`,
+                      minHeight: '200px',
+                      position: 'relative',
+                      overflow: 'hidden',
+                    }}
+                  >
+                    {/* Gradient overlay */}
+                    <div style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      background: 'linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.5) 50%, rgba(0,0,0,0.95) 100%)',
+                      pointerEvents: 'none',
+                    }} />
+                    
+                    {/* Content */}
+                    <div style={{
+                      position: 'relative',
+                      zIndex: 1,
+                      padding: '16px',
                       minHeight: '200px',
                       display: 'flex',
                       flexDirection: 'column',
                       justifyContent: 'flex-end',
-                      position: 'relative',
-                    }}
-                  >
-                    <div style={{ marginBottom: '12px' }}>
-                      <h3 style={{ fontSize: '18px', fontWeight: '600', margin: 0 }}>{meal.name}</h3>
-                    </div>
+                      height: '100%',
+                    }}>
+                      <div style={{ marginBottom: '12px' }}>
+                        <h3 style={{ fontSize: '18px', fontWeight: '600', margin: 0 }}>{meal.name}</h3>
+                      </div>
 
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                      <button
-                        onClick={() => {
-                          setSelectedRecipe(meal);
-                          setShowRecipeModal(true);
-                        }}
-                        style={{
-                          flex: 1,
-                          background: 'rgba(255, 255, 255, 0.08)',
-                          border: '1px solid rgba(255, 255, 255, 0.1)',
-                          borderRadius: '12px',
-                          padding: '10px 12px',
-                          color: '#fff',
-                          cursor: 'pointer',
-                          fontSize: '14px',
-                          fontWeight: '600',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: '6px',
-                        }}
-                      >
-                        <ChefHat size={16} /> View Recipe
-                      </button>
-                      <button
-                        onClick={() => openEditModal('meal', meal)}
-                        style={{
-                          background: '#1234ff',
-                          border: 'none',
-                          borderRadius: '12px',
-                          padding: '10px 12px',
-                          color: '#fff',
-                          cursor: 'pointer',
-                        }}
-                      >
-                        <Edit2 size={18} />
-                      </button>
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <button
+                          onClick={() => {
+                            setSelectedRecipe(meal);
+                            setShowRecipeModal(true);
+                          }}
+                          style={{
+                            flex: 1,
+                            background: 'rgba(255, 255, 255, 0.08)',
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                            borderRadius: '12px',
+                            padding: '10px 12px',
+                            color: '#fff',
+                            cursor: 'pointer',
+                            fontSize: '14px',
+                            fontWeight: '600',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '6px',
+                          }}
+                        >
+                          <ChefHat size={16} /> View Recipe
+                        </button>
+                        <button
+                          onClick={() => openEditModal('meal', meal)}
+                          style={{
+                            background: '#1234ff',
+                            border: 'none',
+                            borderRadius: '12px',
+                            padding: '10px 12px',
+                            color: '#fff',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          <Edit2 size={18} />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
