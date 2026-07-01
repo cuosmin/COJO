@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Home, Leaf, UtensilsCrossed, Wallet, LogOut,
   X, Bell, Plus, Plane, Edit2, MapPin, Droplet, Archive, ChevronDown, Briefcase, Palmtree,
-  ShoppingCart as ShoppingBag, Heart, Wind, Smile, Clock, Shuffle, MessageCircle, Send, Calendar,
+  ShoppingCart as ShoppingBag, Heart, Wind, Smile, Clock, Shuffle, MessageCircle, Send,
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import LinkifyIt from 'linkify-it';
@@ -1251,7 +1251,7 @@ export default function CompleteSharedLifeDashboard() {
                   const travel = thisWeekTravels[0];
                   return (
                     <div
-                      onClick={() => setActiveTab('travels')}
+                      onClick={() => setActiveTab('calendar')}
                       style={{
                         background: `linear-gradient(135deg, rgba(255, 149, 0, 0.15) 0%, rgba(0, 0, 0, 0.8) 100%)`,
                         borderRadius: '16px',
@@ -1279,7 +1279,7 @@ export default function CompleteSharedLifeDashboard() {
                 } else {
                   return (
                     <div
-                      onClick={() => setActiveTab('travels')}
+                      onClick={() => setActiveTab('calendar')}
                       style={{
                         background: `linear-gradient(135deg, rgba(255, 149, 0, 0.15) 0%, rgba(0, 0, 0, 0.8) 100%)`,
                         borderRadius: '16px',
