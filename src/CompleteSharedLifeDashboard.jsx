@@ -150,7 +150,8 @@ const CalendarMonth = ({ travels, currentMonth, onMonthChange }) => {
   const firstDay = new Date(year, month, 1);
   const lastDay = new Date(year, month + 1, 0);
   const daysInMonth = lastDay.getDate();
-  const startingDayOfWeek = firstDay.getDay();
+  let startingDayOfWeek = firstDay.getDay() - 1;
+  if (startingDayOfWeek === -1) startingDayOfWeek = 6;
 
   const days = [];
   for (let i = 0; i < startingDayOfWeek; i++) {
@@ -171,7 +172,7 @@ const CalendarMonth = ({ travels, currentMonth, onMonthChange }) => {
     });
   };
 
-  const weekDays = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+  const weekDays = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
   const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
   return (
@@ -791,7 +792,10 @@ export default function CompleteSharedLifeDashboard() {
                     <div style={{ fontSize: '14px', color: '#999' }}>plants need watering today</div>
                   </>
                 ) : (
-                  <div style={{ fontSize: '18px', fontWeight: '600' }}>No plants need watering today</div>
+                  <>
+                    <div style={{ fontSize: '48px', fontWeight: '700', marginBottom: '8px' }}>All</div>
+                    <div style={{ fontSize: '14px', color: '#999' }}>plants are watered</div>
+                  </>
                 )}
               </div>
 
@@ -880,60 +884,61 @@ export default function CompleteSharedLifeDashboard() {
                     <div
                       key={plant.id}
                       style={{
-                        background: `linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.9) 100%), url(${plant.photo}?w=400&h=300&fit=crop)`,
+                        background: `linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.95) 100%), url(${plant.photo}?w=400&h=300&fit=crop)`,
                         backgroundSize: 'cover',
                         backgroundPosition: 'center',
+                        backgroundAttachment: 'scroll',
                         borderRadius: '16px',
                         padding: '16px',
                         border: `1px solid rgba(${status.needsWatering ? '255, 59, 48' : '18, 52, 255'}, 0.15)`,
-                        backdropFilter: 'blur(10px)',
                         minHeight: '200px',
                         display: 'flex',
                         flexDirection: 'column',
                         justifyContent: 'flex-end',
                       }}
                     >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-                        <div>
-                          <h3 style={{ fontSize: '18px', fontWeight: '600', margin: '0 0 4px' }}>{plant.name}</h3>
-                          <p style={{ fontSize: '12px', color: status.needsWatering ? '#ff3b30' : '#999', margin: 0 }}>
-                            {status.needsWatering ? '💧 Needs watering now!' : `Next watering in ${status.daysUntil} days`}
-                          </p>
-                        </div>
+                      <div style={{ marginBottom: '12px' }}>
+                        <h3 style={{ fontSize: '18px', fontWeight: '600', margin: '0 0 4px' }}>{plant.name}</h3>
+                        <p style={{ fontSize: '12px', color: status.needsWatering ? '#ff3b30' : '#999', margin: 0 }}>
+                          {status.needsWatering ? 'Needs watering!' : `Next in ${status.daysUntil} days`}
+                        </p>
+                      </div>
+
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <button
+                          onClick={() => waterPlant(plant.id)}
+                          style={{
+                            flex: 1,
+                            background: 'rgba(255, 255, 255, 0.08)',
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                            borderRadius: '12px',
+                            padding: '10px',
+                            color: '#fff',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '6px',
+                            fontSize: '14px',
+                            fontWeight: '600',
+                          }}
+                        >
+                          <Droplet size={16} /> Mark as watered
+                        </button>
                         <button
                           onClick={() => openEditModal('plant', plant)}
                           style={{
-                            background: 'rgba(18, 52, 255, 0.2)',
-                            border: '1px solid rgba(18, 52, 255, 0.3)',
+                            background: '#1234ff',
+                            border: 'none',
                             borderRadius: '12px',
-                            padding: '8px',
-                            color: ACCENT_COLOR,
+                            padding: '10px 12px',
+                            color: '#fff',
                             cursor: 'pointer',
                           }}
                         >
                           <Edit2 size={18} />
                         </button>
                       </div>
-
-                      <button
-                        onClick={() => waterPlant(plant.id)}
-                        style={{
-                          background: 'rgba(255, 255, 255, 0.08)',
-                          border: '1px solid rgba(255, 255, 255, 0.1)',
-                          borderRadius: '12px',
-                          padding: '10px',
-                          color: '#fff',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: '6px',
-                          fontSize: '14px',
-                          fontWeight: '600',
-                        }}
-                      >
-                        <Droplet size={16} /> Mark as watered
-                      </button>
                     </div>
                   );
                 })}
@@ -982,60 +987,61 @@ export default function CompleteSharedLifeDashboard() {
                   <div
                     key={meal.id}
                     style={{
-                      background: `linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.9) 100%), url(${meal.photo}?w=400&h=300&fit=crop)`,
+                      background: `linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.95) 100%), url(${meal.photo}?w=400&h=300&fit=crop)`,
                       backgroundSize: 'cover',
                       backgroundPosition: 'center',
+                      backgroundAttachment: 'scroll',
                       borderRadius: '16px',
                       padding: '16px',
                       border: `1px solid rgba(18, 52, 255, 0.15)`,
-                      backdropFilter: 'blur(10px)',
                       minHeight: '200px',
                       display: 'flex',
                       flexDirection: 'column',
                       justifyContent: 'flex-end',
                     }}
                   >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-                      <div>
-                        <h3 style={{ fontSize: '18px', fontWeight: '600', margin: 0 }}>{meal.name}</h3>
-                      </div>
+                    <div style={{ marginBottom: '12px' }}>
+                      <h3 style={{ fontSize: '18px', fontWeight: '600', margin: 0 }}>{meal.name}</h3>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <button
+                        onClick={() => {
+                          setSelectedRecipe(meal);
+                          setShowRecipeModal(true);
+                        }}
+                        style={{
+                          flex: 1,
+                          background: 'rgba(255, 255, 255, 0.08)',
+                          border: '1px solid rgba(255, 255, 255, 0.1)',
+                          borderRadius: '12px',
+                          padding: '10px 12px',
+                          color: '#fff',
+                          cursor: 'pointer',
+                          fontSize: '14px',
+                          fontWeight: '600',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '6px',
+                        }}
+                      >
+                        <ChefHat size={16} /> View Recipe
+                      </button>
                       <button
                         onClick={() => openEditModal('meal', meal)}
                         style={{
-                          background: 'rgba(18, 52, 255, 0.2)',
-                          border: '1px solid rgba(18, 52, 255, 0.3)',
+                          background: '#1234ff',
+                          border: 'none',
                           borderRadius: '12px',
-                          padding: '8px',
-                          color: ACCENT_COLOR,
+                          padding: '10px 12px',
+                          color: '#fff',
                           cursor: 'pointer',
                         }}
                       >
                         <Edit2 size={18} />
                       </button>
                     </div>
-
-                    <button
-                      onClick={() => {
-                        setSelectedRecipe(meal);
-                        setShowRecipeModal(true);
-                      }}
-                      style={{
-                        background: 'rgba(255, 255, 255, 0.08)',
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
-                        borderRadius: '12px',
-                        padding: '10px 12px',
-                        color: '#fff',
-                        cursor: 'pointer',
-                        fontSize: '14px',
-                        fontWeight: '600',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '6px',
-                      }}
-                    >
-                      <ChefHat size={16} /> View Recipe
-                    </button>
                   </div>
                 ))}
               </div>
@@ -1106,7 +1112,7 @@ export default function CompleteSharedLifeDashboard() {
                               <p style={{ fontSize: '14px', margin: 0, fontWeight: '500' }}>€{exp.amount.toFixed(2)}</p>
                               <p style={{ fontSize: '12px', color: '#666', margin: '2px 0 0' }}>{exp.date}</p>
                             </div>
-                            <button onClick={() => openEditModal('expense', exp)} style={{ background: 'none', border: 'none', color: ACCENT_COLOR, cursor: 'pointer', padding: '4px' }}>
+                            <button onClick={() => openEditModal('expense', exp)} style={{ background: '#1234ff', border: 'none', borderRadius: '8px', padding: '8px', color: '#fff', cursor: 'pointer' }}>
                               <Edit2 size={16} />
                             </button>
                           </div>
@@ -1198,37 +1204,17 @@ export default function CompleteSharedLifeDashboard() {
                             <button
                               onClick={() => openEditModal('travel', travel)}
                               style={{
-                                background: 'none',
+                                background: '#1234ff',
                                 border: 'none',
-                                color: ACCENT_COLOR,
+                                borderRadius: '12px',
+                                padding: '8px 12px',
+                                color: '#fff',
                                 cursor: 'pointer',
-                                padding: '4px',
                               }}
                             >
                               <Edit2 size={18} />
                             </button>
                           </div>
-
-                          <button
-                            onClick={() => deleteTravel(travel.id)}
-                            style={{
-                              width: '100%',
-                              background: 'rgba(255, 59, 48, 0.2)',
-                              border: '1px solid rgba(255, 59, 48, 0.3)',
-                              borderRadius: '12px',
-                              padding: '10px',
-                              color: '#ff3b30',
-                              cursor: 'pointer',
-                              fontSize: '14px',
-                              fontWeight: '600',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              gap: '6px',
-                            }}
-                          >
-                            <Trash2 size={16} /> Delete
-                          </button>
                         </div>
                       );
                     })}
