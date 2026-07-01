@@ -249,14 +249,6 @@ export default function CompleteSharedLifeDashboard() {
     }
   };
 
-  const updateMealRecipe = (id, recipe) => {
-    const updated = meals.map(m =>
-      m.id === id ? { ...m, recipe } : m
-    );
-    setMeals(updated);
-    saveData(plants, updated, expenses, intimacy);
-  };
-
   const toggleMealShopping = (id) => {
     const updated = meals.map(m =>
       m.id === id ? { ...m, shoppingNeeded: !m.shoppingNeeded } : m
