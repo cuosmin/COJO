@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Home, Leaf, UtensilsCrossed, Wallet, Heart, LogOut,
-  Trash2, Check, X, Sliders, Bell, Lock, Plus, ChefHat
+  Trash2, Check, X, Sliders, Bell, Lock, Plus, ChefHat, Palette
 } from 'lucide-react';
 import { auth } from './firebaseConfig';
 import { signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
@@ -79,6 +79,7 @@ export default function CompleteSharedLifeDashboard() {
   const [showSettings, setShowSettings] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [modalType, setModalType] = useState(null);
+  const [firebaseError, setFirebaseError] = useState(null);
 
   // Data state
   const [plants, setPlants] = useState([]);
@@ -98,7 +99,7 @@ export default function CompleteSharedLifeDashboard() {
     const unsubscribe = auth.onAuthStateChanged((currentUser) => {
       setUser(currentUser);
       if (currentUser) {
-        console.log('User logged in:', currentUser.uid);
+        console.log('✓ User logged in:', currentUser.email);
         loadSharedData();
       } else {
         setLoading(false);
@@ -109,32 +110,52 @@ export default function CompleteSharedLifeDashboard() {
 
   const loadSharedData = () => {
     try {
+      console.log('📥 Loading data from Firebase...');
       const sharedRef = ref(database, 'shared-data/default');
+      
       const unsubscribe = onValue(
         sharedRef,
         (snapshot) => {
           if (snapshot.exists()) {
             const data = snapshot.val();
-            console.log('Data loaded from Firebase:', data);
+            console.log('✓ Data loaded successfully:', data);
             setPlants(data.plants || []);
             setMeals(data.meals || []);
             setExpenses(data.expenses || []);
             setIntimacy(data.intimacy || []);
             setDashboardBg(data.dashboardBg || null);
+            setFirebaseError(null);
+            // Also save to localStorage as backup
+            localStorage.setItem('cojoBackup', JSON.stringify(data));
           } else {
-            console.log('No data found in Firebase');
+            console.log('ℹ️ No data found, starting fresh');
             setPlants([]);
             setMeals([]);
             setExpenses([]);
             setIntimacy([]);
+            setDashboardBg(null);
           }
           setLoading(false);
         },
         (error) => {
-          console.error('Firebase error:', error);
+          console.error('❌ Firebase error:', error);
+          setFirebaseError(error.message);
           setLoading(false);
+          
+          // Try to load from localStorage backup
+          const backup = localStorage.getItem('cojoBackup');
+          if (backup) {
+            console.log('📦 Using localStorage backup');
+            const data = JSON.parse(backup);
+            setPlants(data.plants || []);
+            setMeals(data.meals || []);
+            setExpenses(data.expenses || []);
+            setIntimacy(data.intimacy || []);
+            setDashboardBg(data.dashboardBg || null);
+          }
         }
       );
+      
       return unsubscribe;
     } catch (error) {
       console.error('Error setting up Firebase listener:', error);
@@ -144,8 +165,9 @@ export default function CompleteSharedLifeDashboard() {
 
   const saveData = async (newPlants, newMeals, newExpenses, newIntimacy, newDashboardBg = dashboardBg) => {
     try {
+      console.log('💾 Saving data to Firebase...');
       const sharedRef = ref(database, 'shared-data/default');
-      await set(sharedRef, {
+      const data = {
         plants: newPlants,
         meals: newMeals,
         expenses: newExpenses,
@@ -153,10 +175,28 @@ export default function CompleteSharedLifeDashboard() {
         dashboardBg: newDashboardBg,
         lastUpdated: new Date().toISOString(),
         lastUpdatedBy: user?.email,
-      });
-      console.log('Data saved successfully to Firebase');
+      };
+      
+      await set(sharedRef, data);
+      console.log('✓ Data saved successfully');
+      
+      // Also save to localStorage as backup
+      localStorage.setItem('cojoBackup', JSON.stringify(data));
+      setFirebaseError(null);
     } catch (error) {
-      console.error('Error saving:', error);
+      console.error('❌ Error saving:', error);
+      setFirebaseError(error.message);
+      // Still save to localStorage
+      const data = {
+        plants: newPlants,
+        meals: newMeals,
+        expenses: newExpenses,
+        intimacy: newIntimacy,
+        dashboardBg: newDashboardBg,
+        lastUpdated: new Date().toISOString(),
+        lastUpdatedBy: user?.email,
+      };
+      localStorage.setItem('cojoBackup', JSON.stringify(data));
     }
   };
 
@@ -377,7 +417,12 @@ export default function CompleteSharedLifeDashboard() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: BG_COLOR }}>
         <div style={{ textAlign: 'center' }}>
           <img src={`/cojo_logo.svg?v=${Date.now()}`} alt="COJO" style={{ height: '60px', marginBottom: '20px' }} />
-          <div style={{ color: '#fff', fontSize: '14px' }}>Loading...</div>
+          <div style={{ color: '#fff', fontSize: '14px', marginBottom: '20px' }}>Loading your data...</div>
+          {firebaseError && (
+            <div style={{ color: '#ff3b30', fontSize: '12px', padding: '12px', background: 'rgba(255, 59, 48, 0.1)', borderRadius: '8px' }}>
+              ⚠️ {firebaseError}
+            </div>
+          )}
         </div>
       </div>
     );
@@ -413,7 +458,7 @@ export default function CompleteSharedLifeDashboard() {
 
   return (
     <div style={{ background: BG_COLOR, minHeight: '100vh', color: '#fff' }}>
-      {/* HEADER - Avatar | Logo | Settings */}
+      {/* HEADER */}
       <div style={{ padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `1px solid rgba(18, 52, 255, 0.1)` }}>
         <div
           onClick={() => setShowSettings(true)}
@@ -449,45 +494,6 @@ export default function CompleteSharedLifeDashboard() {
         {activeTab === 'home' && (
           <div style={{ padding: '20px' }}>
             <h2 style={{ fontSize: '28px', fontWeight: '700', margin: '0 0 24px' }}>Home</h2>
-
-            {/* Dashboard Customization */}
-            <div style={{ marginBottom: '24px', padding: '16px', background: `rgba(18, 52, 255, 0.1)`, borderRadius: '12px', border: `1px solid rgba(18, 52, 255, 0.2)` }}>
-              <label style={{ fontSize: '12px', color: '#aaa', marginBottom: '8px', display: 'block', fontWeight: '600' }}>Customize Dashboard Background</label>
-              <input
-                type="text"
-                placeholder="Search Unsplash... (e.g., sunset, mountains)"
-                onChange={(e) => searchUnsplash(e.target.value)}
-                style={{
-                  width: '100%',
-                  background: `rgba(255, 255, 255, 0.05)`,
-                  border: `1px solid rgba(18, 52, 255, 0.2)`,
-                  borderRadius: '8px',
-                  padding: '8px',
-                  color: '#fff',
-                  fontSize: '14px',
-                  marginBottom: '8px',
-                }}
-              />
-              {unsplashSearchResults.length > 0 && (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
-                  {unsplashSearchResults.map((photo) => (
-                    <img
-                      key={photo.id}
-                      src={`${photo.urls.thumb}?w=80&h=80&fit=crop`}
-                      alt=""
-                      onClick={() => setDashboardBackground(photo.urls.regular)}
-                      style={{
-                        width: '100%',
-                        height: '60px',
-                        borderRadius: '6px',
-                        cursor: 'pointer',
-                        border: dashboardBg === photo.urls.regular ? `2px solid ${ACCENT_COLOR}` : 'none',
-                      }}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
 
             <div style={{ display: 'grid', gap: '12px' }}>
               <div
@@ -715,28 +721,6 @@ export default function CompleteSharedLifeDashboard() {
                         }}
                       >
                         {meal.shoppingNeeded ? '✓ Shop' : 'Shop'}
-                      </button>
-                      <button
-                        onClick={() => {
-                          setModalType('editMeal');
-                          setShowAddModal(true);
-                          setNewItemName(meal.name);
-                          setNewItemRecipe(meal.recipe);
-                        }}
-                        style={{
-                          background: `rgba(18, 52, 255, 0.2)`,
-                          border: 'none',
-                          borderRadius: '8px',
-                          padding: '8px 12px',
-                          color: ACCENT_COLOR,
-                          cursor: 'pointer',
-                          fontSize: '12px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                        }}
-                      >
-                        <ChefHat size={14} />
                       </button>
                       <button
                         onClick={() => deleteMeal(meal.id)}
@@ -1049,7 +1033,53 @@ export default function CompleteSharedLifeDashboard() {
               <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#888' }}>Last updated: {new Date().toLocaleTimeString()}</p>
             </div>
 
-            {/* Configuration Section */}
+            {/* Customization Section */}
+            <div style={{ marginBottom: '24px' }}>
+              <h4 style={{ fontSize: '14px', fontWeight: '600', margin: '0 0 12px', color: '#aaa', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Palette size={16} /> Customize
+              </h4>
+              
+              <div style={{ padding: '12px', background: `rgba(18, 52, 255, 0.1)`, borderRadius: '8px', border: `1px solid rgba(18, 52, 255, 0.2)` }}>
+                <label style={{ fontSize: '12px', color: '#aaa', marginBottom: '8px', display: 'block', fontWeight: '600' }}>Dashboard Background</label>
+                <input
+                  type="text"
+                  placeholder="Search Unsplash... (e.g., sunset, mountains)"
+                  onChange={(e) => searchUnsplash(e.target.value)}
+                  style={{
+                    width: '100%',
+                    background: `rgba(255, 255, 255, 0.05)`,
+                    border: `1px solid rgba(18, 52, 255, 0.2)`,
+                    borderRadius: '8px',
+                    padding: '8px',
+                    color: '#fff',
+                    fontSize: '14px',
+                    marginBottom: '8px',
+                    boxSizing: 'border-box',
+                  }}
+                />
+                {unsplashSearchResults.length > 0 && (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
+                    {unsplashSearchResults.map((photo) => (
+                      <img
+                        key={photo.id}
+                        src={`${photo.urls.thumb}?w=80&h=80&fit=crop`}
+                        alt=""
+                        onClick={() => setDashboardBackground(photo.urls.regular)}
+                        style={{
+                          width: '100%',
+                          height: '60px',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          border: dashboardBg === photo.urls.regular ? `2px solid ${ACCENT_COLOR}` : 'none',
+                        }}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Integrations Section */}
             <div style={{ marginBottom: '24px' }}>
               <h4 style={{ fontSize: '14px', fontWeight: '600', margin: '0 0 12px', color: '#aaa', textTransform: 'uppercase' }}>Integrations</h4>
               
