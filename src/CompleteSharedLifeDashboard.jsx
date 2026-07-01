@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Home, Leaf, UtensilsCrossed, Wallet, Heart, LogOut,
-  Trash2, Check, X, Sliders, Bell, Lock, Plus, Palette
+  Trash2, Check, X, Sliders, Bell, Lock, Plus, Palette, Calendar, Droplet
 } from 'lucide-react';
 import { auth } from './firebaseConfig';
 import { signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
@@ -14,6 +14,71 @@ const database = getDatabase();
 const ACCENT_COLOR = '#1234ff';
 const BG_COLOR = '#0A1014';
 
+// Request notification permission
+const requestNotificationPermission = async () => {
+  if (!('Notification' in window)) {
+    console.log('This browser does not support notifications');
+    return false;
+  }
+
+  if (Notification.permission === 'granted') {
+    return true;
+  }
+
+  if (Notification.permission !== 'denied') {
+    const permission = await Notification.requestPermission();
+    return permission === 'granted';
+  }
+
+  return false;
+};
+
+// Send notification
+const sendNotification = (title, options = {}) => {
+  if ('Notification' in window && Notification.permission === 'granted') {
+    new Notification(title, {
+      icon: '/cojo_icon.png',
+      badge: '/cojo_icon.png',
+      ...options,
+    });
+  }
+};
+
+// Export to iOS Calendar
+const exportToCalendar = (title, date) => {
+  const ics = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//COJO//COJO Calendar//EN
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-CALNAME:COJO Events
+X-WR-TIMEZONE:UTC
+BEGIN:VEVENT
+DTSTART:${date.toISOString().split('T')[0].replace(/-/g, '')}
+DTEND:${date.toISOString().split('T')[0].replace(/-/g, '')}
+DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').split('.')[0]}Z
+UID:${Date.now()}@cojo.app
+CREATED:${new Date().toISOString().replace(/[-:]/g, '').split('.')[0]}Z
+DESCRIPTION:${title}
+LAST-MODIFIED:${new Date().toISOString().replace(/[-:]/g, '').split('.')[0]}Z
+LOCATION:
+SEQUENCE:0
+STATUS:CONFIRMED
+SUMMARY:${title}
+TRANSP:OPAQUE
+END:VEVENT
+END:VCALENDAR`;
+
+  const blob = new Blob([ics], { type: 'text/calendar' });
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.setAttribute('download', `${title}.ics`);
+  document.body.appendChild(link);
+  link.click();
+  link.parentNode.removeChild(link);
+};
+
 // Empty state component
 const EmptyState = ({ icon: Icon, title, subtitle }) => (
   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '400px', padding: '40px 20px' }}>
@@ -25,7 +90,7 @@ const EmptyState = ({ icon: Icon, title, subtitle }) => (
   </div>
 );
 
-// Modal overlay for adding items
+// Modal overlay
 const AddModal = ({ isOpen, title, onClose, children }) => {
   if (!isOpen) return null;
 
@@ -79,7 +144,7 @@ export default function CompleteSharedLifeDashboard() {
   const [showSettings, setShowSettings] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [modalType, setModalType] = useState(null);
-  const [firebaseError, setFirebaseError] = useState(null);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
 
   // Data state
   const [plants, setPlants] = useState([]);
@@ -92,6 +157,7 @@ export default function CompleteSharedLifeDashboard() {
   const [newItemName, setNewItemName] = useState('');
   const [newItemRecipe, setNewItemRecipe] = useState('');
   const [newItemPhoto, setNewItemPhoto] = useState(null);
+  const [newItemWateringDays, setNewItemWateringDays] = useState(7);
   const [unsplashSearchResults, setUnsplashSearchResults] = useState([]);
 
   // Auth
@@ -101,6 +167,8 @@ export default function CompleteSharedLifeDashboard() {
       if (currentUser) {
         console.log('✓ User logged in:', currentUser.email);
         loadSharedData();
+        checkNotificationPermission();
+        checkPlantWateringReminders();
       } else {
         setLoading(false);
       }
@@ -108,24 +176,57 @@ export default function CompleteSharedLifeDashboard() {
     return () => unsubscribe();
   }, []);
 
+  // Check notification permission
+  const checkNotificationPermission = () => {
+    if ('Notification' in window) {
+      setNotificationsEnabled(Notification.permission === 'granted');
+    }
+  };
+
+  // Check if any plants need watering
+  const checkPlantWateringReminders = () => {
+    if (plants.length === 0) return;
+
+    plants.forEach(plant => {
+      const lastWatered = new Date(plant.lastWatered);
+      const today = new Date();
+      const daysSinceWatered = Math.floor((today - lastWatered) / (1000 * 60 * 60 * 24));
+      const wateringFreq = plant.wateringFreqDays || 7;
+
+      if (daysSinceWatered >= wateringFreq) {
+        sendNotification(`💧 ${plant.name} needs watering!`, {
+          body: `It's been ${daysSinceWatered} days since last watering`,
+          tag: `plant-${plant.id}`,
+        });
+      }
+    });
+  };
+
+  // Check reminders periodically
+  useEffect(() => {
+    const interval = setInterval(() => {
+      checkPlantWateringReminders();
+    }, 60000); // Check every minute
+
+    return () => clearInterval(interval);
+  }, [plants]);
+
   const loadSharedData = () => {
     try {
       console.log('📥 Loading data from Firebase...');
       const sharedRef = ref(database, 'shared-data/default');
-      
+
       const unsubscribe = onValue(
         sharedRef,
         (snapshot) => {
           if (snapshot.exists()) {
             const data = snapshot.val();
-            console.log('✓ Data loaded successfully:', data);
+            console.log('✓ Data loaded successfully');
             setPlants(data.plants || []);
             setMeals(data.meals || []);
             setExpenses(data.expenses || []);
             setIntimacy(data.intimacy || []);
             setDashboardBg(data.dashboardBg || null);
-            setFirebaseError(null);
-            // Also save to localStorage as backup
             localStorage.setItem('cojoBackup', JSON.stringify(data));
           } else {
             console.log('ℹ️ No data found, starting fresh');
@@ -139,10 +240,8 @@ export default function CompleteSharedLifeDashboard() {
         },
         (error) => {
           console.error('❌ Firebase error:', error);
-          setFirebaseError(error.message);
           setLoading(false);
-          
-          // Try to load from localStorage backup
+
           const backup = localStorage.getItem('cojoBackup');
           if (backup) {
             console.log('📦 Using localStorage backup');
@@ -155,7 +254,7 @@ export default function CompleteSharedLifeDashboard() {
           }
         }
       );
-      
+
       return unsubscribe;
     } catch (error) {
       console.error('Error setting up Firebase listener:', error);
@@ -176,17 +275,12 @@ export default function CompleteSharedLifeDashboard() {
         lastUpdated: new Date().toISOString(),
         lastUpdatedBy: user?.email,
       };
-      
+
       await set(sharedRef, data);
       console.log('✓ Data saved successfully');
-      
-      // Also save to localStorage as backup
       localStorage.setItem('cojoBackup', JSON.stringify(data));
-      setFirebaseError(null);
     } catch (error) {
       console.error('❌ Error saving:', error);
-      setFirebaseError(error.message);
-      // Still save to localStorage
       const data = {
         plants: newPlants,
         meals: newMeals,
@@ -224,6 +318,7 @@ export default function CompleteSharedLifeDashboard() {
     setShowAddModal(true);
     setNewItemName('');
     setNewItemPhoto(null);
+    setNewItemWateringDays(7);
   };
 
   const addPlant = () => {
@@ -233,7 +328,7 @@ export default function CompleteSharedLifeDashboard() {
         name: newItemName,
         addedDate: new Date().toISOString(),
         lastWatered: new Date().toISOString(),
-        wateringFreqDays: 7,
+        wateringFreqDays: parseInt(newItemWateringDays) || 7,
         healthLevel: 100,
         photo: newItemPhoto || `https://images.unsplash.com/photo-1599599810694-b5ac4dd84e02?w=400&h=400&fit=crop&v=${Date.now()}`,
       };
@@ -243,6 +338,8 @@ export default function CompleteSharedLifeDashboard() {
       setShowAddModal(false);
       setNewItemName('');
       setNewItemPhoto(null);
+      setNewItemWateringDays(7);
+      sendNotification(`🌱 ${newItemName} added to your garden!`);
     }
   };
 
@@ -252,12 +349,34 @@ export default function CompleteSharedLifeDashboard() {
     );
     setPlants(updated);
     saveData(updated, meals, expenses, intimacy);
+    sendNotification('💧 Plant watered!', { body: 'Great job keeping your plant healthy!' });
   };
 
   const deletePlant = (id) => {
     const updated = plants.filter(p => p.id !== id);
     setPlants(updated);
     saveData(updated, meals, expenses, intimacy);
+  };
+
+  const updatePlantWateringFreq = (id, days) => {
+    const updated = plants.map(p =>
+      p.id === id ? { ...p, wateringFreqDays: parseInt(days) || 7 } : p
+    );
+    setPlants(updated);
+    saveData(updated, meals, expenses, intimacy);
+  };
+
+  const getDaysSinceWatered = (lastWatered) => {
+    const last = new Date(lastWatered);
+    const now = new Date();
+    return Math.floor((now - last) / (1000 * 60 * 60 * 24));
+  };
+
+  const getWateringStatus = (plant) => {
+    const daysSince = getDaysSinceWatered(plant.lastWatered);
+    const freq = plant.wateringFreqDays || 7;
+    const daysUntil = Math.max(0, freq - daysSince);
+    return { daysSince, daysUntil, needsWatering: daysUntil === 0 };
   };
 
   // ==================== MEALS ====================
@@ -271,11 +390,12 @@ export default function CompleteSharedLifeDashboard() {
 
   const addMeal = () => {
     if (newItemName.trim()) {
+      const mealDate = new Date().toISOString().split('T')[0];
       const meal = {
         id: Date.now().toString(),
         name: newItemName,
         recipe: newItemRecipe,
-        plannedDate: new Date().toISOString().split('T')[0],
+        plannedDate: mealDate,
         shoppingNeeded: false,
         photo: newItemPhoto || `https://images.unsplash.com/photo-1495575621581-20dbe3ce2bad?w=400&h=400&fit=crop&v=${Date.now()}`,
       };
@@ -286,6 +406,11 @@ export default function CompleteSharedLifeDashboard() {
       setNewItemName('');
       setNewItemRecipe('');
       setNewItemPhoto(null);
+
+      // Export to calendar
+      const mealDateObj = new Date(mealDate);
+      exportToCalendar(`🍽️ ${newItemName}`, mealDateObj);
+      sendNotification(`🍽️ ${newItemName} added to your calendar!`);
     }
   };
 
@@ -350,16 +475,21 @@ export default function CompleteSharedLifeDashboard() {
 
   const addIntimacyEvent = () => {
     if (newItemName.trim()) {
+      const date = new Date().toISOString().split('T')[0];
       const event = {
         id: Date.now().toString(),
         title: newItemName,
-        scheduledDate: new Date().toISOString().split('T')[0],
+        scheduledDate: date,
         completed: false,
         mood: 'neutral',
       };
       const updated = [...intimacy, event];
       setIntimacy(updated);
       saveData(plants, meals, expenses, updated);
+
+      // Export to calendar
+      const eventDate = new Date(date);
+      exportToCalendar(`❤️ ${newItemName}`, eventDate);
       setShowAddModal(false);
       setNewItemName('');
     }
@@ -379,10 +509,15 @@ export default function CompleteSharedLifeDashboard() {
     saveData(plants, meals, expenses, updated);
   };
 
-  // ==================== DASHBOARD ====================
-  const setDashboardBackground = (imageUrl) => {
-    setDashboardBg(imageUrl);
-    saveData(plants, meals, expenses, intimacy, imageUrl);
+  // ==================== HELPERS ====================
+  const totalExpenses = expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+
+  const handleEnableNotifications = async () => {
+    const granted = await requestNotificationPermission();
+    if (granted) {
+      setNotificationsEnabled(true);
+      sendNotification('🔔 Notifications enabled!', { body: 'You will now receive reminders' });
+    }
   };
 
   // ==================== AUTH ====================
@@ -403,26 +538,12 @@ export default function CompleteSharedLifeDashboard() {
     }
   };
 
-  // ==================== HELPERS ====================
-  const getDaysSinceWatered = (lastWatered) => {
-    const last = new Date(lastWatered);
-    const now = new Date();
-    return Math.floor((now - last) / (1000 * 60 * 60 * 24));
-  };
-
-  const totalExpenses = expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
-
   if (loading) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: BG_COLOR }}>
         <div style={{ textAlign: 'center' }}>
           <img src={`/cojo_logo.svg?v=${Date.now()}`} alt="COJO" style={{ height: '60px', marginBottom: '20px' }} />
-          <div style={{ color: '#fff', fontSize: '14px', marginBottom: '20px' }}>Loading your data...</div>
-          {firebaseError && (
-            <div style={{ color: '#ff3b30', fontSize: '12px', padding: '12px', background: 'rgba(255, 59, 48, 0.1)', borderRadius: '8px' }}>
-              ⚠️ {firebaseError}
-            </div>
-          )}
+          <div style={{ color: '#fff', fontSize: '14px' }}>Loading your data...</div>
         </div>
       </div>
     );
@@ -446,7 +567,6 @@ export default function CompleteSharedLifeDashboard() {
               fontSize: '16px',
               fontWeight: '600',
               cursor: 'pointer',
-              transition: 'all 0.3s',
             }}
           >
             Sign in
@@ -586,65 +706,96 @@ export default function CompleteSharedLifeDashboard() {
               />
             ) : (
               <div style={{ display: 'grid', gap: '12px' }}>
-                {plants.map(plant => (
-                  <div
-                    key={plant.id}
-                    style={{
-                      background: `linear-gradient(135deg, rgba(18, 52, 255, 0.15) 0%, rgba(10, 16, 20, 0.5) 100%), url(${plant.photo}?w=400&h=300&fit=crop&v=${Date.now()})`,
-                      backgroundSize: 'cover',
-                      backgroundPosition: 'center',
-                      borderRadius: '16px',
-                      padding: '20px',
-                      border: `1px solid rgba(18, 52, 255, 0.2)`,
-                      backdropFilter: 'blur(10px)',
-                      minHeight: '180px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'space-between',
-                    }}
-                  >
-                    <div>
-                      <h3 style={{ fontSize: '18px', fontWeight: '600', margin: '0 0 4px' }}>{plant.name}</h3>
-                      <p style={{ fontSize: '12px', color: '#aaa', margin: 0 }}>Last watered {getDaysSinceWatered(plant.lastWatered)}d ago</p>
-                    </div>
+                {plants.map(plant => {
+                  const status = getWateringStatus(plant);
+                  return (
+                    <div
+                      key={plant.id}
+                      style={{
+                        background: `linear-gradient(135deg, rgba(18, 52, 255, 0.15) 0%, rgba(10, 16, 20, 0.5) 100%), url(${plant.photo}?w=400&h=300&fit=crop&v=${Date.now()})`,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                        borderRadius: '16px',
+                        padding: '16px',
+                        border: `1px solid rgba(${status.needsWatering ? '255, 59, 48' : '18, 52, 255'}, 0.2)`,
+                        backdropFilter: 'blur(10px)',
+                      }}
+                    >
+                      <div style={{ marginBottom: '12px' }}>
+                        <h3 style={{ fontSize: '16px', fontWeight: '600', margin: '0 0 4px' }}>{plant.name}</h3>
+                        <div style={{ fontSize: '12px', color: status.needsWatering ? '#ff3b30' : '#aaa', marginBottom: '8px' }}>
+                          {status.needsWatering ? (
+                            <span>💧 Needs watering now!</span>
+                          ) : (
+                            <span>Next watering in {status.daysUntil} days</span>
+                          )}
+                        </div>
 
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <button
-                        onClick={() => waterPlant(plant.id)}
-                        style={{
-                          flex: 1,
-                          background: '#34c759',
-                          border: 'none',
-                          borderRadius: '10px',
-                          padding: '10px',
-                          color: '#fff',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: '6px',
-                          fontSize: '14px',
-                          fontWeight: '500',
-                        }}
-                      >
-                        <Check size={16} /> Water
-                      </button>
-                      <button
-                        onClick={() => deletePlant(plant.id)}
-                        style={{
-                          background: 'rgba(255, 59, 48, 0.2)',
-                          border: 'none',
-                          borderRadius: '10px',
-                          padding: '10px 12px',
-                          color: '#ff3b30',
-                          cursor: 'pointer',
-                        }}
-                      >
-                        <Trash2 size={16} />
-                      </button>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#888' }}>
+                          <Droplet size={14} />
+                          Every {plant.wateringFreqDays || 7} days
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+                        <input
+                          type="number"
+                          min="1"
+                          max="60"
+                          value={plant.wateringFreqDays || 7}
+                          onChange={(e) => updatePlantWateringFreq(plant.id, e.target.value)}
+                          style={{
+                            width: '60px',
+                            background: `rgba(255, 255, 255, 0.05)`,
+                            border: `1px solid rgba(18, 52, 255, 0.2)`,
+                            borderRadius: '6px',
+                            padding: '4px',
+                            color: '#fff',
+                            fontSize: '12px',
+                            textAlign: 'center',
+                          }}
+                        />
+                        <span style={{ fontSize: '12px', color: '#888' }}>days</span>
+                      </div>
+
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button
+                          onClick={() => waterPlant(plant.id)}
+                          style={{
+                            flex: 1,
+                            background: status.needsWatering ? '#ff3b30' : '#34c759',
+                            border: 'none',
+                            borderRadius: '10px',
+                            padding: '10px',
+                            color: '#fff',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '6px',
+                            fontSize: '14px',
+                            fontWeight: '500',
+                          }}
+                        >
+                          <Check size={16} /> Water
+                        </button>
+                        <button
+                          onClick={() => deletePlant(plant.id)}
+                          style={{
+                            background: 'rgba(255, 59, 48, 0.2)',
+                            border: 'none',
+                            borderRadius: '10px',
+                            padding: '10px 12px',
+                            color: '#ff3b30',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -921,7 +1072,7 @@ export default function CompleteSharedLifeDashboard() {
         )}
       </div>
 
-      {/* Glass Morphism Pill Menu - Bottom */}
+      {/* Glass Morphism Pill Menu */}
       <div
         style={{
           position: 'fixed',
@@ -1027,10 +1178,35 @@ export default function CompleteSharedLifeDashboard() {
               </div>
             </div>
 
-            {/* Sync Status */}
-            <div style={{ marginBottom: '24px', padding: '12px', background: `rgba(52, 199, 89, 0.1)`, borderRadius: '8px', border: `1px solid rgba(52, 199, 89, 0.2)` }}>
-              <p style={{ margin: 0, fontSize: '12px', color: '#34c759' }}>✓ All data synced across devices</p>
-              <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#888' }}>Last updated: {new Date().toLocaleTimeString()}</p>
+            {/* Notifications Section */}
+            <div style={{ marginBottom: '24px' }}>
+              <h4 style={{ fontSize: '14px', fontWeight: '600', margin: '0 0 12px', color: '#aaa', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Bell size={16} /> Notifications
+              </h4>
+
+              {!notificationsEnabled ? (
+                <button
+                  onClick={handleEnableNotifications}
+                  style={{
+                    width: '100%',
+                    background: ACCENT_COLOR,
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '12px',
+                    color: '#fff',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                  }}
+                >
+                  🔔 Enable Notifications
+                </button>
+              ) : (
+                <div style={{ padding: '12px', background: `rgba(52, 199, 89, 0.1)`, borderRadius: '8px', border: `1px solid rgba(52, 199, 89, 0.2)` }}>
+                  <p style={{ margin: 0, fontSize: '12px', color: '#34c759' }}>✓ Notifications enabled</p>
+                  <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#888' }}>You'll receive reminders for plant watering and more</p>
+                </div>
+              )}
             </div>
 
             {/* Customization Section */}
@@ -1038,12 +1214,12 @@ export default function CompleteSharedLifeDashboard() {
               <h4 style={{ fontSize: '14px', fontWeight: '600', margin: '0 0 12px', color: '#aaa', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <Palette size={16} /> Customize
               </h4>
-              
+
               <div style={{ padding: '12px', background: `rgba(18, 52, 255, 0.1)`, borderRadius: '8px', border: `1px solid rgba(18, 52, 255, 0.2)` }}>
                 <label style={{ fontSize: '12px', color: '#aaa', marginBottom: '8px', display: 'block', fontWeight: '600' }}>Dashboard Background</label>
                 <input
                   type="text"
-                  placeholder="Search Unsplash... (e.g., sunset, mountains)"
+                  placeholder="Search Unsplash... (e.g., sunset)"
                   onChange={(e) => searchUnsplash(e.target.value)}
                   style={{
                     width: '100%',
@@ -1064,7 +1240,7 @@ export default function CompleteSharedLifeDashboard() {
                         key={photo.id}
                         src={`${photo.urls.thumb}?w=80&h=80&fit=crop`}
                         alt=""
-                        onClick={() => setDashboardBackground(photo.urls.regular)}
+                        onClick={() => setDashboardBg(photo.urls.regular)}
                         style={{
                           width: '100%',
                           height: '60px',
@@ -1076,64 +1252,6 @@ export default function CompleteSharedLifeDashboard() {
                     ))}
                   </div>
                 )}
-              </div>
-            </div>
-
-            {/* Integrations Section */}
-            <div style={{ marginBottom: '24px' }}>
-              <h4 style={{ fontSize: '14px', fontWeight: '600', margin: '0 0 12px', color: '#aaa', textTransform: 'uppercase' }}>Integrations</h4>
-              
-              <div style={{ display: 'grid', gap: '8px' }}>
-                <button style={{
-                  background: `rgba(18, 52, 255, 0.1)`,
-                  border: `1px solid rgba(18, 52, 255, 0.2)`,
-                  borderRadius: '8px',
-                  padding: '12px',
-                  color: '#fff',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  fontSize: '14px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  title: 'Coming soon: Connect your Revolut account for automatic expense tracking'
-                }}>
-                  💳 Revolut Integration (Coming Soon)
-                </button>
-
-                <button style={{
-                  background: `rgba(18, 52, 255, 0.1)`,
-                  border: `1px solid rgba(18, 52, 255, 0.2)`,
-                  borderRadius: '8px',
-                  padding: '12px',
-                  color: '#fff',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  fontSize: '14px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                }}>
-                  <Bell size={18} />
-                  Notifications
-                </button>
-
-                <button style={{
-                  background: `rgba(18, 52, 255, 0.1)`,
-                  border: `1px solid rgba(18, 52, 255, 0.2)`,
-                  borderRadius: '8px',
-                  padding: '12px',
-                  color: '#fff',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  fontSize: '14px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                }}>
-                  <Lock size={18} />
-                  Privacy & Security
-                </button>
               </div>
             </div>
 
@@ -1183,6 +1301,26 @@ export default function CompleteSharedLifeDashboard() {
               fontSize: '16px',
             }}
           />
+
+          <div>
+            <label style={{ fontSize: '14px', color: '#aaa', marginBottom: '8px', display: 'block' }}>Watering frequency (days)</label>
+            <input
+              type="number"
+              min="1"
+              max="60"
+              value={newItemWateringDays}
+              onChange={(e) => setNewItemWateringDays(e.target.value)}
+              style={{
+                width: '100%',
+                background: `rgba(255, 255, 255, 0.05)`,
+                border: `1px solid rgba(18, 52, 255, 0.2)`,
+                borderRadius: '12px',
+                padding: '12px',
+                color: '#fff',
+                fontSize: '16px',
+              }}
+            />
+          </div>
 
           <div>
             <label style={{ fontSize: '14px', color: '#aaa', marginBottom: '8px', display: 'block' }}>Search photo</label>
@@ -1334,7 +1472,7 @@ export default function CompleteSharedLifeDashboard() {
               fontWeight: '600',
             }}
           >
-            Add Meal
+            Add Meal (Auto-exports to Calendar)
           </button>
         </div>
       </AddModal>
@@ -1416,7 +1554,7 @@ export default function CompleteSharedLifeDashboard() {
               fontWeight: '600',
             }}
           >
-            Add Reminder
+            Add Reminder (Auto-exports to Calendar)
           </button>
         </div>
       </AddModal>
