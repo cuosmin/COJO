@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Home, Leaf, UtensilsCrossed, Wallet, Heart, LogOut,
-  Trash2, Check, X, Sliders, Bell, Plus, Palette, Droplet
+  Trash2, Check, X, Sliders, Bell, Plus, Palette, Droplet, Plane, Edit2, MapPin, Calendar
 } from 'lucide-react';
 import { auth } from './firebaseConfig';
 import { signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
@@ -16,20 +16,12 @@ const BG_COLOR = '#0A1014';
 
 // Request notification permission
 const requestNotificationPermission = async () => {
-  if (!('Notification' in window)) {
-    console.log('This browser does not support notifications');
-    return false;
-  }
-
-  if (Notification.permission === 'granted') {
-    return true;
-  }
-
+  if (!('Notification' in window)) return false;
+  if (Notification.permission === 'granted') return true;
   if (Notification.permission !== 'denied') {
     const permission = await Notification.requestPermission();
     return permission === 'granted';
   }
-
   return false;
 };
 
@@ -79,7 +71,7 @@ END:VCALENDAR`;
   link.parentNode.removeChild(link);
 };
 
-// Empty state component
+// Empty state
 const EmptyState = ({ icon: Icon, title, subtitle }) => (
   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '400px', padding: '40px 20px' }}>
     <div style={{ background: `rgba(18, 52, 255, 0.1)`, borderRadius: '60px', padding: '40px', marginBottom: '20px' }}>
@@ -93,41 +85,12 @@ const EmptyState = ({ icon: Icon, title, subtitle }) => (
 // Modal overlay
 const AddModal = ({ isOpen, title, onClose, children }) => {
   if (!isOpen) return null;
-
   return (
-    <div
-      style={{
-        position: 'fixed',
-        top: '0',
-        left: '0',
-        right: '0',
-        bottom: '0',
-        background: `rgba(0, 0, 0, 0.6)`,
-        backdropFilter: 'blur(10px)',
-        zIndex: 300,
-        display: 'flex',
-        alignItems: 'flex-end',
-      }}
-      onClick={onClose}
-    >
-      <div
-        style={{
-          width: '100%',
-          background: BG_COLOR,
-          borderTop: `1px solid rgba(18, 52, 255, 0.2)`,
-          borderRadius: '24px 24px 0 0',
-          padding: '24px',
-          maxHeight: '80vh',
-          overflowY: 'auto',
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
+    <div style={{ position: 'fixed', top: '0', left: '0', right: '0', bottom: '0', background: `rgba(0, 0, 0, 0.6)`, backdropFilter: 'blur(10px)', zIndex: 300, display: 'flex', alignItems: 'flex-end' }} onClick={onClose}>
+      <div style={{ width: '100%', background: BG_COLOR, borderTop: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '24px 24px 0 0', padding: '24px', maxHeight: '80vh', overflowY: 'auto' }} onClick={(e) => e.stopPropagation()}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <h3 style={{ fontSize: '20px', fontWeight: '600', margin: 0 }}>{title}</h3>
-          <button
-            onClick={onClose}
-            style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '24px' }}
-          >
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '24px' }}>
             <X size={24} />
           </button>
         </div>
@@ -144,20 +107,25 @@ export default function CompleteSharedLifeDashboard() {
   const [showSettings, setShowSettings] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [modalType, setModalType] = useState(null);
+  const [editingId, setEditingId] = useState(null);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
 
-  // Data state
+  // Data
   const [plants, setPlants] = useState([]);
   const [meals, setMeals] = useState([]);
   const [expenses, setExpenses] = useState([]);
   const [intimacy, setIntimacy] = useState([]);
+  const [travels, setTravels] = useState([]);
   const [dashboardBg, setDashboardBg] = useState(null);
 
-  // Modal input state
+  // Modal states
   const [newItemName, setNewItemName] = useState('');
   const [newItemRecipe, setNewItemRecipe] = useState('');
   const [newItemPhoto, setNewItemPhoto] = useState(null);
   const [newItemWateringDays, setNewItemWateringDays] = useState(7);
+  const [newTravelStart, setNewTravelStart] = useState('');
+  const [newTravelEnd, setNewTravelEnd] = useState('');
+  const [newTravelLocation, setNewTravelLocation] = useState('');
   const [unsplashSearchResults, setUnsplashSearchResults] = useState([]);
 
   // Auth
@@ -165,7 +133,6 @@ export default function CompleteSharedLifeDashboard() {
     const unsubscribe = auth.onAuthStateChanged((currentUser) => {
       setUser(currentUser);
       if (currentUser) {
-        console.log('✓ User logged in:', currentUser.email);
         loadSharedData();
         checkNotificationPermission();
       } else {
@@ -175,131 +142,76 @@ export default function CompleteSharedLifeDashboard() {
     return () => unsubscribe();
   }, []);
 
-  // Check notification permission
   const checkNotificationPermission = () => {
     if ('Notification' in window) {
       setNotificationsEnabled(Notification.permission === 'granted');
     }
   };
 
-  // Check if any plants need watering
-  const checkPlantWateringReminders = React.useCallback(() => {
-    if (plants.length === 0) return;
-
-    plants.forEach(plant => {
-      const lastWatered = new Date(plant.lastWatered);
-      const today = new Date();
-      const daysSinceWatered = Math.floor((today - lastWatered) / (1000 * 60 * 60 * 24));
-      const wateringFreq = plant.wateringFreqDays || 7;
-
-      if (daysSinceWatered >= wateringFreq) {
-        sendNotification(`💧 ${plant.name} needs watering!`, {
-          body: `It's been ${daysSinceWatered} days since last watering`,
-          tag: `plant-${plant.id}`,
-        });
-      }
-    });
-  }, [plants]);
-
-  // Check reminders periodically
-  useEffect(() => {
-    const interval = setInterval(() => {
-      checkPlantWateringReminders();
-    }, 60000); // Check every minute
-
-    return () => clearInterval(interval);
-  }, [checkPlantWateringReminders]);
-
   const loadSharedData = () => {
     try {
-      console.log('📥 Loading data from Firebase...');
       const sharedRef = ref(database, 'shared-data/default');
-
       const unsubscribe = onValue(
         sharedRef,
         (snapshot) => {
           if (snapshot.exists()) {
             const data = snapshot.val();
-            console.log('✓ Data loaded successfully');
             setPlants(data.plants || []);
             setMeals(data.meals || []);
             setExpenses(data.expenses || []);
             setIntimacy(data.intimacy || []);
+            setTravels(data.travels || []);
             setDashboardBg(data.dashboardBg || null);
             localStorage.setItem('cojoBackup', JSON.stringify(data));
-          } else {
-            console.log('ℹ️ No data found, starting fresh');
-            setPlants([]);
-            setMeals([]);
-            setExpenses([]);
-            setIntimacy([]);
-            setDashboardBg(null);
           }
           setLoading(false);
         },
         (error) => {
           console.error('❌ Firebase error:', error);
           setLoading(false);
-
           const backup = localStorage.getItem('cojoBackup');
           if (backup) {
-            console.log('📦 Using localStorage backup');
             const data = JSON.parse(backup);
             setPlants(data.plants || []);
             setMeals(data.meals || []);
             setExpenses(data.expenses || []);
             setIntimacy(data.intimacy || []);
+            setTravels(data.travels || []);
             setDashboardBg(data.dashboardBg || null);
           }
         }
       );
-
       return unsubscribe;
     } catch (error) {
-      console.error('Error setting up Firebase listener:', error);
       setLoading(false);
     }
   };
 
-  const saveData = async (newPlants, newMeals, newExpenses, newIntimacy, newDashboardBg = dashboardBg) => {
+  const saveData = async (newPlants, newMeals, newExpenses, newIntimacy, newTravels, newDashboardBg = dashboardBg) => {
     try {
-      console.log('💾 Saving data to Firebase...');
       const sharedRef = ref(database, 'shared-data/default');
       const data = {
         plants: newPlants,
         meals: newMeals,
         expenses: newExpenses,
         intimacy: newIntimacy,
+        travels: newTravels,
         dashboardBg: newDashboardBg,
         lastUpdated: new Date().toISOString(),
         lastUpdatedBy: user?.email,
       };
-
       await set(sharedRef, data);
-      console.log('✓ Data saved successfully');
       localStorage.setItem('cojoBackup', JSON.stringify(data));
     } catch (error) {
       console.error('❌ Error saving:', error);
-      const data = {
-        plants: newPlants,
-        meals: newMeals,
-        expenses: newExpenses,
-        intimacy: newIntimacy,
-        dashboardBg: newDashboardBg,
-        lastUpdated: new Date().toISOString(),
-        lastUpdatedBy: user?.email,
-      };
-      localStorage.setItem('cojoBackup', JSON.stringify(data));
     }
   };
 
-  // Search Unsplash
   const searchUnsplash = async (query) => {
     if (!query.trim()) {
       setUnsplashSearchResults([]);
       return;
     }
-
     try {
       const response = await fetch(
         `https://api.unsplash.com/search/photos?query=${query}&per_page=6&client_id=${process.env.REACT_APP_UNSPLASH_ACCESS_KEY}`
@@ -312,18 +224,10 @@ export default function CompleteSharedLifeDashboard() {
   };
 
   // ==================== PLANTS ====================
-  const openAddPlantModal = () => {
-    setModalType('plant');
-    setShowAddModal(true);
-    setNewItemName('');
-    setNewItemPhoto(null);
-    setNewItemWateringDays(7);
-  };
-
   const addPlant = () => {
     if (newItemName.trim()) {
       const plant = {
-        id: Date.now().toString(),
+        id: editingId || Date.now().toString(),
         name: newItemName,
         addedDate: new Date().toISOString(),
         lastWatered: new Date().toISOString(),
@@ -331,14 +235,17 @@ export default function CompleteSharedLifeDashboard() {
         healthLevel: 100,
         photo: newItemPhoto || `https://images.unsplash.com/photo-1599599810694-b5ac4dd84e02?w=400&h=400&fit=crop&v=${Date.now()}`,
       };
-      const updated = [...plants, plant];
+      
+      let updated;
+      if (editingId) {
+        updated = plants.map(p => p.id === editingId ? plant : p);
+      } else {
+        updated = [...plants, plant];
+      }
+      
       setPlants(updated);
-      saveData(updated, meals, expenses, intimacy);
-      setShowAddModal(false);
-      setNewItemName('');
-      setNewItemPhoto(null);
-      setNewItemWateringDays(7);
-      sendNotification(`🌱 ${newItemName} added to your garden!`);
+      saveData(updated, meals, expenses, intimacy, travels);
+      resetModal();
     }
   };
 
@@ -347,22 +254,14 @@ export default function CompleteSharedLifeDashboard() {
       p.id === id ? { ...p, lastWatered: new Date().toISOString(), healthLevel: Math.min(100, p.healthLevel + 10) } : p
     );
     setPlants(updated);
-    saveData(updated, meals, expenses, intimacy);
-    sendNotification('💧 Plant watered!', { body: 'Great job keeping your plant healthy!' });
+    saveData(updated, meals, expenses, intimacy, travels);
+    sendNotification('💧 Plant watered!');
   };
 
   const deletePlant = (id) => {
     const updated = plants.filter(p => p.id !== id);
     setPlants(updated);
-    saveData(updated, meals, expenses, intimacy);
-  };
-
-  const updatePlantWateringFreq = (id, days) => {
-    const updated = plants.map(p =>
-      p.id === id ? { ...p, wateringFreqDays: parseInt(days) || 7 } : p
-    );
-    setPlants(updated);
-    saveData(updated, meals, expenses, intimacy);
+    saveData(updated, meals, expenses, intimacy, travels);
   };
 
   const getDaysSinceWatered = (lastWatered) => {
@@ -378,148 +277,192 @@ export default function CompleteSharedLifeDashboard() {
     return { daysSince, daysUntil, needsWatering: daysUntil === 0 };
   };
 
-  // ==================== MEALS ====================
-  const openAddMealModal = () => {
-    setModalType('meal');
-    setShowAddModal(true);
-    setNewItemName('');
-    setNewItemRecipe('');
-    setNewItemPhoto(null);
-  };
+  const plantsNeedingWater = plants.filter(p => getWateringStatus(p).needsWatering).length;
 
+  // ==================== MEALS ====================
   const addMeal = () => {
     if (newItemName.trim()) {
       const mealDate = new Date().toISOString().split('T')[0];
       const meal = {
-        id: Date.now().toString(),
+        id: editingId || Date.now().toString(),
         name: newItemName,
         recipe: newItemRecipe,
         plannedDate: mealDate,
         shoppingNeeded: false,
         photo: newItemPhoto || `https://images.unsplash.com/photo-1495575621581-20dbe3ce2bad?w=400&h=400&fit=crop&v=${Date.now()}`,
       };
-      const updated = [...meals, meal];
+      
+      let updated;
+      if (editingId) {
+        updated = meals.map(m => m.id === editingId ? meal : m);
+      } else {
+        updated = [...meals, meal];
+        exportToCalendar(`🍽️ ${newItemName}`, new Date(mealDate));
+      }
+      
       setMeals(updated);
-      saveData(plants, updated, expenses, intimacy);
-      setShowAddModal(false);
-      setNewItemName('');
-      setNewItemRecipe('');
-      setNewItemPhoto(null);
-
-      // Export to calendar
-      const mealDateObj = new Date(mealDate);
-      exportToCalendar(`🍽️ ${newItemName}`, mealDateObj);
-      sendNotification(`🍽️ ${newItemName} added to your calendar!`);
+      saveData(plants, updated, expenses, intimacy, travels);
+      resetModal();
     }
-  };
-
-  const toggleMealShopping = (id) => {
-    const updated = meals.map(m =>
-      m.id === id ? { ...m, shoppingNeeded: !m.shoppingNeeded } : m
-    );
-    setMeals(updated);
-    saveData(plants, updated, expenses, intimacy);
   };
 
   const deleteMeal = (id) => {
     const updated = meals.filter(m => m.id !== id);
     setMeals(updated);
-    saveData(plants, updated, expenses, intimacy);
+    saveData(plants, updated, expenses, intimacy, travels);
   };
 
   // ==================== EXPENSES ====================
-  const openAddExpenseModal = () => {
-    setModalType('expense');
-    setShowAddModal(true);
-    setNewItemName('');
-  };
-
   const addExpense = () => {
     if (newItemName.trim()) {
       const expense = {
-        id: Date.now().toString(),
+        id: editingId || Date.now().toString(),
         description: newItemName,
-        category: 'food',
         amount: 0,
         date: new Date().toISOString().split('T')[0],
       };
-      const updated = [...expenses, expense];
+      
+      let updated;
+      if (editingId) {
+        updated = expenses.map(e => e.id === editingId ? expense : e);
+      } else {
+        updated = [...expenses, expense];
+      }
+      
       setExpenses(updated);
-      saveData(plants, meals, updated, intimacy);
-      setShowAddModal(false);
-      setNewItemName('');
+      saveData(plants, meals, updated, intimacy, travels);
+      resetModal();
     }
-  };
-
-  const updateExpense = (id, amount) => {
-    const updated = expenses.map(e =>
-      e.id === id ? { ...e, amount: parseFloat(amount) } : e
-    );
-    setExpenses(updated);
-    saveData(plants, meals, updated, intimacy);
   };
 
   const deleteExpense = (id) => {
     const updated = expenses.filter(e => e.id !== id);
     setExpenses(updated);
-    saveData(plants, meals, updated, intimacy);
+    saveData(plants, meals, updated, intimacy, travels);
   };
 
   // ==================== INTIMACY ====================
-  const openAddIntimacyModal = () => {
-    setModalType('intimacy');
-    setShowAddModal(true);
-    setNewItemName('');
-  };
-
-  const addIntimacyEvent = () => {
+  const addIntimacy = () => {
     if (newItemName.trim()) {
       const date = new Date().toISOString().split('T')[0];
       const event = {
-        id: Date.now().toString(),
+        id: editingId || Date.now().toString(),
         title: newItemName,
         scheduledDate: date,
         completed: false,
-        mood: 'neutral',
       };
-      const updated = [...intimacy, event];
+      
+      let updated;
+      if (editingId) {
+        updated = intimacy.map(i => i.id === editingId ? event : i);
+      } else {
+        updated = [...intimacy, event];
+        exportToCalendar(`❤️ ${newItemName}`, new Date(date));
+      }
+      
       setIntimacy(updated);
-      saveData(plants, meals, expenses, updated);
-
-      // Export to calendar
-      const eventDate = new Date(date);
-      exportToCalendar(`❤️ ${newItemName}`, eventDate);
-      setShowAddModal(false);
-      setNewItemName('');
+      saveData(plants, meals, expenses, updated, travels);
+      resetModal();
     }
-  };
-
-  const toggleIntimacyComplete = (id) => {
-    const updated = intimacy.map(i =>
-      i.id === id ? { ...i, completed: !i.completed } : i
-    );
-    setIntimacy(updated);
-    saveData(plants, meals, expenses, updated);
   };
 
   const deleteIntimacy = (id) => {
     const updated = intimacy.filter(i => i.id !== id);
     setIntimacy(updated);
-    saveData(plants, meals, expenses, updated);
+    saveData(plants, meals, expenses, updated, travels);
+  };
+
+  // ==================== TRAVELS ====================
+  const addTravel = () => {
+    if (newTravelStart && newTravelEnd && newTravelLocation) {
+      const travel = {
+        id: editingId || Date.now().toString(),
+        startDate: newTravelStart,
+        endDate: newTravelEnd,
+        location: newTravelLocation,
+      };
+      
+      let updated;
+      if (editingId) {
+        updated = travels.map(t => t.id === editingId ? travel : t);
+      } else {
+        updated = [...travels, travel];
+      }
+      
+      setTravels(updated);
+      saveData(plants, meals, expenses, intimacy, updated);
+      resetModal();
+    }
+  };
+
+  const deleteTravel = (id) => {
+    const updated = travels.filter(t => t.id !== id);
+    setTravels(updated);
+    saveData(plants, meals, expenses, intimacy, updated);
+  };
+
+  const getTravelDaysThisMonth = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth();
+    let days = 0;
+
+    travels.forEach(travel => {
+      const start = new Date(travel.startDate);
+      const end = new Date(travel.endDate);
+
+      if (start.getMonth() === month && start.getFullYear() === year) {
+        days += Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+      }
+    });
+
+    return days;
   };
 
   // ==================== HELPERS ====================
-  const totalExpenses = expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+  const resetModal = () => {
+    setShowAddModal(false);
+    setModalType(null);
+    setEditingId(null);
+    setNewItemName('');
+    setNewItemRecipe('');
+    setNewItemPhoto(null);
+    setNewItemWateringDays(7);
+    setNewTravelStart('');
+    setNewTravelEnd('');
+    setNewTravelLocation('');
+  };
+
+  const openEditModal = (type, item) => {
+    setModalType(type);
+    setEditingId(item.id);
+    setShowAddModal(true);
+    
+    if (type === 'plant') {
+      setNewItemName(item.name);
+      setNewItemWateringDays(item.wateringFreqDays);
+      setNewItemPhoto(item.photo);
+    } else if (type === 'meal') {
+      setNewItemName(item.name);
+      setNewItemRecipe(item.recipe || '');
+      setNewItemPhoto(item.photo);
+    } else if (type === 'expense') {
+      setNewItemName(item.description);
+    } else if (type === 'travel') {
+      setNewTravelStart(item.startDate);
+      setNewTravelEnd(item.endDate);
+      setNewTravelLocation(item.location);
+    }
+  };
 
   const handleEnableNotifications = async () => {
     const granted = await requestNotificationPermission();
     if (granted) {
       setNotificationsEnabled(true);
-      sendNotification('🔔 Notifications enabled!', { body: 'You will now receive reminders' });
+      sendNotification('🔔 Notifications enabled!');
     }
   };
 
-  // ==================== AUTH ====================
   const handleLogin = async () => {
     try {
       await signInWithPopup(auth, provider);
@@ -577,8 +520,20 @@ export default function CompleteSharedLifeDashboard() {
 
   return (
     <div style={{ background: BG_COLOR, minHeight: '100vh', color: '#fff' }}>
-      {/* HEADER */}
-      <div style={{ padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `1px solid rgba(18, 52, 255, 0.1)` }}>
+      {/* STICKY HEADER */}
+      <div style={{ 
+        position: 'fixed', 
+        top: 0, 
+        left: 0, 
+        right: 0,
+        padding: '16px 20px', 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        borderBottom: `1px solid rgba(18, 52, 255, 0.1)`,
+        background: '#000000',
+        zIndex: 50,
+      }}>
         <div
           onClick={() => setShowSettings(true)}
           style={{
@@ -607,14 +562,15 @@ export default function CompleteSharedLifeDashboard() {
         </button>
       </div>
 
-      {/* Content Area */}
-      <div style={{ paddingBottom: '120px' }}>
+      {/* Content Area with top padding for sticky header */}
+      <div style={{ paddingTop: '80px', paddingBottom: '120px' }}>
         {/* HOME TAB */}
         {activeTab === 'home' && (
           <div style={{ padding: '20px' }}>
             <h2 style={{ fontSize: '28px', fontWeight: '700', margin: '0 0 24px' }}>Home</h2>
 
             <div style={{ display: 'grid', gap: '12px' }}>
+              {/* Main dashboard card with bg */}
               <div
                 style={{
                   background: `linear-gradient(135deg, rgba(18, 52, 255, 0.15) 0%, rgba(10, 16, 20, 0.5) 100%), url(${dashboardBg || 'https://images.unsplash.com/photo-1469022563149-aa64dbd37dae?w=800&h=400&fit=crop'})`,
@@ -634,6 +590,25 @@ export default function CompleteSharedLifeDashboard() {
                 <div style={{ fontSize: '14px', color: '#aaa' }}>plants to care for</div>
               </div>
 
+              {/* Plants needing water */}
+              <div
+                style={{
+                  background: `linear-gradient(135deg, rgba(255, 59, 48, 0.15) 0%, rgba(10, 16, 20, 0.5) 100%)`,
+                  borderRadius: '20px',
+                  padding: '32px 24px',
+                  border: `1px solid rgba(255, 59, 48, 0.2)`,
+                  backdropFilter: 'blur(10px)',
+                  minHeight: '180px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'flex-end',
+                }}
+              >
+                <div style={{ fontSize: '48px', fontWeight: '700', marginBottom: '8px', color: '#ff3b30' }}>{plantsNeedingWater}</div>
+                <div style={{ fontSize: '14px', color: '#aaa' }}>plants need watering</div>
+              </div>
+
+              {/* Travel days */}
               <div
                 style={{
                   background: `linear-gradient(135deg, rgba(18, 52, 255, 0.15) 0%, rgba(10, 16, 20, 0.5) 100%)`,
@@ -647,12 +622,11 @@ export default function CompleteSharedLifeDashboard() {
                   justifyContent: 'flex-end',
                 }}
               >
-                <div style={{ fontSize: '48px', fontWeight: '700', marginBottom: '8px', color: ACCENT_COLOR }}>
-                  €{totalExpenses.toFixed(2)}
-                </div>
-                <div style={{ fontSize: '14px', color: '#aaa' }}>spent this month</div>
+                <div style={{ fontSize: '48px', fontWeight: '700', marginBottom: '8px' }}>{getTravelDaysThisMonth()}</div>
+                <div style={{ fontSize: '14px', color: '#aaa' }}>travel days this month</div>
               </div>
 
+              {/* Meals */}
               <div
                 style={{
                   background: `linear-gradient(135deg, rgba(18, 52, 255, 0.15) 0%, rgba(10, 16, 20, 0.5) 100%)`,
@@ -679,7 +653,14 @@ export default function CompleteSharedLifeDashboard() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
               <h2 style={{ fontSize: '28px', fontWeight: '700', margin: 0 }}>Plants</h2>
               <button
-                onClick={openAddPlantModal}
+                onClick={() => {
+                  setModalType('plant');
+                  setEditingId(null);
+                  setShowAddModal(true);
+                  setNewItemName('');
+                  setNewItemWateringDays(7);
+                  setNewItemPhoto(null);
+                }}
                 style={{
                   background: ACCENT_COLOR,
                   border: 'none',
@@ -698,11 +679,7 @@ export default function CompleteSharedLifeDashboard() {
             </div>
 
             {plants.length === 0 ? (
-              <EmptyState
-                icon={Leaf}
-                title="No plants yet"
-                subtitle="Let's start growing together"
-              />
+              <EmptyState icon={Leaf} title="No plants yet" subtitle="Let's start growing together" />
             ) : (
               <div style={{ display: 'grid', gap: '12px' }}>
                 {plants.map(plant => {
@@ -720,41 +697,25 @@ export default function CompleteSharedLifeDashboard() {
                         backdropFilter: 'blur(10px)',
                       }}
                     >
-                      <div style={{ marginBottom: '12px' }}>
-                        <h3 style={{ fontSize: '16px', fontWeight: '600', margin: '0 0 4px' }}>{plant.name}</h3>
-                        <div style={{ fontSize: '12px', color: status.needsWatering ? '#ff3b30' : '#aaa', marginBottom: '8px' }}>
-                          {status.needsWatering ? (
-                            <span>💧 Needs watering now!</span>
-                          ) : (
-                            <span>Next watering in {status.daysUntil} days</span>
-                          )}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                        <div>
+                          <h3 style={{ fontSize: '16px', fontWeight: '600', margin: '0 0 4px' }}>{plant.name}</h3>
+                          <p style={{ fontSize: '12px', color: status.needsWatering ? '#ff3b30' : '#aaa', margin: 0 }}>
+                            {status.needsWatering ? '💧 Needs watering now!' : `Next watering in ${status.daysUntil} days`}
+                          </p>
                         </div>
-
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#888' }}>
-                          <Droplet size={14} />
-                          Every {plant.wateringFreqDays || 7} days
-                        </div>
-                      </div>
-
-                      <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
-                        <input
-                          type="number"
-                          min="1"
-                          max="60"
-                          value={plant.wateringFreqDays || 7}
-                          onChange={(e) => updatePlantWateringFreq(plant.id, e.target.value)}
+                        <button
+                          onClick={() => openEditModal('plant', plant)}
                           style={{
-                            width: '60px',
-                            background: `rgba(255, 255, 255, 0.05)`,
-                            border: `1px solid rgba(18, 52, 255, 0.2)`,
-                            borderRadius: '6px',
+                            background: 'none',
+                            border: 'none',
+                            color: ACCENT_COLOR,
+                            cursor: 'pointer',
                             padding: '4px',
-                            color: '#fff',
-                            fontSize: '12px',
-                            textAlign: 'center',
                           }}
-                        />
-                        <span style={{ fontSize: '12px', color: '#888' }}>days</span>
+                        >
+                          <Edit2 size={18} />
+                        </button>
                       </div>
 
                       <div style={{ display: 'flex', gap: '8px' }}>
@@ -806,7 +767,14 @@ export default function CompleteSharedLifeDashboard() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
               <h2 style={{ fontSize: '28px', fontWeight: '700', margin: 0 }}>Meals</h2>
               <button
-                onClick={openAddMealModal}
+                onClick={() => {
+                  setModalType('meal');
+                  setEditingId(null);
+                  setShowAddModal(true);
+                  setNewItemName('');
+                  setNewItemRecipe('');
+                  setNewItemPhoto(null);
+                }}
                 style={{
                   background: ACCENT_COLOR,
                   border: 'none',
@@ -825,11 +793,7 @@ export default function CompleteSharedLifeDashboard() {
             </div>
 
             {meals.length === 0 ? (
-              <EmptyState
-                icon={UtensilsCrossed}
-                title="No meals planned"
-                subtitle="Let's start planning together"
-              />
+              <EmptyState icon={UtensilsCrossed} title="No meals planned" subtitle="Let's start planning together" />
             ) : (
               <div style={{ display: 'grid', gap: '12px' }}>
                 {meals.map(meal => (
@@ -845,20 +809,32 @@ export default function CompleteSharedLifeDashboard() {
                       backdropFilter: 'blur(10px)',
                     }}
                   >
-                    <div style={{ marginBottom: '12px' }}>
-                      <h3 style={{ fontSize: '16px', fontWeight: '600', margin: '0 0 4px' }}>{meal.name}</h3>
-                      <p style={{ fontSize: '12px', color: '#aaa', margin: '0 0 8px' }}>{meal.plannedDate}</p>
-                      {meal.recipe && (
-                        <details style={{ fontSize: '12px', color: '#ccc' }}>
-                          <summary style={{ cursor: 'pointer', fontWeight: '500' }}>View Recipe</summary>
-                          <p style={{ margin: '8px 0 0', whiteSpace: 'pre-wrap' }}>{meal.recipe}</p>
-                        </details>
-                      )}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+                      <div>
+                        <h3 style={{ fontSize: '16px', fontWeight: '600', margin: '0 0 4px' }}>{meal.name}</h3>
+                        <p style={{ fontSize: '12px', color: '#aaa', margin: 0 }}>{meal.plannedDate}</p>
+                      </div>
+                      <button
+                        onClick={() => openEditModal('meal', meal)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: ACCENT_COLOR,
+                          cursor: 'pointer',
+                          padding: '4px',
+                        }}
+                      >
+                        <Edit2 size={18} />
+                      </button>
                     </div>
 
                     <div style={{ display: 'flex', gap: '8px' }}>
                       <button
-                        onClick={() => toggleMealShopping(meal.id)}
+                        onClick={() => {
+                          const updated = meals.map(m => m.id === meal.id ? { ...m, shoppingNeeded: !m.shoppingNeeded } : m);
+                          setMeals(updated);
+                          saveData(plants, updated, expenses, intimacy, travels);
+                        }}
                         style={{
                           flex: 1,
                           background: meal.shoppingNeeded ? `rgba(18, 52, 255, 0.3)` : 'rgba(255, 255, 255, 0.1)',
@@ -899,7 +875,12 @@ export default function CompleteSharedLifeDashboard() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
               <h2 style={{ fontSize: '28px', fontWeight: '700', margin: 0 }}>Budget</h2>
               <button
-                onClick={openAddExpenseModal}
+                onClick={() => {
+                  setModalType('expense');
+                  setEditingId(null);
+                  setShowAddModal(true);
+                  setNewItemName('');
+                }}
                 style={{
                   background: ACCENT_COLOR,
                   border: 'none',
@@ -918,11 +899,7 @@ export default function CompleteSharedLifeDashboard() {
             </div>
 
             {expenses.length === 0 ? (
-              <EmptyState
-                icon={Wallet}
-                title="No expenses logged"
-                subtitle="Track your spending together"
-              />
+              <EmptyState icon={Wallet} title="No expenses logged" subtitle="Track your spending together" />
             ) : (
               <div style={{ display: 'grid', gap: '12px' }}>
                 {expenses.map(exp => (
@@ -946,8 +923,12 @@ export default function CompleteSharedLifeDashboard() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <input
                         type="number"
-                        value={exp.amount}
-                        onChange={(e) => updateExpense(exp.id, e.target.value)}
+                        value={exp.amount || 0}
+                        onChange={(e) => {
+                          const updated = expenses.map(ex => ex.id === exp.id ? { ...ex, amount: parseFloat(e.target.value) } : ex);
+                          setExpenses(updated);
+                          saveData(plants, meals, updated, intimacy, travels);
+                        }}
                         placeholder="0"
                         style={{
                           width: '70px',
@@ -988,7 +969,12 @@ export default function CompleteSharedLifeDashboard() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
               <h2 style={{ fontSize: '28px', fontWeight: '700', margin: 0 }}>Intimacy</h2>
               <button
-                onClick={openAddIntimacyModal}
+                onClick={() => {
+                  setModalType('intimacy');
+                  setEditingId(null);
+                  setShowAddModal(true);
+                  setNewItemName('');
+                }}
                 style={{
                   background: ACCENT_COLOR,
                   border: 'none',
@@ -1007,11 +993,7 @@ export default function CompleteSharedLifeDashboard() {
             </div>
 
             {intimacy.length === 0 ? (
-              <EmptyState
-                icon={Heart}
-                title="No reminders yet"
-                subtitle="Keep the spark alive"
-              />
+              <EmptyState icon={Heart} title="No reminders yet" subtitle="Keep the spark alive" />
             ) : (
               <div style={{ display: 'grid', gap: '12px' }}>
                 {intimacy.map(event => (
@@ -1036,7 +1018,11 @@ export default function CompleteSharedLifeDashboard() {
 
                     <div style={{ display: 'flex', gap: '8px' }}>
                       <button
-                        onClick={() => toggleIntimacyComplete(event.id)}
+                        onClick={() => {
+                          const updated = intimacy.map(i => i.id === event.id ? { ...i, completed: !i.completed } : i);
+                          setIntimacy(updated);
+                          saveData(plants, meals, expenses, updated, travels);
+                        }}
                         style={{
                           background: event.completed ? '#34c759' : 'rgba(255, 255, 255, 0.1)',
                           border: 'none',
@@ -1069,9 +1055,101 @@ export default function CompleteSharedLifeDashboard() {
             )}
           </div>
         )}
+
+        {/* TRAVEL TAB */}
+        {activeTab === 'travel' && (
+          <div style={{ padding: '20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h2 style={{ fontSize: '28px', fontWeight: '700', margin: 0 }}>Travel</h2>
+              <button
+                onClick={() => {
+                  setModalType('travel');
+                  setEditingId(null);
+                  setShowAddModal(true);
+                  setNewTravelStart('');
+                  setNewTravelEnd('');
+                  setNewTravelLocation('');
+                }}
+                style={{
+                  background: ACCENT_COLOR,
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '8px 12px',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  fontSize: '14px',
+                }}
+              >
+                <Plus size={18} /> Add
+              </button>
+            </div>
+
+            {travels.length === 0 ? (
+              <EmptyState icon={Plane} title="No trips planned" subtitle="Plan your travels together" />
+            ) : (
+              <div style={{ display: 'grid', gap: '12px' }}>
+                {travels.map(travel => (
+                  <div
+                    key={travel.id}
+                    style={{
+                      background: `rgba(18, 52, 255, 0.1)`,
+                      border: `1px solid rgba(18, 52, 255, 0.2)`,
+                      borderRadius: '12px',
+                      padding: '16px',
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                          <MapPin size={16} style={{ color: ACCENT_COLOR }} />
+                          <h3 style={{ fontSize: '16px', fontWeight: '600', margin: 0 }}>{travel.location}</h3>
+                        </div>
+                        <p style={{ fontSize: '12px', color: '#aaa', margin: 0 }}>
+                          {travel.startDate} → {travel.endDate}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => openEditModal('travel', travel)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: ACCENT_COLOR,
+                          cursor: 'pointer',
+                          padding: '4px',
+                        }}
+                      >
+                        <Edit2 size={18} />
+                      </button>
+                    </div>
+
+                    <button
+                      onClick={() => deleteTravel(travel.id)}
+                      style={{
+                        width: '100%',
+                        background: 'rgba(255, 59, 48, 0.2)',
+                        border: 'none',
+                        borderRadius: '8px',
+                        padding: '8px',
+                        color: '#ff3b30',
+                        cursor: 'pointer',
+                        fontSize: '12px',
+                      }}
+                    >
+                      <Trash2 size={14} style={{ marginRight: '4px' }} />
+                      Delete
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Glass Morphism Pill Menu */}
+      {/* Bottom Menu */}
       <div
         style={{
           position: 'fixed',
@@ -1097,6 +1175,7 @@ export default function CompleteSharedLifeDashboard() {
           { id: 'food', icon: UtensilsCrossed },
           { id: 'budget', icon: Wallet },
           { id: 'intimacy', icon: Heart },
+          { id: 'travel', icon: Plane },
         ].map(tab => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -1177,7 +1256,7 @@ export default function CompleteSharedLifeDashboard() {
               </div>
             </div>
 
-            {/* Notifications Section */}
+            {/* Notifications */}
             <div style={{ marginBottom: '24px' }}>
               <h4 style={{ fontSize: '14px', fontWeight: '600', margin: '0 0 12px', color: '#aaa', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <Bell size={16} /> Notifications
@@ -1203,12 +1282,11 @@ export default function CompleteSharedLifeDashboard() {
               ) : (
                 <div style={{ padding: '12px', background: `rgba(52, 199, 89, 0.1)`, borderRadius: '8px', border: `1px solid rgba(52, 199, 89, 0.2)` }}>
                   <p style={{ margin: 0, fontSize: '12px', color: '#34c759' }}>✓ Notifications enabled</p>
-                  <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#888' }}>You'll receive reminders for plant watering and more</p>
                 </div>
               )}
             </div>
 
-            {/* Customization Section */}
+            {/* Customization */}
             <div style={{ marginBottom: '24px' }}>
               <h4 style={{ fontSize: '14px', fontWeight: '600', margin: '0 0 12px', color: '#aaa', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <Palette size={16} /> Customize
@@ -1218,7 +1296,7 @@ export default function CompleteSharedLifeDashboard() {
                 <label style={{ fontSize: '12px', color: '#aaa', marginBottom: '8px', display: 'block', fontWeight: '600' }}>Dashboard Background</label>
                 <input
                   type="text"
-                  placeholder="Search Unsplash... (e.g., sunset)"
+                  placeholder="Search Unsplash..."
                   onChange={(e) => searchUnsplash(e.target.value)}
                   style={{
                     width: '100%',
@@ -1239,7 +1317,10 @@ export default function CompleteSharedLifeDashboard() {
                         key={photo.id}
                         src={`${photo.urls.thumb}?w=80&h=80&fit=crop`}
                         alt=""
-                        onClick={() => setDashboardBg(photo.urls.regular)}
+                        onClick={() => {
+                          setDashboardBg(photo.urls.regular);
+                          saveData(plants, meals, expenses, intimacy, travels, photo.urls.regular);
+                        }}
                         style={{
                           width: '100%',
                           height: '60px',
@@ -1279,281 +1360,99 @@ export default function CompleteSharedLifeDashboard() {
         </div>
       )}
 
+      {/* MODALS */}
       {/* Add Plant Modal */}
-      <AddModal
-        isOpen={showAddModal && modalType === 'plant'}
-        title="Add Plant"
-        onClose={() => setShowAddModal(false)}
-      >
+      <AddModal isOpen={showAddModal && modalType === 'plant'} title={editingId ? "Edit Plant" : "Add Plant"} onClose={resetModal}>
         <div style={{ display: 'grid', gap: '16px' }}>
-          <input
-            type="text"
-            value={newItemName}
-            onChange={(e) => setNewItemName(e.target.value)}
-            placeholder="Plant name..."
-            style={{
-              background: `rgba(255, 255, 255, 0.05)`,
-              border: `1px solid rgba(18, 52, 255, 0.2)`,
-              borderRadius: '12px',
-              padding: '12px',
-              color: '#fff',
-              fontSize: '16px',
-            }}
-          />
-
+          <input type="text" value={newItemName} onChange={(e) => setNewItemName(e.target.value)} placeholder="Plant name..." style={{ background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px' }} />
+          
           <div>
             <label style={{ fontSize: '14px', color: '#aaa', marginBottom: '8px', display: 'block' }}>Watering frequency (days)</label>
-            <input
-              type="number"
-              min="1"
-              max="60"
-              value={newItemWateringDays}
-              onChange={(e) => setNewItemWateringDays(e.target.value)}
-              style={{
-                width: '100%',
-                background: `rgba(255, 255, 255, 0.05)`,
-                border: `1px solid rgba(18, 52, 255, 0.2)`,
-                borderRadius: '12px',
-                padding: '12px',
-                color: '#fff',
-                fontSize: '16px',
-              }}
-            />
+            <input type="number" min="1" max="60" value={newItemWateringDays} onChange={(e) => setNewItemWateringDays(e.target.value)} style={{ width: '100%', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px' }} />
           </div>
 
           <div>
             <label style={{ fontSize: '14px', color: '#aaa', marginBottom: '8px', display: 'block' }}>Search photo</label>
-            <input
-              type="text"
-              placeholder="e.g. monstera, cactus..."
-              onChange={(e) => searchUnsplash(e.target.value)}
-              style={{
-                width: '100%',
-                background: `rgba(255, 255, 255, 0.05)`,
-                border: `1px solid rgba(18, 52, 255, 0.2)`,
-                borderRadius: '12px',
-                padding: '12px',
-                color: '#fff',
-                fontSize: '16px',
-                marginBottom: '12px',
-              }}
-            />
-
+            <input type="text" placeholder="e.g. monstera, cactus..." onChange={(e) => searchUnsplash(e.target.value)} style={{ width: '100%', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px', marginBottom: '12px' }} />
             {unsplashSearchResults.length > 0 && (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
                 {unsplashSearchResults.map((photo) => (
-                  <img
-                    key={photo.id}
-                    src={`${photo.urls.thumb}?w=120&h=120&fit=crop&v=${Date.now()}`}
-                    alt=""
-                    onClick={() => setNewItemPhoto(photo.urls.regular)}
-                    style={{
-                      width: '100%',
-                      height: '100px',
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                      border: newItemPhoto === photo.urls.regular ? `2px solid ${ACCENT_COLOR}` : 'none',
-                    }}
-                  />
+                  <img key={photo.id} src={`${photo.urls.thumb}?w=120&h=120&fit=crop`} alt="" onClick={() => setNewItemPhoto(photo.urls.regular)} style={{ width: '100%', height: '100px', borderRadius: '8px', cursor: 'pointer', border: newItemPhoto === photo.urls.regular ? `2px solid ${ACCENT_COLOR}` : 'none' }} />
                 ))}
               </div>
             )}
           </div>
 
-          <button
-            onClick={addPlant}
-            style={{
-              width: '100%',
-              background: ACCENT_COLOR,
-              border: 'none',
-              borderRadius: '12px',
-              padding: '14px',
-              color: '#fff',
-              cursor: 'pointer',
-              fontSize: '16px',
-              fontWeight: '600',
-            }}
-          >
-            Add Plant
+          <button onClick={addPlant} style={{ width: '100%', background: ACCENT_COLOR, border: 'none', borderRadius: '12px', padding: '14px', color: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: '600' }}>
+            {editingId ? 'Update Plant' : 'Add Plant'}
           </button>
         </div>
       </AddModal>
 
       {/* Add Meal Modal */}
-      <AddModal
-        isOpen={showAddModal && modalType === 'meal'}
-        title="Add Meal"
-        onClose={() => setShowAddModal(false)}
-      >
+      <AddModal isOpen={showAddModal && modalType === 'meal'} title={editingId ? "Edit Meal" : "Add Meal"} onClose={resetModal}>
         <div style={{ display: 'grid', gap: '16px' }}>
-          <input
-            type="text"
-            value={newItemName}
-            onChange={(e) => setNewItemName(e.target.value)}
-            placeholder="Meal name..."
-            style={{
-              background: `rgba(255, 255, 255, 0.05)`,
-              border: `1px solid rgba(18, 52, 255, 0.2)`,
-              borderRadius: '12px',
-              padding: '12px',
-              color: '#fff',
-              fontSize: '16px',
-            }}
-          />
-
-          <textarea
-            value={newItemRecipe}
-            onChange={(e) => setNewItemRecipe(e.target.value)}
-            placeholder="Add recipe (optional)..."
-            style={{
-              background: `rgba(255, 255, 255, 0.05)`,
-              border: `1px solid rgba(18, 52, 255, 0.2)`,
-              borderRadius: '12px',
-              padding: '12px',
-              color: '#fff',
-              fontSize: '16px',
-              minHeight: '100px',
-              fontFamily: 'inherit',
-              resize: 'vertical',
-            }}
-          />
-
+          <input type="text" value={newItemName} onChange={(e) => setNewItemName(e.target.value)} placeholder="Meal name..." style={{ background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px' }} />
+          <textarea value={newItemRecipe} onChange={(e) => setNewItemRecipe(e.target.value)} placeholder="Add recipe (optional)..." style={{ background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px', minHeight: '100px', fontFamily: 'inherit' }} />
+          
           <div>
             <label style={{ fontSize: '14px', color: '#aaa', marginBottom: '8px', display: 'block' }}>Search photo</label>
-            <input
-              type="text"
-              placeholder="e.g. pasta, salad..."
-              onChange={(e) => searchUnsplash(e.target.value)}
-              style={{
-                width: '100%',
-                background: `rgba(255, 255, 255, 0.05)`,
-                border: `1px solid rgba(18, 52, 255, 0.2)`,
-                borderRadius: '12px',
-                padding: '12px',
-                color: '#fff',
-                fontSize: '16px',
-                marginBottom: '12px',
-              }}
-            />
-
+            <input type="text" placeholder="e.g. pasta, salad..." onChange={(e) => searchUnsplash(e.target.value)} style={{ width: '100%', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px', marginBottom: '12px' }} />
             {unsplashSearchResults.length > 0 && (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
                 {unsplashSearchResults.map((photo) => (
-                  <img
-                    key={photo.id}
-                    src={`${photo.urls.thumb}?w=120&h=120&fit=crop&v=${Date.now()}`}
-                    alt=""
-                    onClick={() => setNewItemPhoto(photo.urls.regular)}
-                    style={{
-                      width: '100%',
-                      height: '100px',
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                      border: newItemPhoto === photo.urls.regular ? `2px solid ${ACCENT_COLOR}` : 'none',
-                    }}
-                  />
+                  <img key={photo.id} src={`${photo.urls.thumb}?w=120&h=120&fit=crop`} alt="" onClick={() => setNewItemPhoto(photo.urls.regular)} style={{ width: '100%', height: '100px', borderRadius: '8px', cursor: 'pointer', border: newItemPhoto === photo.urls.regular ? `2px solid ${ACCENT_COLOR}` : 'none' }} />
                 ))}
               </div>
             )}
           </div>
 
-          <button
-            onClick={addMeal}
-            style={{
-              width: '100%',
-              background: ACCENT_COLOR,
-              border: 'none',
-              borderRadius: '12px',
-              padding: '14px',
-              color: '#fff',
-              cursor: 'pointer',
-              fontSize: '16px',
-              fontWeight: '600',
-            }}
-          >
-            Add Meal (Auto-exports to Calendar)
+          <button onClick={addMeal} style={{ width: '100%', background: ACCENT_COLOR, border: 'none', borderRadius: '12px', padding: '14px', color: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: '600' }}>
+            {editingId ? 'Update Meal' : 'Add Meal'}
           </button>
         </div>
       </AddModal>
 
       {/* Add Expense Modal */}
-      <AddModal
-        isOpen={showAddModal && modalType === 'expense'}
-        title="Add Expense"
-        onClose={() => setShowAddModal(false)}
-      >
+      <AddModal isOpen={showAddModal && modalType === 'expense'} title={editingId ? "Edit Expense" : "Add Expense"} onClose={resetModal}>
         <div style={{ display: 'grid', gap: '16px' }}>
-          <input
-            type="text"
-            value={newItemName}
-            onChange={(e) => setNewItemName(e.target.value)}
-            placeholder="What did you spend on?"
-            style={{
-              background: `rgba(255, 255, 255, 0.05)`,
-              border: `1px solid rgba(18, 52, 255, 0.2)`,
-              borderRadius: '12px',
-              padding: '12px',
-              color: '#fff',
-              fontSize: '16px',
-            }}
-          />
-
-          <button
-            onClick={addExpense}
-            style={{
-              width: '100%',
-              background: ACCENT_COLOR,
-              border: 'none',
-              borderRadius: '12px',
-              padding: '14px',
-              color: '#fff',
-              cursor: 'pointer',
-              fontSize: '16px',
-              fontWeight: '600',
-            }}
-          >
-            Add Expense
+          <input type="text" value={newItemName} onChange={(e) => setNewItemName(e.target.value)} placeholder="What did you spend on?" style={{ background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px' }} />
+          <button onClick={addExpense} style={{ width: '100%', background: ACCENT_COLOR, border: 'none', borderRadius: '12px', padding: '14px', color: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: '600' }}>
+            {editingId ? 'Update Expense' : 'Add Expense'}
           </button>
         </div>
       </AddModal>
 
       {/* Add Intimacy Modal */}
-      <AddModal
-        isOpen={showAddModal && modalType === 'intimacy'}
-        title="Add Reminder"
-        onClose={() => setShowAddModal(false)}
-      >
+      <AddModal isOpen={showAddModal && modalType === 'intimacy'} title={editingId ? "Edit Reminder" : "Add Reminder"} onClose={resetModal}>
         <div style={{ display: 'grid', gap: '16px' }}>
-          <input
-            type="text"
-            value={newItemName}
-            onChange={(e) => setNewItemName(e.target.value)}
-            placeholder="What would you like to plan?"
-            style={{
-              background: `rgba(255, 255, 255, 0.05)`,
-              border: `1px solid rgba(18, 52, 255, 0.2)`,
-              borderRadius: '12px',
-              padding: '12px',
-              color: '#fff',
-              fontSize: '16px',
-            }}
-          />
+          <input type="text" value={newItemName} onChange={(e) => setNewItemName(e.target.value)} placeholder="What would you like to plan?" style={{ background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px' }} />
+          <button onClick={addIntimacy} style={{ width: '100%', background: ACCENT_COLOR, border: 'none', borderRadius: '12px', padding: '14px', color: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: '600' }}>
+            {editingId ? 'Update Reminder' : 'Add Reminder'}
+          </button>
+        </div>
+      </AddModal>
 
-          <button
-            onClick={addIntimacyEvent}
-            style={{
-              width: '100%',
-              background: ACCENT_COLOR,
-              border: 'none',
-              borderRadius: '12px',
-              padding: '14px',
-              color: '#fff',
-              cursor: 'pointer',
-              fontSize: '16px',
-              fontWeight: '600',
-            }}
-          >
-            Add Reminder (Auto-exports to Calendar)
+      {/* Add Travel Modal */}
+      <AddModal isOpen={showAddModal && modalType === 'travel'} title={editingId ? "Edit Travel" : "Add Travel"} onClose={resetModal}>
+        <div style={{ display: 'grid', gap: '16px' }}>
+          <div>
+            <label style={{ fontSize: '12px', color: '#aaa', marginBottom: '6px', display: 'block' }}>Location</label>
+            <input type="text" value={newTravelLocation} onChange={(e) => setNewTravelLocation(e.target.value)} placeholder="Where are you going?" style={{ width: '100%', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px', boxSizing: 'border-box' }} />
+          </div>
+          
+          <div>
+            <label style={{ fontSize: '12px', color: '#aaa', marginBottom: '6px', display: 'block' }}>Start date</label>
+            <input type="date" value={newTravelStart} onChange={(e) => setNewTravelStart(e.target.value)} style={{ width: '100%', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px', boxSizing: 'border-box' }} />
+          </div>
+
+          <div>
+            <label style={{ fontSize: '12px', color: '#aaa', marginBottom: '6px', display: 'block' }}>End date</label>
+            <input type="date" value={newTravelEnd} onChange={(e) => setNewTravelEnd(e.target.value)} style={{ width: '100%', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px', boxSizing: 'border-box' }} />
+          </div>
+
+          <button onClick={addTravel} style={{ width: '100%', background: ACCENT_COLOR, border: 'none', borderRadius: '12px', padding: '14px', color: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: '600' }}>
+            {editingId ? 'Update Travel' : 'Add Travel'}
           </button>
         </div>
       </AddModal>
