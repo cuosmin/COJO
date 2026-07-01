@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Home, Leaf, UtensilsCrossed, Wallet, LogOut,
-  X, Sliders, Bell, Plus, Plane, Edit2, MapPin, ChefHat, Droplet, Archive, ChevronDown, Briefcase, Palmtree,
+  X, Sliders, Bell, Plus, Plane, Edit2, MapPin, Droplet, Archive, ChevronDown, Briefcase, Palmtree,
   ShoppingCart as ShoppingBag, Heart, Wind, Smile, Clock, Shuffle,
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
