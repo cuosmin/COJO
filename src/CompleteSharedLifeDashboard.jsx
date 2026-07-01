@@ -711,31 +711,6 @@ export default function CompleteSharedLifeDashboard() {
     saveData(plants, meals, expenses, updated);
   };
 
-  // Removed: getTravelDaysThisMonth - no longer used in redesigned Home tab
-
-  const getTravelDaysThisMonthOld = () => {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth();
-    let days = 0;
-
-    travels.forEach(travel => {
-      const start = new Date(travel.startDate);
-      const end = new Date(travel.endDate);
-      const travelUserIds = travel.userIds || [travel.userId];
-
-      // Only count as days apart if not both users are traveling together
-      const bothTraveling = travelUserIds.length > 1 && travelUserIds.includes(user?.uid) && 
-                           travelUserIds.find(uid => uid !== user?.uid && users.find(u => u.uid === uid));
-
-      if (start.getMonth() === month && start.getFullYear() === year && !bothTraveling) {
-        days += Math.ceil((end - start) / (1000 * 60 * 60 * 24));
-      }
-    });
-
-    return days;
-  };
-
   const getCurrentTraveler = () => {
     const today = new Date().toISOString().split('T')[0];
     return travels.find(t => t.startDate <= today && t.endDate >= today);
