@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Home, Leaf, UtensilsCrossed, Wallet, LogOut,
-  X, Sliders, Bell, Plus, Plane, Edit2, MapPin, ChefHat, Droplet,
+  X, Sliders, Bell, Plus, Plane, Edit2, MapPin, ChefHat, Droplet, Archive,
   ShoppingCart as ShoppingBag, Heart, Wind, Smile
 } from 'lucide-react';
 import { auth } from './firebaseConfig';
@@ -824,7 +824,10 @@ export default function CompleteSharedLifeDashboard() {
         {/* HOME TAB */}
         {activeTab === 'home' && (
           <div style={{ padding: '20px' }}>
-            <h2 style={{ fontSize: '28px', fontWeight: '700', margin: '0 0 24px' }}>Home</h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h2 style={{ fontSize: '28px', fontWeight: '700', margin: 0 }}>Home</h2>
+              <div style={{ width: '20px' }} />
+            </div>
 
             <div style={{ display: 'grid', gap: '12px' }}>
               {/* Currently traveling card - FIRST */}
@@ -1192,7 +1195,7 @@ export default function CompleteSharedLifeDashboard() {
           <div style={{ padding: '20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
               <h2 style={{ fontSize: '28px', fontWeight: '700', margin: 0 }}>Budget</h2>
-              <div style={{ display: 'flex', gap: '8px' }}>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                 <button
                   onClick={() => {
                     setShowArchive(true);
@@ -1203,14 +1206,16 @@ export default function CompleteSharedLifeDashboard() {
                     background: 'rgba(255, 255, 255, 0.1)',
                     border: '1px solid rgba(255, 255, 255, 0.15)',
                     borderRadius: '12px',
-                    padding: '10px 16px',
+                    padding: '10px 12px',
                     color: '#999',
                     cursor: 'pointer',
-                    fontSize: '14px',
-                    fontWeight: '600',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
                   }}
+                  title="View archive"
                 >
-                  Archive
+                  <Archive size={18} />
                 </button>
                 <button
                   onClick={() => {
@@ -1267,9 +1272,12 @@ export default function CompleteSharedLifeDashboard() {
                       <div style={{ display: 'grid', gap: '8px' }}>
                         {categoryExpenses.map(exp => (
                           <div key={exp.id} style={{ background: `rgba(255, 255, 255, 0.02)`, borderRadius: '12px', padding: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: `1px solid rgba(255, 255, 255, 0.05)` }}>
-                            <div>
-                              <p style={{ fontSize: '14px', margin: 0, fontWeight: '500' }}>€{exp.amount.toFixed(2)}</p>
+                            <div style={{ flex: 1 }}>
+                              <p style={{ fontSize: '14px', margin: 0, fontWeight: '500' }}>{exp.title}</p>
                               <p style={{ fontSize: '12px', color: '#666', margin: '2px 0 0' }}>{exp.date}</p>
+                            </div>
+                            <div style={{ marginRight: '12px', textAlign: 'right' }}>
+                              <p style={{ fontSize: '14px', margin: 0, fontWeight: '600' }}>€{exp.amount.toFixed(2)}</p>
                             </div>
                             <button onClick={() => openEditModal('expense', exp)} style={{ background: '#1234ff', border: 'none', borderRadius: '8px', padding: '8px', color: '#fff', cursor: 'pointer' }}>
                               <Edit2 size={16} />
@@ -1290,7 +1298,7 @@ export default function CompleteSharedLifeDashboard() {
           <div style={{ padding: '20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
               <h2 style={{ fontSize: '28px', fontWeight: '700', margin: 0 }}>Travel</h2>
-              <div style={{ display: 'flex', gap: '8px' }}>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                 <button
                   onClick={() => {
                     setShowArchive(true);
@@ -1301,14 +1309,16 @@ export default function CompleteSharedLifeDashboard() {
                     background: 'rgba(255, 255, 255, 0.1)',
                     border: '1px solid rgba(255, 255, 255, 0.15)',
                     borderRadius: '12px',
-                    padding: '10px 16px',
+                    padding: '10px 12px',
                     color: '#999',
                     cursor: 'pointer',
-                    fontSize: '14px',
-                    fontWeight: '600',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
                   }}
+                  title="View archive"
                 >
-                  Archive
+                  <Archive size={18} />
                 </button>
                 <button
                   onClick={() => {
@@ -1879,7 +1889,7 @@ export default function CompleteSharedLifeDashboard() {
 
           <div>
             <label style={{ fontSize: '14px', color: '#666', marginBottom: '8px', display: 'block' }}>Date</label>
-            <input type="date" value={newExpenseDate} onChange={(e) => setNewExpenseDate(e.target.value)} style={{ width: '100%', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px', boxSizing: 'border-box', lineHeight: '1.5', WebkitAppearance: 'none', MozAppearance: 'textfield' }} />
+            <input type="date" value={newExpenseDate} onChange={(e) => setNewExpenseDate(e.target.value)} style={{ width: '100%', minWidth: '100%', maxWidth: '100%', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px', boxSizing: 'border-box', lineHeight: '1.5', WebkitAppearance: 'none', MozAppearance: 'textfield', display: 'block' }} />
           </div>
 
           <div>
@@ -1995,12 +2005,12 @@ export default function CompleteSharedLifeDashboard() {
           
           <div>
             <label style={{ fontSize: '12px', color: '#666', marginBottom: '6px', display: 'block' }}>Start date</label>
-            <input type="date" value={newTravelStart} onChange={(e) => setNewTravelStart(e.target.value)} style={{ width: '100%', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px', boxSizing: 'border-box', lineHeight: '1.5', WebkitAppearance: 'none', MozAppearance: 'textfield' }} />
+            <input type="date" value={newTravelStart} onChange={(e) => setNewTravelStart(e.target.value)} style={{ width: '100%', minWidth: '100%', maxWidth: '100%', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px', boxSizing: 'border-box', lineHeight: '1.5', WebkitAppearance: 'none', MozAppearance: 'textfield', display: 'block' }} />
           </div>
 
           <div>
             <label style={{ fontSize: '12px', color: '#666', marginBottom: '6px', display: 'block' }}>End date</label>
-            <input type="date" value={newTravelEnd} onChange={(e) => setNewTravelEnd(e.target.value)} style={{ width: '100%', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px', boxSizing: 'border-box', lineHeight: '1.5', WebkitAppearance: 'none', MozAppearance: 'textfield' }} />
+            <input type="date" value={newTravelEnd} onChange={(e) => setNewTravelEnd(e.target.value)} style={{ width: '100%', minWidth: '100%', maxWidth: '100%', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px', boxSizing: 'border-box', lineHeight: '1.5', WebkitAppearance: 'none', MozAppearance: 'textfield', display: 'block' }} />
           </div>
 
           <button onClick={addTravel} style={{ width: '100%', background: ACCENT_COLOR, border: 'none', borderRadius: '12px', padding: '14px', color: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: '600' }}>
