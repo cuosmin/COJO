@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Home, Leaf, UtensilsCrossed, Wallet, LogOut,
-  Trash2, X, Sliders, Bell, Plus, Plane, Edit2, MapPin, ChefHat, Droplet,
+  X, Sliders, Bell, Plus, Plane, Edit2, MapPin, ChefHat, Droplet,
   ShoppingCart as ShoppingBag, Heart, Wind, Smile
 } from 'lucide-react';
 import { auth } from './firebaseConfig';
@@ -707,7 +707,6 @@ export default function CompleteSharedLifeDashboard() {
   }
 
   const currentTraveler = getCurrentTraveler();
-  const expensesByCategory = getExpensesByCategory();
 
   return (
     <div style={{ background: BG_COLOR, minHeight: '100vh', color: '#fff' }}>
