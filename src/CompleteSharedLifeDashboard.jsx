@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Home, Leaf, UtensilsCrossed, Wallet, LogOut,
   Trash2, X, Sliders, Bell, Plus, Plane, Edit2, MapPin, ChefHat, Droplet,
-  ShoppingCart as ShoppingBag, Heart, Zap, Wind, Smile
+  ShoppingCart as ShoppingBag, Heart, Wind, Smile
 } from 'lucide-react';
 import { auth } from './firebaseConfig';
 import { signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
@@ -63,50 +63,50 @@ const LANGUAGES = {
     summaryTotal: 'Total',
   },
   FR: {
-    home: "Accueil",
-    plants: "Plantes",
-    meals: "Repas",
-    budget: "Budget",
-    travel: "Voyage",
-    plantsNeedingWater: "plantes à arroser aujourd'hui",
-    noPlantsNeedingWater: "Aucune plante à arroser aujourd'hui",
-    daysApart: "jours séparés ce mois",
-    spentTogether: "dépensé ensemble ce mois",
-    addPlant: "Ajouter une plante",
-    editPlant: "Modifier la plante",
-    markAsWatered: "Marquer comme arrosée",
-    viewRecipe: "Voir la recette",
-    addMeal: "Ajouter un repas",
-    editMeal: "Modifier le repas",
-    mealName: "Nom du repas...",
-    recipe: "Ajouter une recette (optionnel)...",
-    searchPhoto: "Rechercher une photo",
-    addExpense: "Ajouter une dépense",
-    editExpense: "Modifier la dépense",
-    category: "Catégorie",
-    date: "Date",
-    amount: "Montant (€)",
-    addTravel: "Ajouter un voyage",
-    editTravel: "Modifier le voyage",
-    whoTraveling: "Qui voyage?",
-    location: "Localisation",
-    searchCity: "Rechercher une ville...",
-    startDate: "Date de début",
-    endDate: "Date de fin",
-    delete: "Supprimer",
-    update: "Mettre à jour",
-    add: "Ajouter",
-    settings: "Paramètres",
-    language: "Langue",
-    notifications: "Notifications",
-    enableNotifications: "Activer les notifications",
-    signOut: "Déconnexion",
-    isCurrentlyIn: "est actuellement à",
-    plantName: "Nom de la plante...",
-    wateringFrequency: "Fréquence d'arrosage (jours)",
-    currentMonth: "Mois actuel",
-    archive: "Archive",
-    summaryTotal: "Total",
+    home: 'Accueil',
+    plants: 'Plantes',
+    meals: 'Repas',
+    budget: 'Budget',
+    travel: 'Voyage',
+    plantsNeedingWater: 'plantes a arroser',
+    noPlantsNeedingWater: 'Aucune plante a arroser',
+    daysApart: 'jours separes ce mois',
+    spentTogether: 'depense ensemble ce mois',
+    addPlant: 'Ajouter une plante',
+    editPlant: 'Modifier la plante',
+    markAsWatered: 'Marquer comme arrosee',
+    viewRecipe: 'Voir la recette',
+    addMeal: 'Ajouter un repas',
+    editMeal: 'Modifier le repas',
+    mealName: 'Nom du repas...',
+    recipe: 'Ajouter une recette (optionnel)...',
+    searchPhoto: 'Rechercher une photo',
+    addExpense: 'Ajouter une depense',
+    editExpense: 'Modifier la depense',
+    category: 'Categorie',
+    date: 'Date',
+    amount: 'Montant (€)',
+    addTravel: 'Ajouter un voyage',
+    editTravel: 'Modifier le voyage',
+    whoTraveling: 'Qui voyage?',
+    location: 'Localisation',
+    searchCity: 'Rechercher une ville...',
+    startDate: 'Date de debut',
+    endDate: 'Date de fin',
+    delete: 'Supprimer',
+    update: 'Mettre a jour',
+    add: 'Ajouter',
+    settings: 'Parametres',
+    language: 'Langue',
+    notifications: 'Notifications',
+    enableNotifications: 'Activer les notifications',
+    signOut: 'Deconnexion',
+    isCurrentlyIn: 'est actuellement a',
+    plantName: 'Nom de la plante...',
+    wateringFrequency: 'Frequence d\'arrosage (jours)',
+    currentMonth: 'Mois actuel',
+    archive: 'Archive',
+    summaryTotal: 'Total',
   },
 };
 
@@ -135,7 +135,7 @@ const MAJOR_CITIES = [
   { name: 'Bangkok', country: 'Thailand' },
   { name: 'Istanbul', country: 'Turkey' },
   { name: 'Mexico City', country: 'Mexico' },
-  { name: 'São Paulo', country: 'Brazil' },
+  { name: 'Sao Paulo', country: 'Brazil' },
   { name: 'Buenos Aires', country: 'Argentina' },
   { name: 'Madrid', country: 'Spain' },
   { name: 'Vienna', country: 'Austria' },
@@ -329,7 +329,6 @@ export default function CompleteSharedLifeDashboard() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [language, setLanguage] = useState('EN');
 
-  // Data
   const [plants, setPlants] = useState([]);
   const [meals, setMeals] = useState([]);
   const [expenses, setExpenses] = useState([]);
@@ -338,7 +337,6 @@ export default function CompleteSharedLifeDashboard() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [archiveMonth, setArchiveMonth] = useState(new Date());
 
-  // Modal states
   const [newItemName, setNewItemName] = useState('');
   const [newItemRecipe, setNewItemRecipe] = useState('');
   const [newItemPhoto, setNewItemPhoto] = useState(null);
@@ -355,7 +353,6 @@ export default function CompleteSharedLifeDashboard() {
 
   const t = LANGUAGES[language];
 
-  // Auth
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((currentUser) => {
       setUser(currentUser);
@@ -377,12 +374,10 @@ export default function CompleteSharedLifeDashboard() {
         if (snapshot.exists()) {
           const usersData = snapshot.val();
           setUsers(usersData.filter(u => u && u.uid));
-        } else {
-          setUsers([]);
         }
       });
     } catch (error) {
-      console.error('Error loading users:', error);
+      console.error('Error:', error);
     }
   };
 
@@ -395,33 +390,17 @@ export default function CompleteSharedLifeDashboard() {
   const loadSharedData = () => {
     try {
       const sharedRef = ref(database, 'shared-data/default');
-      const unsubscribe = onValue(
-        sharedRef,
-        (snapshot) => {
-          if (snapshot.exists()) {
-            const data = snapshot.val();
-            setPlants(data.plants || []);
-            setMeals(data.meals || []);
-            setExpenses(data.expenses || []);
-            setTravels(data.travels || []);
-            localStorage.setItem('cojoBackup', JSON.stringify(data));
-          }
-          setLoading(false);
-        },
-        (error) => {
-          console.error('❌ Firebase error:', error);
-          setLoading(false);
-          const backup = localStorage.getItem('cojoBackup');
-          if (backup) {
-            const data = JSON.parse(backup);
-            setPlants(data.plants || []);
-            setMeals(data.meals || []);
-            setExpenses(data.expenses || []);
-            setTravels(data.travels || []);
-          }
+      onValue(sharedRef, (snapshot) => {
+        if (snapshot.exists()) {
+          const data = snapshot.val();
+          setPlants(data.plants || []);
+          setMeals(data.meals || []);
+          setExpenses(data.expenses || []);
+          setTravels(data.travels || []);
+          localStorage.setItem('cojoBackup', JSON.stringify(data));
         }
-      );
-      return unsubscribe;
+        setLoading(false);
+      });
     } catch (error) {
       setLoading(false);
     }
@@ -441,7 +420,7 @@ export default function CompleteSharedLifeDashboard() {
       await set(sharedRef, data);
       localStorage.setItem('cojoBackup', JSON.stringify(data));
     } catch (error) {
-      console.error('❌ Error saving:', error);
+      console.error('Error:', error);
     }
   };
 
@@ -451,7 +430,7 @@ export default function CompleteSharedLifeDashboard() {
       const userRef = ref(database, `shared-data/users/${user.uid}/language`);
       await set(userRef, lang);
     } catch (error) {
-      console.error('Error saving language:', error);
+      console.error('Error:', error);
     }
   };
 
@@ -467,7 +446,7 @@ export default function CompleteSharedLifeDashboard() {
       const data = await response.json();
       setUnsplashSearchResults(data.results || []);
     } catch (error) {
-      console.error('Failed to search Unsplash:', error);
+      console.error('Error:', error);
     }
   };
 
@@ -483,7 +462,6 @@ export default function CompleteSharedLifeDashboard() {
     }
   };
 
-  // ==================== PLANTS ====================
   const addPlant = () => {
     if (newItemName.trim()) {
       const plant = {
@@ -493,7 +471,7 @@ export default function CompleteSharedLifeDashboard() {
         lastWatered: new Date().toISOString(),
         wateringFreqDays: parseInt(newItemWateringDays) || 7,
         healthLevel: 100,
-        photo: newItemPhoto || `https://images.unsplash.com/photo-1599599810694-b5ac4dd84e02?w=400&h=400&fit=crop&v=${Date.now()}`,
+        photo: newItemPhoto || 'https://images.unsplash.com/photo-1599599810694-b5ac4dd84e02?w=400&h=400&fit=crop',
       };
       
       let updated;
@@ -511,11 +489,10 @@ export default function CompleteSharedLifeDashboard() {
 
   const waterPlant = (id) => {
     const updated = plants.map(p =>
-      p.id === id ? { ...p, lastWatered: new Date().toISOString(), healthLevel: Math.min(100, p.healthLevel + 10) } : p
+      p.id === id ? { ...p, lastWatered: new Date().toISOString() } : p
     );
     setPlants(updated);
     saveData(updated, meals, expenses, travels);
-    sendNotification('💧 Plant watered!');
   };
 
   const deletePlant = (id) => {
@@ -539,15 +516,13 @@ export default function CompleteSharedLifeDashboard() {
 
   const plantsNeedingWater = plants.filter(p => getWateringStatus(p).needsWatering).length;
 
-  // ==================== MEALS ====================
   const addMeal = () => {
     if (newItemName.trim()) {
-      const mealDate = new Date().toISOString().split('T')[0];
       const meal = {
         id: editingId || Date.now().toString(),
         name: newItemName,
         recipe: newItemRecipe,
-        photo: newItemPhoto || `https://images.unsplash.com/photo-1495575621581-20dbe3ce2bad?w=400&h=400&fit=crop&v=${Date.now()}`,
+        photo: newItemPhoto || 'https://images.unsplash.com/photo-1495575621581-20dbe3ce2bad?w=400&h=400&fit=crop',
       };
       
       let updated;
@@ -555,7 +530,6 @@ export default function CompleteSharedLifeDashboard() {
         updated = meals.map(m => m.id === editingId ? meal : m);
       } else {
         updated = [...meals, meal];
-        exportToCalendar(`🍽️ ${newItemName}`, new Date(mealDate));
       }
       
       setMeals(updated);
@@ -570,7 +544,6 @@ export default function CompleteSharedLifeDashboard() {
     saveData(plants, updated, expenses, travels);
   };
 
-  // ==================== EXPENSES ====================
   const addExpense = () => {
     if (newExpenseAmount && newExpenseAmount > 0) {
       const expense = {
@@ -620,7 +593,6 @@ export default function CompleteSharedLifeDashboard() {
     return grouped;
   };
 
-  // ==================== TRAVELS ====================
   const addTravel = () => {
     if (newTravelStart && newTravelEnd && newTravelLocation && newTravelUserId) {
       const travel = {
@@ -695,7 +667,6 @@ export default function CompleteSharedLifeDashboard() {
     return { name: otherUser?.displayName || 'Partner', avatar: otherUser?.photoURL };
   };
 
-  // ==================== HELPERS ====================
   const resetModal = () => {
     setShowAddModal(false);
     setModalType(null);
@@ -711,7 +682,6 @@ export default function CompleteSharedLifeDashboard() {
     setNewExpenseCategory('Groceries');
     setNewExpenseAmount('');
     setNewExpenseDate(new Date().toISOString().split('T')[0]);
-    setCitySuggestions([]);
   };
 
   const openEditModal = (type, item) => {
@@ -743,7 +713,6 @@ export default function CompleteSharedLifeDashboard() {
     const granted = await requestNotificationPermission();
     if (granted) {
       setNotificationsEnabled(true);
-      sendNotification('🔔 Notifications enabled!');
     }
   };
 
@@ -751,7 +720,7 @@ export default function CompleteSharedLifeDashboard() {
     try {
       await signInWithPopup(auth, provider);
     } catch (error) {
-      console.error('Login error:', error);
+      console.error('Error:', error);
     }
   };
 
@@ -760,7 +729,7 @@ export default function CompleteSharedLifeDashboard() {
       await signOut(auth);
       setShowSettings(false);
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error('Error:', error);
     }
   };
 
@@ -768,7 +737,7 @@ export default function CompleteSharedLifeDashboard() {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: BG_COLOR }}>
         <div style={{ textAlign: 'center' }}>
-          <img src={`/cojo_logo.svg?v=${Date.now()}`} alt="COJO" style={{ height: '60px', marginBottom: '20px' }} />
+          <img src="/cojo_logo.svg" alt="COJO" style={{ height: '60px', marginBottom: '20px' }} />
           <div style={{ color: '#fff', fontSize: '14px' }}>Loading...</div>
         </div>
       </div>
@@ -779,7 +748,7 @@ export default function CompleteSharedLifeDashboard() {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: BG_COLOR, padding: '20px' }}>
         <div style={{ maxWidth: '400px', textAlign: 'center' }}>
-          <img src={`/cojo_logo.svg?v=${Date.now()}`} alt="COJO" style={{ height: '80px', marginBottom: '30px' }} />
+          <img src="/cojo_logo.svg" alt="COJO" style={{ height: '80px', marginBottom: '30px' }} />
           <p style={{ color: '#999', marginBottom: '40px', fontSize: '16px' }}>Sharing life together.</p>
           <button onClick={handleLogin} style={{ width: '100%', padding: '14px', background: ACCENT_COLOR, color: '#fff', border: 'none', borderRadius: '12px', fontSize: '16px', fontWeight: '600', cursor: 'pointer' }}>
             Sign in
@@ -797,154 +766,51 @@ export default function CompleteSharedLifeDashboard() {
 
   return (
     <div style={{ background: BG_COLOR, minHeight: '100vh', color: '#fff' }}>
-      {/* STICKY HEADER */}
-      <div style={{ 
-        position: 'fixed', 
-        top: 0, 
-        left: 0, 
-        right: 0,
-        padding: '16px 20px', 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center', 
-        borderBottom: `1px solid rgba(18, 52, 255, 0.15)`,
-        background: '#000000',
-        zIndex: 50,
-      }}>
-        <div
-          onClick={() => setShowSettings(true)}
-          style={{
-            width: '40px',
-            height: '40px',
-            borderRadius: '50%',
-            background: `url(${user?.photoURL}) no-repeat center / cover`,
-            cursor: 'pointer',
-            border: `2px solid ${ACCENT_COLOR}`,
-          }}
-        />
-
-        <img src={`/cojo_logo.svg?v=${Date.now()}`} alt="COJO" style={{ height: '32px' }} />
-
-        <button
-          onClick={() => setShowSettings(true)}
-          style={{
-            background: 'none',
-            border: 'none',
-            color: '#fff',
-            cursor: 'pointer',
-            padding: '8px',
-          }}
-        >
+      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `1px solid rgba(18, 52, 255, 0.15)`, background: '#000000', zIndex: 50 }}>
+        <div onClick={() => setShowSettings(true)} style={{ width: '40px', height: '40px', borderRadius: '50%', background: `url(${user?.photoURL}) no-repeat center / cover`, cursor: 'pointer', border: `2px solid ${ACCENT_COLOR}` }} />
+        <img src="/cojo_logo.svg" alt="COJO" style={{ height: '32px' }} />
+        <button onClick={() => setShowSettings(true)} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', padding: '8px' }}>
           <Sliders size={24} />
         </button>
       </div>
 
-      {/* Content Area */}
       <div style={{ paddingTop: '80px', paddingBottom: '120px' }}>
-        {/* HOME TAB */}
         {activeTab === 'home' && (
           <div style={{ padding: '20px' }}>
             <h2 style={{ fontSize: '28px', fontWeight: '700', margin: '0 0 24px' }}>{t.home}</h2>
-
             <div style={{ display: 'grid', gap: '12px' }}>
-              {/* Plants needing water - FIRST */}
-              <div
-                style={{
-                  background: `linear-gradient(135deg, ${plantsNeedingWater > 0 ? 'rgba(255, 59, 48, 0.15)' : 'rgba(18, 52, 255, 0.15)'} 0%, rgba(0, 0, 0, 0.8) 100%)`,
-                  borderRadius: '16px',
-                  padding: '32px 24px',
-                  border: `1px solid rgba(${plantsNeedingWater > 0 ? '255, 59, 48' : '18, 52, 255'}, 0.15)`,
-                  backdropFilter: 'blur(10px)',
-                  minHeight: '160px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'flex-end',
-                }}
-              >
+              <div style={{ background: `linear-gradient(135deg, ${plantsNeedingWater > 0 ? 'rgba(255, 59, 48, 0.15)' : 'rgba(18, 52, 255, 0.15)'} 0%, rgba(0, 0, 0, 0.8) 100%)`, borderRadius: '16px', padding: '32px 24px', border: `1px solid rgba(${plantsNeedingWater > 0 ? '255, 59, 48' : '18, 52, 255'}, 0.15)`, minHeight: '160px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
                 {plantsNeedingWater > 0 ? (
                   <>
                     <div style={{ fontSize: '48px', fontWeight: '700', marginBottom: '8px', color: '#ff3b30' }}>{plantsNeedingWater}</div>
                     <div style={{ fontSize: '14px', color: '#999' }}>{t.plantsNeedingWater}</div>
                   </>
                 ) : (
-                  <>
-                    <div style={{ fontSize: '24px', fontWeight: '600', marginBottom: '0px' }}>{t.noPlantsNeedingWater}</div>
-                  </>
+                  <div style={{ fontSize: '24px', fontWeight: '600' }}>{t.noPlantsNeedingWater}</div>
                 )}
               </div>
 
-              {/* Currently traveling - if exists */}
               {currentTraveler && (() => {
                 const info = getTravelerInfo(currentTraveler.userId);
                 return (
-                  <div
-                    style={{
-                      background: `linear-gradient(135deg, rgba(18, 52, 255, 0.15) 0%, rgba(0, 0, 0, 0.8) 100%)`,
-                      borderRadius: '16px',
-                      padding: '24px',
-                      border: `1px solid rgba(18, 52, 255, 0.15)`,
-                      backdropFilter: 'blur(10px)',
-                      minHeight: '160px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'flex-end',
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-                      <div
-                        style={{
-                          width: '48px',
-                          height: '48px',
-                          borderRadius: '50%',
-                          background: `url(${info.avatar}) no-repeat center / cover`,
-                          border: `2px solid ${ACCENT_COLOR}`,
-                        }}
-                      />
+                  <div style={{ background: `linear-gradient(135deg, rgba(18, 52, 255, 0.15) 0%, rgba(0, 0, 0, 0.8) 100%)`, borderRadius: '16px', padding: '24px', border: `1px solid rgba(18, 52, 255, 0.15)`, minHeight: '160px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: `url(${info.avatar}) no-repeat center / cover`, border: `2px solid ${ACCENT_COLOR}` }} />
                       <div>
-                        <div style={{ fontSize: '14px', color: '#999', marginBottom: '2px' }}>
-                          {t.isCurrentlyIn}
-                        </div>
-                        <div style={{ fontSize: '24px', fontWeight: '700', color: ACCENT_COLOR }}>
-                          {currentTraveler.location}
-                        </div>
+                        <div style={{ fontSize: '14px', color: '#999', marginBottom: '2px' }}>{t.isCurrentlyIn}</div>
+                        <div style={{ fontSize: '24px', fontWeight: '700', color: ACCENT_COLOR }}>{currentTraveler.location}</div>
                       </div>
                     </div>
                   </div>
                 );
               })()}
 
-              {/* Days apart this month */}
-              <div
-                style={{
-                  background: `linear-gradient(135deg, rgba(18, 52, 255, 0.15) 0%, rgba(0, 0, 0, 0.8) 100%)`,
-                  borderRadius: '16px',
-                  padding: '32px 24px',
-                  border: `1px solid rgba(18, 52, 255, 0.15)`,
-                  backdropFilter: 'blur(10px)',
-                  minHeight: '160px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'flex-end',
-                }}
-              >
+              <div style={{ background: `linear-gradient(135deg, rgba(18, 52, 255, 0.15) 0%, rgba(0, 0, 0, 0.8) 100%)`, borderRadius: '16px', padding: '32px 24px', border: `1px solid rgba(18, 52, 255, 0.15)`, minHeight: '160px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
                 <div style={{ fontSize: '48px', fontWeight: '700', marginBottom: '8px' }}>{monthTravelDays}</div>
                 <div style={{ fontSize: '14px', color: '#999' }}>{t.daysApart}</div>
               </div>
 
-              {/* Total spent this month */}
-              <div
-                style={{
-                  background: `linear-gradient(135deg, rgba(18, 52, 255, 0.15) 0%, rgba(0, 0, 0, 0.8) 100%)`,
-                  borderRadius: '16px',
-                  padding: '32px 24px',
-                  border: `1px solid rgba(18, 52, 255, 0.15)`,
-                  backdropFilter: 'blur(10px)',
-                  minHeight: '160px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'flex-end',
-                }}
-              >
+              <div style={{ background: `linear-gradient(135deg, rgba(18, 52, 255, 0.15) 0%, rgba(0, 0, 0, 0.8) 100%)`, borderRadius: '16px', padding: '32px 24px', border: `1px solid rgba(18, 52, 255, 0.15)`, minHeight: '160px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
                 <div style={{ fontSize: '48px', fontWeight: '700', marginBottom: '8px' }}>€{getExpenseTotal(monthExpenses).toFixed(2)}</div>
                 <div style={{ fontSize: '14px', color: '#999' }}>{t.spentTogether}</div>
               </div>
@@ -952,100 +818,33 @@ export default function CompleteSharedLifeDashboard() {
           </div>
         )}
 
-        {/* PLANTS TAB */}
         {activeTab === 'plants' && (
           <div style={{ padding: '20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
               <h2 style={{ fontSize: '28px', fontWeight: '700', margin: 0 }}>{t.plants}</h2>
-              <button
-                onClick={() => {
-                  setModalType('plant');
-                  setEditingId(null);
-                  setShowAddModal(true);
-                  setNewItemName('');
-                  setNewItemWateringDays(7);
-                  setNewItemPhoto(null);
-                }}
-                style={{
-                  background: ACCENT_COLOR,
-                  border: 'none',
-                  borderRadius: '12px',
-                  padding: '10px 16px',
-                  color: '#fff',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                }}
-              >
+              <button onClick={() => { setModalType('plant'); setEditingId(null); setShowAddModal(true); setNewItemName(''); setNewItemWateringDays(7); setNewItemPhoto(null); }} style={{ background: ACCENT_COLOR, border: 'none', borderRadius: '12px', padding: '10px 16px', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: '600' }}>
                 <Plus size={18} /> {t.add}
               </button>
             </div>
 
             {plants.length === 0 ? (
-              <EmptyState icon={Leaf} title="No plants yet" subtitle="Let's start growing together" />
+              <EmptyState icon={Leaf} title="No plants" subtitle="Lets grow together" />
             ) : (
               <div style={{ display: 'grid', gap: '12px' }}>
                 {plants.map(plant => {
                   const status = getWateringStatus(plant);
                   return (
-                    <div
-                      key={plant.id}
-                      style={{
-                        background: `linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.95) 100%), url(${plant.photo}?w=400&h=300&fit=crop)`,
-                        backgroundSize: 'cover',
-                        backgroundPosition: 'center',
-                        borderRadius: '16px',
-                        padding: '16px',
-                        border: `1px solid rgba(${status.needsWatering ? '255, 59, 48' : '18, 52, 255'}, 0.15)`,
-                        backdropFilter: 'blur(10px)',
-                        minHeight: '200px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        justifyContent: 'flex-end',
-                      }}
-                    >
+                    <div key={plant.id} style={{ background: `linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.95) 100%), url(${plant.photo}?w=400&h=300&fit=crop)`, backgroundSize: 'cover', backgroundPosition: 'center', borderRadius: '16px', padding: '16px', border: `1px solid rgba(${status.needsWatering ? '255, 59, 48' : '18, 52, 255'}, 0.15)`, minHeight: '200px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
                         <div>
                           <h3 style={{ fontSize: '18px', fontWeight: '600', margin: '0 0 4px' }}>{plant.name}</h3>
-                          <p style={{ fontSize: '12px', color: status.needsWatering ? '#ff3b30' : '#999', margin: 0 }}>
-                            {status.needsWatering ? '💧 Needs watering now!' : `Next watering in ${status.daysUntil} days`}
-                          </p>
+                          <p style={{ fontSize: '12px', color: status.needsWatering ? '#ff3b30' : '#999', margin: 0 }}>{status.needsWatering ? 'Needs watering!' : `Next in ${status.daysUntil} days`}</p>
                         </div>
-                        <button
-                          onClick={() => openEditModal('plant', plant)}
-                          style={{
-                            background: `rgba(18, 52, 255, 0.2)`,
-                            border: '1px solid rgba(18, 52, 255, 0.3)',
-                            borderRadius: '12px',
-                            padding: '8px',
-                            color: ACCENT_COLOR,
-                            cursor: 'pointer',
-                          }}
-                        >
+                        <button onClick={() => openEditModal('plant', plant)} style={{ background: `rgba(18, 52, 255, 0.2)`, border: '1px solid rgba(18, 52, 255, 0.3)`, borderRadius: '12px', padding: '8px', color: ACCENT_COLOR, cursor: 'pointer' }}>
                           <Edit2 size={18} />
                         </button>
                       </div>
-
-                      <button
-                        onClick={() => waterPlant(plant.id)}
-                        style={{
-                          background: 'rgba(255, 255, 255, 0.08)',
-                          border: '1px solid rgba(255, 255, 255, 0.1)',
-                          borderRadius: '12px',
-                          padding: '10px',
-                          color: '#fff',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: '6px',
-                          fontSize: '14px',
-                          fontWeight: '600',
-                        }}
-                      >
+                      <button onClick={() => waterPlant(plant.id)} style={{ background: 'rgba(255, 255, 255, 0.08)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '12px', padding: '10px', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '14px', fontWeight: '600' }}>
                         <Droplet size={16} /> {t.markAsWatered}
                       </button>
                     </div>
@@ -1056,98 +855,28 @@ export default function CompleteSharedLifeDashboard() {
           </div>
         )}
 
-        {/* MEALS TAB */}
         {activeTab === 'food' && (
           <div style={{ padding: '20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
               <h2 style={{ fontSize: '28px', fontWeight: '700', margin: 0 }}>{t.meals}</h2>
-              <button
-                onClick={() => {
-                  setModalType('meal');
-                  setEditingId(null);
-                  setShowAddModal(true);
-                  setNewItemName('');
-                  setNewItemRecipe('');
-                  setNewItemPhoto(null);
-                }}
-                style={{
-                  background: ACCENT_COLOR,
-                  border: 'none',
-                  borderRadius: '12px',
-                  padding: '10px 16px',
-                  color: '#fff',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                }}
-              >
+              <button onClick={() => { setModalType('meal'); setEditingId(null); setShowAddModal(true); setNewItemName(''); setNewItemRecipe(''); setNewItemPhoto(null); }} style={{ background: ACCENT_COLOR, border: 'none', borderRadius: '12px', padding: '10px 16px', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: '600' }}>
                 <Plus size={18} /> {t.add}
               </button>
             </div>
 
             {meals.length === 0 ? (
-              <EmptyState icon={UtensilsCrossed} title="No meals" subtitle="Let's start collecting recipes" />
+              <EmptyState icon={UtensilsCrossed} title="No meals" subtitle="Collect recipes" />
             ) : (
               <div style={{ display: 'grid', gap: '12px' }}>
                 {meals.map(meal => (
-                  <div
-                    key={meal.id}
-                    style={{
-                      background: `linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.95) 100%), url(${meal.photo}?w=400&h=300&fit=crop)`,
-                      backgroundSize: 'cover',
-                      backgroundPosition: 'center',
-                      borderRadius: '16px',
-                      padding: '16px',
-                      border: `1px solid rgba(18, 52, 255, 0.15)`,
-                      backdropFilter: 'blur(10px)',
-                      minHeight: '200px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'flex-end',
-                    }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-                      <div>
-                        <h3 style={{ fontSize: '18px', fontWeight: '600', margin: 0 }}>{meal.name}</h3>
-                      </div>
-                      <button
-                        onClick={() => openEditModal('meal', meal)}
-                        style={{
-                          background: `rgba(18, 52, 255, 0.2)`,
-                          border: '1px solid rgba(18, 52, 255, 0.3)`,
-                          borderRadius: '12px',
-                          padding: '8px',
-                          color: ACCENT_COLOR,
-                          cursor: 'pointer',
-                        }}
-                      >
+                  <div key={meal.id} style={{ background: `linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.95) 100%), url(${meal.photo}?w=400&h=300&fit=crop)`, backgroundSize: 'cover', backgroundPosition: 'center', borderRadius: '16px', padding: '16px', border: `1px solid rgba(18, 52, 255, 0.15)`, minHeight: '200px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+                      <h3 style={{ fontSize: '18px', fontWeight: '600', margin: 0 }}>{meal.name}</h3>
+                      <button onClick={() => openEditModal('meal', meal)} style={{ background: `rgba(18, 52, 255, 0.2)`, border: '1px solid rgba(18, 52, 255, 0.3)`, borderRadius: '12px', padding: '8px', color: ACCENT_COLOR, cursor: 'pointer' }}>
                         <Edit2 size={18} />
                       </button>
                     </div>
-
-                    <button
-                      onClick={() => {
-                        setSelectedRecipe(meal);
-                        setShowRecipeModal(true);
-                      }}
-                      style={{
-                        background: 'rgba(255, 255, 255, 0.08)',
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
-                        borderRadius: '12px',
-                        padding: '10px 12px',
-                        color: '#fff',
-                        cursor: 'pointer',
-                        fontSize: '14px',
-                        fontWeight: '600',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '6px',
-                      }}
-                    >
+                    <button onClick={() => { setSelectedRecipe(meal); setShowRecipeModal(true); }} style={{ background: 'rgba(255, 255, 255, 0.08)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '12px', padding: '10px', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '14px', fontWeight: '600' }}>
                       <ChefHat size={16} /> {t.viewRecipe}
                     </button>
                   </div>
@@ -1157,66 +886,22 @@ export default function CompleteSharedLifeDashboard() {
           </div>
         )}
 
-        {/* BUDGET TAB */}
         {activeTab === 'budget' && (
           <div style={{ padding: '20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
               <h2 style={{ fontSize: '28px', fontWeight: '700', margin: 0 }}>{t.budget}</h2>
               <div style={{ display: 'flex', gap: '8px' }}>
-                <button onClick={() => { setShowArchive(true); setArchiveType('budget'); }} style={{ background: 'rgba(255, 255, 255, 0.1)', border: '1px solid rgba(255, 255, 255, 0.15)', borderRadius: '12px', padding: '8px 12px', color: '#999', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>
+                <button onClick={() => { setShowArchive(true); setArchiveType('budget'); }} style={{ background: 'rgba(255, 255, 255, 0.1)', border: '1px solid rgba(255, 255, 255, 0.15)', borderRadius: '12px', padding: '8px 12px', color: '#999', cursor: 'pointer', fontSize: '12px' }}>
                   {t.archive}
                 </button>
-                <button
-                  onClick={() => {
-                    setModalType('expense');
-                    setEditingId(null);
-                    setShowAddModal(true);
-                    setNewExpenseCategory('Groceries');
-                    setNewExpenseAmount('');
-                    setNewExpenseDate(new Date().toISOString().split('T')[0]);
-                  }}
-                  style={{
-                    background: ACCENT_COLOR,
-                    border: 'none',
-                    borderRadius: '12px',
-                    padding: '8px 12px',
-                    color: '#fff',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                  }}
-                >
+                <button onClick={() => { setModalType('expense'); setEditingId(null); setShowAddModal(true); setNewExpenseCategory('Groceries'); setNewExpenseAmount(''); setNewExpenseDate(new Date().toISOString().split('T')[0]); }} style={{ background: ACCENT_COLOR, border: 'none', borderRadius: '12px', padding: '8px 12px', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: '600' }}>
                   <Plus size={18} />
                 </button>
               </div>
             </div>
 
-            {monthExpenses.length > 0 && (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '12px', marginBottom: '24px' }}>
-                {BUDGET_CATEGORIES.map(category => {
-                  const catExpenses = monthExpensesByCategory[category.name] || [];
-                  const total = catExpenses.reduce((sum, e) => sum + e.amount, 0);
-                  if (total === 0) return null;
-                  
-                  const Icon = category.icon;
-                  return (
-                    <div key={category.name} style={{ background: `rgba(255, 255, 255, 0.02)`, borderRadius: '16px', padding: '16px', border: `1px solid rgba(18, 52, 255, 0.15)`, textAlign: 'center' }}>
-                      <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: `${category.color}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 8px', color: category.color }}>
-                        <Icon size={20} />
-                      </div>
-                      <p style={{ fontSize: '12px', color: '#666', margin: '0 0 4px', textTransform: 'capitalize' }}>{category.name}</p>
-                      <p style={{ fontSize: '18px', fontWeight: '700', margin: 0, color: category.color }}>€{total.toFixed(2)}</p>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
             {monthExpenses.length === 0 ? (
-              <EmptyState icon={Wallet} title="No expenses" subtitle="Track your spending together" />
+              <EmptyState icon={Wallet} title="No expenses" subtitle="Track together" />
             ) : (
               <div style={{ display: 'grid', gap: '12px' }}>
                 {BUDGET_CATEGORIES.map(category => {
@@ -1233,12 +918,11 @@ export default function CompleteSharedLifeDashboard() {
                           <Icon size={20} />
                         </div>
                         <div style={{ flex: 1 }}>
-                          <h3 style={{ fontSize: '16px', fontWeight: '600', margin: 0, textTransform: 'capitalize' }}>{category.name}</h3>
+                          <h3 style={{ fontSize: '16px', fontWeight: '600', margin: 0 }}>{category.name}</h3>
                           <p style={{ fontSize: '12px', color: '#666', margin: 0 }}>{catExpenses.length} items</p>
                         </div>
                         <div style={{ fontSize: '18px', fontWeight: '700', color: category.color }}>€{total.toFixed(2)}</div>
                       </div>
-
                       <div style={{ display: 'grid', gap: '8px' }}>
                         {catExpenses.map(exp => (
                           <div key={exp.id} style={{ background: `rgba(255, 255, 255, 0.02)`, borderRadius: '12px', padding: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: `1px solid rgba(255, 255, 255, 0.05)` }}>
@@ -1247,7 +931,7 @@ export default function CompleteSharedLifeDashboard() {
                               <p style={{ fontSize: '12px', color: '#666', margin: '2px 0 0' }}>{exp.date}</p>
                             </div>
                             <div style={{ display: 'flex', gap: '8px' }}>
-                              <button onClick={() => openEditModal('expense', exp)} style={{ background: 'none', border: 'none', color: ACCENT_COLOR, cursor: 'pointer', padding: '4px' }}>
+                              <button onClick={() => openEditModal('expense', exp)} style={{ background: 'none', border: 'none', color: ACCENT_COLOR, cursor: 'pointer' }}>
                                 <Edit2 size={16} />
                               </button>
                             </div>
@@ -1262,96 +946,42 @@ export default function CompleteSharedLifeDashboard() {
           </div>
         )}
 
-        {/* TRAVEL TAB */}
         {activeTab === 'travel' && (
           <div style={{ padding: '20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
               <h2 style={{ fontSize: '28px', fontWeight: '700', margin: 0 }}>{t.travel}</h2>
               <div style={{ display: 'flex', gap: '8px' }}>
-                <button onClick={() => { setShowArchive(true); setArchiveType('travel'); }} style={{ background: 'rgba(255, 255, 255, 0.1)', border: '1px solid rgba(255, 255, 255, 0.15)', borderRadius: '12px', padding: '8px 12px', color: '#999', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>
+                <button onClick={() => { setShowArchive(true); setArchiveType('travel'); }} style={{ background: 'rgba(255, 255, 255, 0.1)', border: '1px solid rgba(255, 255, 255, 0.15)', borderRadius: '12px', padding: '8px 12px', color: '#999', cursor: 'pointer', fontSize: '12px' }}>
                   {t.archive}
                 </button>
-                <button
-                  onClick={() => {
-                    setModalType('travel');
-                    setEditingId(null);
-                    setShowAddModal(true);
-                    setNewTravelStart('');
-                    setNewTravelEnd('');
-                    setNewTravelLocation('');
-                    setNewTravelUserId(user?.uid || '');
-                  }}
-                  style={{
-                    background: ACCENT_COLOR,
-                    border: 'none',
-                    borderRadius: '12px',
-                    padding: '8px 12px',
-                    color: '#fff',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                  }}
-                >
+                <button onClick={() => { setModalType('travel'); setEditingId(null); setShowAddModal(true); setNewTravelStart(''); setNewTravelEnd(''); setNewTravelLocation(''); setNewTravelUserId(user?.uid || ''); }} style={{ background: ACCENT_COLOR, border: 'none', borderRadius: '12px', padding: '8px 12px', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: '600' }}>
                   <Plus size={18} />
                 </button>
               </div>
             </div>
 
             {monthTravels.length === 0 ? (
-              <EmptyState icon={Plane} title="No trips" subtitle="Plan your travels together" />
+              <EmptyState icon={Plane} title="No trips" subtitle="Plan travels" />
             ) : (
               <>
-                <CalendarMonth
-                  travels={monthTravels}
-                  currentMonth={currentMonth}
-                  onMonthChange={(delta) => {
-                    const newMonth = new Date(currentMonth);
-                    newMonth.setMonth(newMonth.getMonth() + delta);
-                    setCurrentMonth(newMonth);
-                  }}
-                />
-
+                <CalendarMonth travels={monthTravels} currentMonth={currentMonth} onMonthChange={(delta) => { const m = new Date(currentMonth); m.setMonth(m.getMonth() + delta); setCurrentMonth(m); }} />
                 <div style={{ marginTop: '24px' }}>
                   <h3 style={{ fontSize: '16px', fontWeight: '600', margin: '0 0 12px' }}>Trips</h3>
                   <div style={{ display: 'grid', gap: '12px' }}>
                     {monthTravels.map(travel => {
                       const info = getTravelerInfo(travel.userId);
                       return (
-                        <div
-                          key={travel.id}
-                          style={{
-                            background: `rgba(18, 52, 255, 0.08)`,
-                            border: `1px solid rgba(18, 52, 255, 0.15)`,
-                            borderRadius: '16px',
-                            padding: '16px',
-                          }}
-                        >
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                        <div key={travel.id} style={{ background: `rgba(18, 52, 255, 0.08)`, border: `1px solid rgba(18, 52, 255, 0.15)`, borderRadius: '16px', padding: '16px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                             <div>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
                                 <MapPin size={16} style={{ color: ACCENT_COLOR }} />
                                 <h3 style={{ fontSize: '16px', fontWeight: '600', margin: 0 }}>{travel.location}</h3>
                               </div>
-                              <p style={{ fontSize: '12px', color: '#666', margin: '0 0 4px' }}>
-                                {travel.startDate} → {travel.endDate}
-                              </p>
-                              <p style={{ fontSize: '12px', color: '#999', margin: 0 }}>
-                                {info.name}
-                              </p>
+                              <p style={{ fontSize: '12px', color: '#666', margin: '0 0 4px' }}>{travel.startDate} to {travel.endDate}</p>
+                              <p style={{ fontSize: '12px', color: '#999', margin: 0 }}>{info.name}</p>
                             </div>
-                            <button
-                              onClick={() => openEditModal('travel', travel)}
-                              style={{
-                                background: 'none',
-                                border: 'none',
-                                color: ACCENT_COLOR,
-                                cursor: 'pointer',
-                                padding: '4px',
-                              }}
-                            >
+                            <button onClick={() => openEditModal('travel', travel)} style={{ background: 'none', border: 'none', color: ACCENT_COLOR, cursor: 'pointer' }}>
                               <Edit2 size={18} />
                             </button>
                           </div>
@@ -1366,372 +996,119 @@ export default function CompleteSharedLifeDashboard() {
         )}
       </div>
 
-      {/* Bottom Menu */}
-      <div style={{ position: 'fixed', bottom: '20px', left: '50%', transform: 'translateX(-50%)', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px', padding: '12px 16px', background: `rgba(0, 0, 0, 0.8)`, backdropFilter: 'blur(30px)', borderRadius: '60px', border: `1px solid rgba(18, 52, 255, 0.3)`, zIndex: 100, boxShadow: `0 8px 32px rgba(18, 52, 255, 0.1)` }}>
-        {[
-          { id: 'home', icon: Home },
-          { id: 'plants', icon: Leaf },
-          { id: 'food', icon: UtensilsCrossed },
-          { id: 'budget', icon: Wallet },
-          { id: 'travel', icon: Plane },
-        ].map(tab => {
+      <div style={{ position: 'fixed', bottom: '20px', left: '50%', transform: 'translateX(-50%)', display: 'flex', justifyContent: 'center', gap: '12px', padding: '12px 16px', background: `rgba(0, 0, 0, 0.8)`, backdropFilter: 'blur(30px)', borderRadius: '60px', border: `1px solid rgba(18, 52, 255, 0.3)`, zIndex: 100 }}>
+        {[{ id: 'home', icon: Home }, { id: 'plants', icon: Leaf }, { id: 'food', icon: UtensilsCrossed }, { id: 'budget', icon: Wallet }, { id: 'travel', icon: Plane }].map(tab => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
           return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              style={{
-                background: isActive ? `rgba(18, 52, 255, 0.4)` : 'transparent',
-                border: 'none',
-                borderRadius: '50%',
-                padding: '12px',
-                width: '48px',
-                height: '48px',
-                color: isActive ? ACCENT_COLOR : '#666',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'all 0.3s',
-              }}
-            >
+            <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{ background: isActive ? `rgba(18, 52, 255, 0.4)` : 'transparent', border: 'none', borderRadius: '50%', padding: '12px', width: '48px', height: '48px', color: isActive ? ACCENT_COLOR : '#666', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Icon size={24} />
             </button>
           );
         })}
       </div>
 
-      {/* Settings Panel */}
       {showSettings && (
-        <div
-          style={{
-            position: 'fixed',
-            top: '0',
-            left: '0',
-            right: '0',
-            bottom: '0',
-            background: `rgba(0, 0, 0, 0.6)`,
-            backdropFilter: 'blur(10px)',
-            zIndex: 200,
-            display: 'flex',
-            alignItems: 'flex-end',
-          }}
-          onClick={() => setShowSettings(false)}
-        >
-          <div
-            style={{
-              width: '100%',
-              background: BG_COLOR,
-              borderTop: `1px solid rgba(18, 52, 255, 0.2)`,
-              borderRadius: '20px 20px 0 0',
-              padding: '20px',
-              maxHeight: '80vh',
-              overflowY: 'auto',
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
+        <div style={{ position: 'fixed', top: '0', left: '0', right: '0', bottom: '0', background: `rgba(0, 0, 0, 0.6)`, backdropFilter: 'blur(10px)', zIndex: 200, display: 'flex', alignItems: 'flex-end' }} onClick={() => setShowSettings(false)}>
+          <div style={{ width: '100%', background: BG_COLOR, borderTop: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '20px 20px 0 0', padding: '20px', maxHeight: '80vh', overflowY: 'auto' }} onClick={(e) => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
               <h3 style={{ fontSize: '20px', fontWeight: '600', margin: 0 }}>{t.settings}</h3>
-              <button
-                onClick={() => setShowSettings(false)}
-                style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '24px' }}
-              >
+              <button onClick={() => setShowSettings(false)} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '24px' }}>
                 <X size={24} />
               </button>
             </div>
 
-            {/* User Info */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px', padding: '16px', background: `rgba(18, 52, 255, 0.1)`, borderRadius: '12px' }}>
-              <img
-                src={user?.photoURL}
-                alt="Avatar"
-                style={{ width: '48px', height: '48px', borderRadius: '50%' }}
-              />
+              <img src={user?.photoURL} alt="Avatar" style={{ width: '48px', height: '48px', borderRadius: '50%' }} />
               <div>
                 <p style={{ margin: '0 0 4px', fontWeight: '600' }}>{user?.displayName}</p>
                 <p style={{ margin: 0, fontSize: '12px', color: '#666' }}>{user?.email}</p>
               </div>
             </div>
 
-            {/* Language */}
             <div style={{ marginBottom: '24px' }}>
               <h4 style={{ fontSize: '14px', fontWeight: '600', margin: '0 0 12px', color: '#666', textTransform: 'uppercase' }}>{t.language}</h4>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                 {['EN', 'FR'].map(lang => (
-                  <button
-                    key={lang}
-                    onClick={() => saveLanguage(lang)}
-                    style={{
-                      background: language === lang ? ACCENT_COLOR : `rgba(255, 255, 255, 0.05)`,
-                      border: `1px solid rgba(${language === lang ? '18, 52, 255' : '255, 255, 255'}, ${language === lang ? 0.4 : 0.1})`,
-                      borderRadius: '12px',
-                      padding: '12px',
-                      color: language === lang ? '#fff' : '#999',
-                      cursor: 'pointer',
-                      fontSize: '14px',
-                      fontWeight: '600',
-                    }}
-                  >
+                  <button key={lang} onClick={() => saveLanguage(lang)} style={{ background: language === lang ? ACCENT_COLOR : `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(${language === lang ? '18, 52, 255' : '255, 255, 255'}, ${language === lang ? 0.4 : 0.1})`, borderRadius: '12px', padding: '12px', color: language === lang ? '#fff' : '#999', cursor: 'pointer', fontSize: '14px', fontWeight: '600' }}>
                     {lang}
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Notifications */}
             <div style={{ marginBottom: '24px' }}>
               <h4 style={{ fontSize: '14px', fontWeight: '600', margin: '0 0 12px', color: '#666', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <Bell size={16} /> {t.notifications}
               </h4>
-
               {!notificationsEnabled ? (
-                <button
-                  onClick={handleEnableNotifications}
-                  style={{
-                    width: '100%',
-                    background: ACCENT_COLOR,
-                    border: 'none',
-                    borderRadius: '12px',
-                    padding: '12px',
-                    color: '#fff',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                  }}
-                >
-                  🔔 {t.enableNotifications}
+                <button onClick={handleEnableNotifications} style={{ width: '100%', background: ACCENT_COLOR, border: 'none', borderRadius: '12px', padding: '12px', color: '#fff', cursor: 'pointer', fontSize: '14px', fontWeight: '600' }}>
+                  {t.enableNotifications}
                 </button>
               ) : (
                 <div style={{ padding: '12px', background: `rgba(52, 199, 89, 0.1)`, borderRadius: '12px', border: `1px solid rgba(52, 199, 89, 0.2)` }}>
-                  <p style={{ margin: 0, fontSize: '12px', color: '#34c759' }}>✓ Notifications enabled</p>
+                  <p style={{ margin: 0, fontSize: '12px', color: '#34c759' }}>Enabled</p>
                 </div>
               )}
             </div>
 
-            {/* Sign Out */}
-            <button
-              onClick={handleLogout}
-              style={{
-                width: '100%',
-                background: 'rgba(255, 59, 48, 0.2)',
-                border: `1px solid rgba(255, 59, 48, 0.3)`,
-                borderRadius: '12px',
-                padding: '12px',
-                color: '#ff3b30',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                fontSize: '16px',
-                fontWeight: '600',
-              }}
-            >
+            <button onClick={handleLogout} style={{ width: '100%', background: 'rgba(255, 59, 48, 0.2)', border: `1px solid rgba(255, 59, 48, 0.3)`, borderRadius: '12px', padding: '12px', color: '#ff3b30', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '16px', fontWeight: '600' }}>
               <LogOut size={18} /> {t.signOut}
             </button>
           </div>
         </div>
       )}
 
-      {/* Recipe Modal */}
       {showRecipeModal && selectedRecipe && (
-        <div
-          style={{
-            position: 'fixed',
-            top: '0',
-            left: '0',
-            right: '0',
-            bottom: '0',
-            background: `rgba(0, 0, 0, 0.6)`,
-            backdropFilter: 'blur(10px)',
-            zIndex: 300,
-            display: 'flex',
-            alignItems: 'flex-end',
-          }}
-          onClick={() => setShowRecipeModal(false)}
-        >
-          <div
-            style={{
-              width: '100%',
-              background: BG_COLOR,
-              borderTop: `1px solid rgba(18, 52, 255, 0.2)`,
-              borderRadius: '24px 24px 0 0',
-              padding: '24px',
-              maxHeight: '80vh',
-              overflowY: 'auto',
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
+        <div style={{ position: 'fixed', top: '0', left: '0', right: '0', bottom: '0', background: `rgba(0, 0, 0, 0.6)`, backdropFilter: 'blur(10px)', zIndex: 300, display: 'flex', alignItems: 'flex-end' }} onClick={() => setShowRecipeModal(false)}>
+          <div style={{ width: '100%', background: BG_COLOR, borderTop: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '24px 24px 0 0', padding: '24px', maxHeight: '80vh', overflowY: 'auto' }} onClick={(e) => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
               <h3 style={{ fontSize: '20px', fontWeight: '600', margin: 0 }}>{selectedRecipe.name}</h3>
-              <button
-                onClick={() => setShowRecipeModal(false)}
-                style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '24px' }}
-              >
+              <button onClick={() => setShowRecipeModal(false)} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '24px' }}>
                 <X size={24} />
               </button>
             </div>
-
             <div style={{ background: `rgba(18, 52, 255, 0.08)`, borderRadius: '16px', padding: '20px', border: `1px solid rgba(18, 52, 255, 0.15)` }}>
               {selectedRecipe.recipe ? (
                 <p style={{ margin: 0, lineHeight: '1.6', color: '#ccc', whiteSpace: 'pre-wrap', fontSize: '14px' }}>
                   {selectedRecipe.recipe}
                 </p>
               ) : (
-                <p style={{ margin: 0, color: '#666', fontSize: '14px' }}>No recipe provided</p>
+                <p style={{ margin: 0, color: '#666', fontSize: '14px' }}>No recipe</p>
               )}
             </div>
           </div>
         </div>
       )}
 
-      {/* Archive Modal */}
       {showArchive && archiveType && (
-        <div
-          style={{
-            position: 'fixed',
-            top: '0',
-            left: '0',
-            right: '0',
-            bottom: '0',
-            background: `rgba(0, 0, 0, 0.6)`,
-            backdropFilter: 'blur(10px)',
-            zIndex: 300,
-            display: 'flex',
-            alignItems: 'flex-end',
-          }}
-          onClick={() => setShowArchive(false)}
-        >
-          <div
-            style={{
-              width: '100%',
-              background: BG_COLOR,
-              borderTop: `1px solid rgba(18, 52, 255, 0.2)`,
-              borderRadius: '24px 24px 0 0',
-              padding: '24px',
-              maxHeight: '80vh',
-              overflowY: 'auto',
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
+        <div style={{ position: 'fixed', top: '0', left: '0', right: '0', bottom: '0', background: `rgba(0, 0, 0, 0.6)`, backdropFilter: 'blur(10px)', zIndex: 300, display: 'flex', alignItems: 'flex-end' }} onClick={() => setShowArchive(false)}>
+          <div style={{ width: '100%', background: BG_COLOR, borderTop: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '24px 24px 0 0', padding: '24px', maxHeight: '80vh', overflowY: 'auto' }} onClick={(e) => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
               <h3 style={{ fontSize: '20px', fontWeight: '600', margin: 0 }}>{t.archive}</h3>
-              <button
-                onClick={() => setShowArchive(false)}
-                style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '24px' }}
-              >
+              <button onClick={() => setShowArchive(false)} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '24px' }}>
                 <X size={24} />
               </button>
             </div>
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h4 style={{ fontSize: '16px', fontWeight: '600', margin: 0 }}>
-                {archiveMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}
-              </h4>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
+              <h4 style={{ fontSize: '16px', fontWeight: '600', margin: 0 }}>{archiveMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}</h4>
               <div style={{ display: 'flex', gap: '8px' }}>
                 <button onClick={() => { const m = new Date(archiveMonth); m.setMonth(m.getMonth() - 1); setArchiveMonth(m); }} style={{ background: 'rgba(255, 255, 255, 0.1)', border: 'none', borderRadius: '8px', padding: '8px 12px', color: '#999', cursor: 'pointer' }}>←</button>
                 <button onClick={() => { const m = new Date(archiveMonth); m.setMonth(m.getMonth() + 1); setArchiveMonth(m); }} style={{ background: 'rgba(255, 255, 255, 0.1)', border: 'none', borderRadius: '8px', padding: '8px 12px', color: '#999', cursor: 'pointer' }}>→</button>
               </div>
             </div>
-
-            {archiveType === 'budget' ? (
-              <>
-                {getExpensesForMonth(archiveMonth).length === 0 ? (
-                  <p style={{ textAlign: 'center', color: '#666' }}>No expenses for this month</p>
-                ) : (
-                  <div style={{ display: 'grid', gap: '12px' }}>
-                    {BUDGET_CATEGORIES.map(category => {
-                      const archExpenses = getExpensesByCategory(getExpensesForMonth(archiveMonth))[category.name] || [];
-                      if (archExpenses.length === 0) return null;
-                      
-                      const Icon = category.icon;
-                      const total = archExpenses.reduce((sum, e) => sum + e.amount, 0);
-                      
-                      return (
-                        <div key={category.name} style={{ background: `rgba(255, 255, 255, 0.02)`, borderRadius: '16px', padding: '16px', border: `1px solid rgba(18, 52, 255, 0.15)` }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-                            <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: `${category.color}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: category.color }}>
-                              <Icon size={20} />
-                            </div>
-                            <div style={{ flex: 1 }}>
-                              <h3 style={{ fontSize: '16px', fontWeight: '600', margin: 0, textTransform: 'capitalize' }}>{category.name}</h3>
-                              <p style={{ fontSize: '12px', color: '#666', margin: 0 }}>{archExpenses.length} items</p>
-                            </div>
-                            <div style={{ fontSize: '18px', fontWeight: '700', color: category.color }}>€{total.toFixed(2)}</div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </>
-            ) : (
-              <>
-                {getTravelsForMonth(archiveMonth).length === 0 ? (
-                  <p style={{ textAlign: 'center', color: '#666' }}>No trips for this month</p>
-                ) : (
-                  <div style={{ display: 'grid', gap: '12px' }}>
-                    {getTravelsForMonth(archiveMonth).map(travel => {
-                      const info = getTravelerInfo(travel.userId);
-                      return (
-                        <div
-                          key={travel.id}
-                          style={{
-                            background: `rgba(18, 52, 255, 0.08)`,
-                            border: `1px solid rgba(18, 52, 255, 0.15)`,
-                            borderRadius: '16px',
-                            padding: '16px',
-                          }}
-                        >
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                            <div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                                <MapPin size={16} style={{ color: ACCENT_COLOR }} />
-                                <h3 style={{ fontSize: '16px', fontWeight: '600', margin: 0 }}>{travel.location}</h3>
-                              </div>
-                              <p style={{ fontSize: '12px', color: '#666', margin: '0 0 4px' }}>
-                                {travel.startDate} → {travel.endDate}
-                              </p>
-                              <p style={{ fontSize: '12px', color: '#999', margin: 0 }}>
-                                {info.name}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </>
-            )}
+            {archiveType === 'budget' ? getExpensesForMonth(archiveMonth).length === 0 ? <p style={{ textAlign: 'center', color: '#666' }}>No data</p> : null : getTravelsForMonth(archiveMonth).length === 0 ? <p style={{ textAlign: 'center', color: '#666' }}>No data</p> : null}
           </div>
         </div>
       )}
 
-      {/* MODALS */}
-      {/* Add Plant Modal */}
       <AddModal isOpen={showAddModal && modalType === 'plant'} title={editingId ? t.editPlant : t.addPlant} onClose={resetModal}>
         <div style={{ display: 'grid', gap: '16px' }}>
           <input type="text" value={newItemName} onChange={(e) => setNewItemName(e.target.value)} placeholder={t.plantName} style={{ background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px' }} />
-          
           <div>
             <label style={{ fontSize: '14px', color: '#666', marginBottom: '8px', display: 'block' }}>{t.wateringFrequency}</label>
             <input type="number" min="1" max="60" value={newItemWateringDays} onChange={(e) => setNewItemWateringDays(e.target.value)} style={{ width: '100%', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px' }} />
           </div>
-
-          <div>
-            <label style={{ fontSize: '14px', color: '#666', marginBottom: '8px', display: 'block' }}>{t.searchPhoto}</label>
-            <input type="text" placeholder="e.g. monstera, cactus..." onChange={(e) => searchUnsplash(e.target.value)} style={{ width: '100%', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px', marginBottom: '12px' }} />
-            {unsplashSearchResults.length > 0 && (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
-                {unsplashSearchResults.map((photo) => (
-                  <img key={photo.id} src={`${photo.urls.thumb}?w=120&h=120&fit=crop`} alt="" onClick={() => setNewItemPhoto(photo.urls.regular)} style={{ width: '100%', height: '100px', borderRadius: '8px', cursor: 'pointer', border: newItemPhoto === photo.urls.regular ? `2px solid ${ACCENT_COLOR}` : 'none' }} />
-                ))}
-              </div>
-            )}
-          </div>
-
           <button onClick={addPlant} style={{ width: '100%', background: ACCENT_COLOR, border: 'none', borderRadius: '12px', padding: '14px', color: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: '600' }}>
             {editingId ? t.update : t.add}
           </button>
@@ -1743,24 +1120,10 @@ export default function CompleteSharedLifeDashboard() {
         </div>
       </AddModal>
 
-      {/* Add Meal Modal */}
       <AddModal isOpen={showAddModal && modalType === 'meal'} title={editingId ? t.editMeal : t.addMeal} onClose={resetModal}>
         <div style={{ display: 'grid', gap: '16px' }}>
           <input type="text" value={newItemName} onChange={(e) => setNewItemName(e.target.value)} placeholder={t.mealName} style={{ background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px' }} />
           <textarea value={newItemRecipe} onChange={(e) => setNewItemRecipe(e.target.value)} placeholder={t.recipe} style={{ background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px', minHeight: '100px', fontFamily: 'inherit' }} />
-          
-          <div>
-            <label style={{ fontSize: '14px', color: '#666', marginBottom: '8px', display: 'block' }}>{t.searchPhoto}</label>
-            <input type="text" placeholder="e.g. pasta, salad..." onChange={(e) => searchUnsplash(e.target.value)} style={{ width: '100%', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px', marginBottom: '12px' }} />
-            {unsplashSearchResults.length > 0 && (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
-                {unsplashSearchResults.map((photo) => (
-                  <img key={photo.id} src={`${photo.urls.thumb}?w=120&h=120&fit=crop`} alt="" onClick={() => setNewItemPhoto(photo.urls.regular)} style={{ width: '100%', height: '100px', borderRadius: '8px', cursor: 'pointer', border: newItemPhoto === photo.urls.regular ? `2px solid ${ACCENT_COLOR}` : 'none' }} />
-                ))}
-              </div>
-            )}
-          </div>
-
           <button onClick={addMeal} style={{ width: '100%', background: ACCENT_COLOR, border: 'none', borderRadius: '12px', padding: '14px', color: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: '600' }}>
             {editingId ? t.update : t.add}
           </button>
@@ -1772,7 +1135,6 @@ export default function CompleteSharedLifeDashboard() {
         </div>
       </AddModal>
 
-      {/* Add Expense Modal */}
       <AddModal isOpen={showAddModal && modalType === 'expense'} title={editingId ? t.editExpense : t.addExpense} onClose={resetModal}>
         <div style={{ display: 'grid', gap: '16px' }}>
           <div>
@@ -1785,17 +1147,14 @@ export default function CompleteSharedLifeDashboard() {
               ))}
             </select>
           </div>
-
           <div>
             <label style={{ fontSize: '14px', color: '#666', marginBottom: '8px', display: 'block' }}>{t.date}</label>
             <input type="date" value={newExpenseDate} onChange={(e) => setNewExpenseDate(e.target.value)} style={{ width: '100%', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px' }} />
           </div>
-
           <div>
             <label style={{ fontSize: '14px', color: '#666', marginBottom: '8px', display: 'block' }}>{t.amount}</label>
             <input type="number" value={newExpenseAmount} onChange={(e) => setNewExpenseAmount(e.target.value)} placeholder="0.00" step="0.01" style={{ width: '100%', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px' }} />
           </div>
-
           <button onClick={addExpense} style={{ width: '100%', background: ACCENT_COLOR, border: 'none', borderRadius: '12px', padding: '14px', color: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: '600' }}>
             {editingId ? t.update : t.add}
           </button>
@@ -1807,81 +1166,40 @@ export default function CompleteSharedLifeDashboard() {
         </div>
       </AddModal>
 
-      {/* Add Travel Modal */}
       <AddModal isOpen={showAddModal && modalType === 'travel'} title={editingId ? t.editTravel : t.addTravel} onClose={resetModal}>
         <div style={{ display: 'grid', gap: '16px' }}>
           <div>
             <label style={{ fontSize: '12px', color: '#666', marginBottom: '6px', display: 'block' }}>{t.whoTraveling}</label>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-              {[
-                { id: user?.uid, name: user?.displayName || 'You', avatar: user?.photoURL },
-                ...users.filter(u => u.uid !== user?.uid),
-              ].map(person => (
-                <button
-                  key={person.id}
-                  onClick={() => setNewTravelUserId(person.id)}
-                  style={{
-                    background: newTravelUserId === person.id ? `${ACCENT_COLOR}40` : `rgba(255, 255, 255, 0.05)`,
-                    border: `1px solid rgba(${newTravelUserId === person.id ? '18, 52, 255' : '255, 255, 255'}, ${newTravelUserId === person.id ? 0.4 : 0.1})`,
-                    borderRadius: '12px',
-                    padding: '12px',
-                    color: newTravelUserId === person.id ? ACCENT_COLOR : '#999',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    justifyContent: 'center',
-                  }}
-                >
+              {[{ id: user?.uid, name: user?.displayName || 'You', avatar: user?.photoURL }, ...users.filter(u => u.uid !== user?.uid)].map(person => (
+                <button key={person.id} onClick={() => setNewTravelUserId(person.id)} style={{ background: newTravelUserId === person.id ? `${ACCENT_COLOR}40` : `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(${newTravelUserId === person.id ? '18, 52, 255' : '255, 255, 255'}, ${newTravelUserId === person.id ? 0.4 : 0.1})`, borderRadius: '12px', padding: '12px', color: newTravelUserId === person.id ? ACCENT_COLOR : '#999', cursor: 'pointer', fontSize: '14px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
                   <img src={person.avatar} alt="" style={{ width: '24px', height: '24px', borderRadius: '50%' }} />
                   {person.name}
                 </button>
               ))}
             </div>
           </div>
-
           <div>
             <label style={{ fontSize: '12px', color: '#666', marginBottom: '6px', display: 'block' }}>{t.location}</label>
             <input type="text" value={newTravelLocation} onChange={(e) => handleCitySearch(e.target.value)} placeholder={t.searchCity} style={{ width: '100%', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px', boxSizing: 'border-box' }} />
             {citySuggestions.length > 0 && (
               <div style={{ marginTop: '8px', display: 'grid', gap: '4px' }}>
                 {citySuggestions.map((city, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => {
-                      setNewTravelLocation(`${city.name}, ${city.country}`);
-                      setCitySuggestions([]);
-                    }}
-                    style={{
-                      background: `rgba(18, 52, 255, 0.1)`,
-                      border: `1px solid rgba(18, 52, 255, 0.2)`,
-                      borderRadius: '8px',
-                      padding: '8px 12px',
-                      color: '#fff',
-                      cursor: 'pointer',
-                      fontSize: '14px',
-                      textAlign: 'left',
-                    }}
-                  >
+                  <button key={idx} onClick={() => { setNewTravelLocation(`${city.name}, ${city.country}`); setCitySuggestions([]); }} style={{ background: `rgba(18, 52, 255, 0.1)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '8px', padding: '8px 12px', color: '#fff', cursor: 'pointer', fontSize: '14px', textAlign: 'left' }}>
                     {city.name}, {city.country}
                   </button>
                 ))}
               </div>
             )}
           </div>
-          
           <div>
             <label style={{ fontSize: '12px', color: '#666', marginBottom: '6px', display: 'block' }}>{t.startDate}</label>
             <input type="date" value={newTravelStart} onChange={(e) => setNewTravelStart(e.target.value)} style={{ width: '100%', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px', boxSizing: 'border-box' }} />
           </div>
-
           <div>
             <label style={{ fontSize: '12px', color: '#666', marginBottom: '6px', display: 'block' }}>{t.endDate}</label>
             <input type="date" value={newTravelEnd} onChange={(e) => setNewTravelEnd(e.target.value)} style={{ width: '100%', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px', boxSizing: 'border-box' }} />
           </div>
-
           <button onClick={addTravel} style={{ width: '100%', background: ACCENT_COLOR, border: 'none', borderRadius: '12px', padding: '14px', color: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: '600' }}>
             {editingId ? t.update : t.add}
           </button>
