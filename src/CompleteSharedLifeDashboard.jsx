@@ -1479,6 +1479,11 @@ export default function CompleteSharedLifeDashboard() {
           <button onClick={addPlant} style={{ width: '100%', background: ACCENT_COLOR, border: 'none', borderRadius: '12px', padding: '14px', color: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: '600' }}>
             {editingId ? 'Update Plant' : 'Add Plant'}
           </button>
+          {editingId && (
+            <button onClick={() => { deletePlant(editingId); resetModal(); }} style={{ width: '100%', background: 'rgba(255, 59, 48, 0.2)', border: '1px solid rgba(255, 59, 48, 0.3)', borderRadius: '12px', padding: '14px', color: '#ff3b30', cursor: 'pointer', fontSize: '16px', fontWeight: '600' }}>
+              Delete Plant
+            </button>
+          )}
         </div>
       </AddModal>
 
@@ -1503,6 +1508,11 @@ export default function CompleteSharedLifeDashboard() {
           <button onClick={addMeal} style={{ width: '100%', background: ACCENT_COLOR, border: 'none', borderRadius: '12px', padding: '14px', color: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: '600' }}>
             {editingId ? 'Update Meal' : 'Add Meal'}
           </button>
+          {editingId && (
+            <button onClick={() => { deleteMeal(editingId); resetModal(); }} style={{ width: '100%', background: 'rgba(255, 59, 48, 0.2)', border: '1px solid rgba(255, 59, 48, 0.3)', borderRadius: '12px', padding: '14px', color: '#ff3b30', cursor: 'pointer', fontSize: '16px', fontWeight: '600' }}>
+              Delete Meal
+            </button>
+          )}
         </div>
       </AddModal>
 
@@ -1533,6 +1543,11 @@ export default function CompleteSharedLifeDashboard() {
           <button onClick={addExpense} style={{ width: '100%', background: ACCENT_COLOR, border: 'none', borderRadius: '12px', padding: '14px', color: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: '600' }}>
             {editingId ? 'Update Expense' : 'Add Expense'}
           </button>
+          {editingId && (
+            <button onClick={() => { deleteExpense(editingId); resetModal(); }} style={{ width: '100%', background: 'rgba(255, 59, 48, 0.2)', border: '1px solid rgba(255, 59, 48, 0.3)', borderRadius: '12px', padding: '14px', color: '#ff3b30', cursor: 'pointer', fontSize: '16px', fontWeight: '600' }}>
+              Delete Expense
+            </button>
+          )}
         </div>
       </AddModal>
 
@@ -1614,6 +1629,11 @@ export default function CompleteSharedLifeDashboard() {
           <button onClick={addTravel} style={{ width: '100%', background: ACCENT_COLOR, border: 'none', borderRadius: '12px', padding: '14px', color: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: '600' }}>
             {editingId ? 'Update Travel' : 'Add Travel'}
           </button>
+          {editingId && (
+            <button onClick={() => { deleteTravel(editingId); resetModal(); }} style={{ width: '100%', background: 'rgba(255, 59, 48, 0.2)', border: '1px solid rgba(255, 59, 48, 0.3)', borderRadius: '12px', padding: '14px', color: '#ff3b30', cursor: 'pointer', fontSize: '16px', fontWeight: '600' }}>
+              Delete Travel
+            </button>
+          )}
         </div>
       </AddModal>
     </div>
