@@ -1270,9 +1270,9 @@ export default function CompleteSharedLifeDashboard() {
             ) : (
               <div style={{ display: 'grid', gap: '24px' }}>
                 {/* CIRCULAR CHART */}
-                <div style={{ background: 'transparent', borderRadius: '20px', padding: '20px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                  <ResponsiveContainer width="100%" height={240}>
-                    <PieChart>
+                <div style={{ background: 'transparent', borderRadius: '20px', padding: '16px 24px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                  <ResponsiveContainer width="100%" height={250}>
+                    <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
                       <Pie
                         data={BUDGET_CATEGORIES.map(cat => {
                           const catExpenses = getExpensesByCategoryForMonth(currentMonth)[cat.name];
@@ -1300,7 +1300,7 @@ export default function CompleteSharedLifeDashboard() {
                     </PieChart>
                   </ResponsiveContainer>
                   
-                  <div style={{ textAlign: 'center', marginTop: '-78px', position: 'relative', zIndex: 10, width: '100%' }}>
+                  <div style={{ textAlign: 'center', marginTop: '-100px', position: 'absolute', zIndex: 10 }}>
                     <p style={{ fontSize: '20px', fontWeight: '700', margin: 0, color: '#fff', lineHeight: '1' }}>
                       €{getExpensesForMonth(currentMonth).reduce((sum, e) => sum + e.amount, 0).toFixed(2)}
                     </p>
@@ -1336,19 +1336,26 @@ export default function CompleteSharedLifeDashboard() {
                             gap: '12px',
                             cursor: 'pointer',
                             transition: 'all 0.2s',
+                            color: 'inherit',
                           }}
-                          onMouseEnter={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.04)'}
-                          onMouseLeave={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.02)'}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)';
+                            e.currentTarget.style.borderColor = 'rgba(18, 52, 255, 0.15)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.02)';
+                            e.currentTarget.style.borderColor = 'rgba(18, 52, 255, 0.1)';
+                          }}
                         >
-                          <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: `${category.color}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: category.color }}>
+                          <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: `${category.color}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: category.color, flexShrink: 0 }}>
                             <Icon size={20} />
                           </div>
                           <div style={{ flex: 1, textAlign: 'left' }}>
                             <p style={{ fontSize: '16px', fontWeight: '600', margin: 0, color: '#fff' }}>{category.name}</p>
-                            <p style={{ fontSize: '12px', color: '#666', margin: 0 }}>{categoryExpenses.length} transaction{categoryExpenses.length !== 1 ? 's' : ''}</p>
+                            <p style={{ fontSize: '12px', color: '#999', margin: 0 }}>{categoryExpenses.length} transaction{categoryExpenses.length !== 1 ? 's' : ''}</p>
                           </div>
-                          <div style={{ fontSize: '16px', fontWeight: '700', color: category.color, marginRight: '8px' }}>€{total.toFixed(2)}</div>
-                          <ChevronDown size={20} color="#666" style={{ transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
+                          <div style={{ fontSize: '16px', fontWeight: '700', color: category.color, marginRight: '8px', flexShrink: 0 }}>€{total.toFixed(2)}</div>
+                          <ChevronDown size={20} color="#999" style={{ transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s', flexShrink: 0 }} />
                         </button>
                         
                         {isExpanded && (
