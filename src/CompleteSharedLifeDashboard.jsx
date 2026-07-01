@@ -1,8 +1,7 @@
-javascript
 import React, { useState, useEffect } from 'react';
 import {
   Home, Leaf, UtensilsCrossed, Wallet, Heart, MapPin, Settings, LogOut,
-  Plus, Trash2, Check, Camera, MoreVertical, X
+  Plus, Trash2, Check, Camera, X
 } from 'lucide-react';
 import { auth } from './firebaseConfig';
 import { signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
@@ -17,7 +16,7 @@ const storage = getStorage();
 const ACCENT_COLOR = '#1234ff';
 const BG_COLOR = '#0A1014';
 
-export default function COJO() {
+export default function CompleteSharedLifeDashboard() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('home');
@@ -107,7 +106,7 @@ export default function COJO() {
     }
   };
 
-  // Plants
+  // ==================== PLANTS ====================
   const addPlant = () => {
     if (newItem.trim()) {
       const plant = {
@@ -140,7 +139,7 @@ export default function COJO() {
     saveData(updated, meals, expenses, intimacy, travelMeals);
   };
 
-  // Meals
+  // ==================== MEALS ====================
   const addMeal = () => {
     if (newItem.trim()) {
       const meal = {
@@ -171,7 +170,7 @@ export default function COJO() {
     saveData(plants, updated, expenses, intimacy, travelMeals);
   };
 
-  // Expenses
+  // ==================== EXPENSES ====================
   const addExpense = () => {
     if (newItem.trim()) {
       const expense = {
@@ -202,7 +201,7 @@ export default function COJO() {
     saveData(plants, meals, updated, intimacy, travelMeals);
   };
 
-  // Intimacy
+  // ==================== INTIMACY ====================
   const addIntimacyEvent = () => {
     if (newItem.trim()) {
       const event = {
@@ -233,7 +232,7 @@ export default function COJO() {
     saveData(plants, meals, expenses, updated, travelMeals);
   };
 
-  // Travel
+  // ==================== TRAVEL ====================
   const addTravelMeal = () => {
     if (newItem.trim()) {
       const meal = {
@@ -263,7 +262,7 @@ export default function COJO() {
     saveData(plants, meals, expenses, intimacy, updated);
   };
 
-  // Auth
+  // ==================== AUTH ====================
   const handleLogin = async () => {
     try {
       await signInWithPopup(auth, provider);
@@ -280,7 +279,7 @@ export default function COJO() {
     }
   };
 
-  // Helpers
+  // ==================== HELPERS ====================
   const getDaysSinceWatered = (lastWatered) => {
     const last = new Date(lastWatered);
     const now = new Date();
@@ -342,7 +341,6 @@ export default function COJO() {
             </div>
 
             <div style={{ display: 'grid', gap: '12px' }}>
-              {/* Plants Card */}
               <div
                 style={{
                   background: `linear-gradient(135deg, rgba(18, 52, 255, 0.1) 0%, rgba(10, 16, 20, 0.5) 100%), url(${unsplashBg})`,
@@ -362,7 +360,6 @@ export default function COJO() {
                 <div style={{ fontSize: '14px', color: '#aaa' }}>plants to care for</div>
               </div>
 
-              {/* Spending Card */}
               <div
                 style={{
                   background: `linear-gradient(135deg, rgba(18, 52, 255, 0.1) 0%, rgba(10, 16, 20, 0.5) 100%), url(${unsplashBg})`,
@@ -384,7 +381,6 @@ export default function COJO() {
                 <div style={{ fontSize: '14px', color: '#aaa' }}>spent this month</div>
               </div>
 
-              {/* Meals Card */}
               <div
                 style={{
                   background: `linear-gradient(135deg, rgba(18, 52, 255, 0.1) 0%, rgba(10, 16, 20, 0.5) 100%), url(${unsplashBg})`,
@@ -1027,4 +1023,3 @@ export default function COJO() {
     </div>
   );
 }
-Done
