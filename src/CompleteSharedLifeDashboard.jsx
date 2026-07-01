@@ -1285,7 +1285,6 @@ export default function CompleteSharedLifeDashboard() {
                       {currentMonth.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }).toUpperCase()}
                     </p>
                   </div>
-                  </div>
                 </div>
 
                 {/* ACCORDION CATEGORIES */}
