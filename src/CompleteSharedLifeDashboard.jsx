@@ -1023,23 +1023,27 @@ export default function CompleteSharedLifeDashboard() {
               })()}
 
               {/* Wellness Rings - Activity Style */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+              <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))',
+                gap: '12px' 
+              }}>
                 {/* Plants Ring */}
                 <div
                   style={{
                     background: `linear-gradient(135deg, rgba(52, 199, 89, 0.15) 0%, rgba(0, 0, 0, 0.8) 100%)`,
                     borderRadius: '16px',
-                    padding: '20px',
+                    padding: '16px 12px',
                     border: `1px solid rgba(52, 199, 89, 0.15)`,
                     textAlign: 'center',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'flex-end',
-                    minHeight: '180px',
+                    minHeight: '160px',
                   }}
                 >
-                  <svg width="80" height="80" style={{ marginBottom: '12px' }}>
+                  <svg width="70" height="70" style={{ marginBottom: '10px' }}>
                     <circle cx="40" cy="40" r="35" fill="none" stroke="#333" strokeWidth="3" />
                     <circle
                       cx="40" cy="40" r="35" fill="none" stroke={plantsNeedingWater === 0 ? '#34c759' : '#ff3b30'} strokeWidth="3"
@@ -1056,17 +1060,17 @@ export default function CompleteSharedLifeDashboard() {
                   style={{
                     background: `linear-gradient(135deg, rgba(255, 193, 7, 0.15) 0%, rgba(0, 0, 0, 0.8) 100%)`,
                     borderRadius: '16px',
-                    padding: '20px',
+                    padding: '16px 12px',
                     border: `1px solid rgba(255, 193, 7, 0.15)`,
                     textAlign: 'center',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'flex-end',
-                    minHeight: '180px',
+                    minHeight: '160px',
                   }}
                 >
-                  <svg width="80" height="80" style={{ marginBottom: '12px' }}>
+                  <svg width="70" height="70" style={{ marginBottom: '10px' }}>
                     <circle cx="40" cy="40" r="35" fill="none" stroke="#333" strokeWidth="3" />
                     <circle
                       cx="40" cy="40" r="35" fill="none" stroke="#ffc107" strokeWidth="3"
@@ -1083,17 +1087,17 @@ export default function CompleteSharedLifeDashboard() {
                   style={{
                     background: `linear-gradient(135deg, rgba(18, 52, 255, 0.15) 0%, rgba(0, 0, 0, 0.8) 100%)`,
                     borderRadius: '16px',
-                    padding: '20px',
+                    padding: '16px 12px',
                     border: `1px solid rgba(18, 52, 255, 0.15)`,
                     textAlign: 'center',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'flex-end',
-                    minHeight: '180px',
+                    minHeight: '160px',
                   }}
                 >
-                  <svg width="80" height="80" style={{ marginBottom: '12px' }}>
+                  <svg width="70" height="70" style={{ marginBottom: '10px' }}>
                     <circle cx="40" cy="40" r="35" fill="none" stroke="#333" strokeWidth="3" />
                     <circle
                       cx="40" cy="40" r="35" fill="none" stroke={ACCENT_COLOR} strokeWidth="3"
@@ -1124,7 +1128,8 @@ export default function CompleteSharedLifeDashboard() {
                       position: 'relative',
                       overflow: 'hidden',
                       cursor: 'pointer',
-                      border: `1px solid rgba(18, 52, 255, 0.15)`,
+                      border: `1px solid rgba(18, 52, 255, 0.35)`,
+                      boxShadow: '0 0 0 1px rgba(18, 52, 255, 0.2)',
                     }}
                   >
                     <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.8), rgba(0,0,0,0.2))' }} />
@@ -1196,31 +1201,62 @@ export default function CompleteSharedLifeDashboard() {
               )}
 
               {/* Days Together Counter */}
-              <div
-                style={{
-                  background: `linear-gradient(135deg, rgba(255, 45, 85, 0.15) 0%, rgba(0, 0, 0, 0.8) 100%)`,
-                  borderRadius: '16px',
-                  padding: '24px',
-                  border: `1px solid rgba(255, 45, 85, 0.15)`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                }}
-              >
-                <div>
-                  <div style={{ fontSize: '48px', fontWeight: '700', marginBottom: '4px' }}>
-                    {new Date().getDate() - parseInt(new Date(currentMonth).getDate() || 1) + 1}
+              {(() => {
+                const now = new Date();
+                const year = now.getFullYear();
+                const month = now.getMonth();
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                
+                let daysTogether = daysInMonth;
+                
+                travels.forEach(travel => {
+                  const start = new Date(travel.startDate);
+                  const end = new Date(travel.endDate);
+                  
+                  if (start.getMonth() === month && start.getFullYear() === year) {
+                    const travelUserIds = travel.userIds || [travel.userId];
+                    // If only one user is traveling (not both), subtract those days
+                    if (travelUserIds.length === 1) {
+                      const travelDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+                      daysTogether = Math.max(0, daysTogether - travelDays);
+                    }
+                  }
+                });
+
+                return (
+                  <div
+                    style={{
+                      background: `linear-gradient(135deg, rgba(18, 52, 255, 0.15) 0%, rgba(0, 0, 0, 0.8) 100%)`,
+                      borderRadius: '16px',
+                      padding: '24px',
+                      border: `1px solid rgba(18, 52, 255, 0.15)`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontSize: '48px', fontWeight: '700', marginBottom: '4px' }}>
+                        {daysTogether}
+                      </div>
+                      <div style={{ fontSize: '14px', color: '#999' }}>days together this month</div>
+                    </div>
+                    <Heart size={48} fill={ACCENT_COLOR} color={ACCENT_COLOR} style={{ animation: 'pulse 2s infinite' }} />
                   </div>
-                  <div style={{ fontSize: '14px', color: '#999' }}>days together this month</div>
-                </div>
-                <Heart size={48} fill="#ff2d55" color="#ff2d55" style={{ animation: 'pulse 2s infinite' }} />
-              </div>
+                );
+              })()}
             </div>
 
             <style>{`
               @keyframes pulse {
                 0%, 100% { transform: scale(1); }
                 50% { transform: scale(1.05); }
+              }
+              
+              @media (max-width: 480px) {
+                .home-container {
+                  padding: 12px !important;
+                }
               }
             `}</style>
           </div>
