@@ -5,6 +5,7 @@ import {
   ShoppingCart as ShoppingBag, Heart, Wind, Smile, Clock, Shuffle, MessageCircle, Send,
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
+import LinkifyIt from 'linkify-it';
 import { auth } from './firebaseConfig';
 import { signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
 import { ref, onValue, set } from 'firebase/database';
@@ -425,34 +426,88 @@ export default function CompleteSharedLifeDashboard() {
   }, [user]);
 
   // Send chat message
+  const fetchLinkPreview = async (url) => {
+    try {
+      const response = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
+      const data = await response.json();
+      
+      if (!data.contents) return null;
+      
+      // Extract Open Graph tags from HTML string
+      const titleMatch = data.contents.match(/<meta\s+property="og:title"\s+content="([^"]+)"/i) || 
+                        data.contents.match(/<meta\s+name="og:title"\s+content="([^"]+)"/i) ||
+                        data.contents.match(/<title>([^<]+)<\/title>/i);
+      
+      const descMatch = data.contents.match(/<meta\s+property="og:description"\s+content="([^"]+)"/i) ||
+                       data.contents.match(/<meta\s+name="description"\s+content="([^"]+)"/i);
+      
+      const imageMatch = data.contents.match(/<meta\s+property="og:image"\s+content="([^"]+)"/i) ||
+                        data.contents.match(/<meta\s+name="og:image"\s+content="([^"]+)"/i);
+      
+      return {
+        url: url,
+        title: titleMatch?.[1] || new URL(url).hostname,
+        description: descMatch?.[1] || '',
+        image: imageMatch?.[1] || '',
+      };
+    } catch (error) {
+      console.log('Could not fetch preview for:', url);
+      return {
+        url: url,
+        title: new URL(url).hostname,
+        description: '',
+        image: '',
+      };
+    }
+  };
+
   const sendChatMessage = async () => {
     if (!newChatMessage.trim() || !user) return;
 
-    // Simple URL regex for link detection
-    const urlRegex = /(https?:\/\/[^\s]+)/g;
-    const links = newChatMessage.match(urlRegex) || [];
-    
-    const message = {
-      id: Date.now().toString(),
-      userId: user.uid,
-      displayName: user.displayName || 'User',
-      avatar: user.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.uid}`,
-      text: newChatMessage,
-      timestamp: new Date().toISOString(),
-      links: links,
-    };
-
     try {
       if (!database) {
-        console.error('❌ Database not initialized');
+        alert('❌ Database not initialized. Please reload the page.');
         return;
       }
+
+      const linkify = new LinkifyIt();
+      const urlMatches = linkify.match(newChatMessage);
+      const links = urlMatches ? urlMatches.map(match => match.url) : [];
+      
+      const message = {
+        id: Date.now().toString(),
+        userId: user.uid,
+        displayName: user.displayName || 'User',
+        avatar: user.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.uid}`,
+        text: newChatMessage,
+        timestamp: new Date().toISOString(),
+        links: links,
+        linkPreviews: {},
+      };
+
+      // Send message first
       const chatRef = ref(database, `shared-data/chat/${message.id}`);
       await set(chatRef, message);
       setNewChatMessage('');
+
+      // Fetch link previews in the background (non-blocking)
+      if (links.length > 0) {
+        for (const link of links) {
+          try {
+            const preview = await fetchLinkPreview(link);
+            if (preview) {
+              // Update message with preview data
+              const updateRef = ref(database, `shared-data/chat/${message.id}/linkPreviews/${link.replace(/[.#$[\]]/g, '_')}`);
+              await set(updateRef, preview);
+            }
+          } catch (err) {
+            console.log('Preview fetch error for', link, err);
+          }
+        }
+      }
     } catch (error) {
       console.error('❌ Error sending message:', error);
-      alert('Failed to send message. Check console for details.');
+      alert('Failed to send message: ' + error.message);
     }
   };
 
@@ -2159,32 +2214,58 @@ export default function CompleteSharedLifeDashboard() {
 
                         {/* Link Previews */}
                         {msg.links && msg.links.length > 0 && (
-                          <div style={{ display: 'grid', gap: '6px' }}>
-                            {msg.links.map((link, idx) => (
-                              <a
-                                key={idx}
-                                href={link}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                style={{
-                                  display: 'block',
-                                  padding: '8px 10px',
-                                  background: 'rgba(18, 52, 255, 0.15)',
-                                  border: `1px solid ${ACCENT_COLOR}`,
-                                  borderRadius: '8px',
-                                  color: ACCENT_COLOR,
-                                  textDecoration: 'none',
-                                  fontSize: '12px',
-                                  fontWeight: '500',
-                                  overflow: 'hidden',
-                                  textOverflow: 'ellipsis',
-                                  whiteSpace: 'nowrap',
-                                }}
-                                title={link}
-                              >
-                                🔗 {link}
-                              </a>
-                            ))}
+                          <div style={{ display: 'grid', gap: '8px' }}>
+                            {msg.links.map((link, idx) => {
+                              const preview = msg.linkPreviews?.[link];
+                              return (
+                                <a
+                                  key={idx}
+                                  href={link}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  style={{
+                                    display: 'block',
+                                    textDecoration: 'none',
+                                    color: 'inherit',
+                                    background: 'rgba(18, 52, 255, 0.1)',
+                                    border: `1px solid rgba(18, 52, 255, 0.3)`,
+                                    borderRadius: '8px',
+                                    overflow: 'hidden',
+                                  }}
+                                >
+                                  <div style={{ display: 'flex', gap: '8px' }}>
+                                    {preview?.image && (
+                                      <img
+                                        src={preview.image}
+                                        alt=""
+                                        style={{
+                                          width: '80px',
+                                          height: '80px',
+                                          objectFit: 'cover',
+                                          flexShrink: 0,
+                                        }}
+                                        onError={(e) => {
+                                          e.target.style.display = 'none';
+                                        }}
+                                      />
+                                    )}
+                                    <div style={{ padding: '8px', flex: 1, minWidth: 0 }}>
+                                      <p style={{ fontSize: '12px', fontWeight: '600', margin: '0 0 4px', color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                        {preview?.title || 'Link'}
+                                      </p>
+                                      {preview?.description && (
+                                        <p style={{ fontSize: '11px', margin: '0 0 4px', color: '#ccc', overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: '2', WebkitBoxOrient: 'vertical' }}>
+                                          {preview.description}
+                                        </p>
+                                      )}
+                                      <p style={{ fontSize: '10px', margin: 0, color: ACCENT_COLOR }}>
+                                        {new URL(link).hostname}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </a>
+                              );
+                            })}
                           </div>
                         )}
 
