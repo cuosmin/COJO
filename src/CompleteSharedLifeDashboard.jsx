@@ -723,15 +723,7 @@ export default function CompleteSharedLifeDashboard() {
         }}>
           {/* Top section - Logo and tagline */}
           <div style={{ textAlign: 'center', marginTop: '60px' }}>
-            <h1 style={{
-              fontSize: '48px',
-              fontWeight: '800',
-              margin: '0 0 20px',
-              color: '#fff',
-              letterSpacing: '-1px',
-            }}>
-              COJO
-            </h1>
+            <img src={`/cojo_logo.svg?v=${Date.now()}`} alt="COJO" style={{ height: '80px', marginBottom: '20px' }} />
             <p style={{
               fontSize: '18px',
               color: '#fff',
