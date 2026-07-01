@@ -5,7 +5,6 @@ import {
   ShoppingCart as ShoppingBag, Heart, Wind, Smile, Clock, Shuffle, MessageCircle, Send,
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
-import LinkifyIt from 'linkify-it';
 import { auth } from './firebaseConfig';
 import { signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
 import { ref, onValue, set } from 'firebase/database';
@@ -429,8 +428,9 @@ export default function CompleteSharedLifeDashboard() {
   const sendChatMessage = async () => {
     if (!newChatMessage.trim() || !user) return;
 
-    const linkify = new LinkifyIt();
-    const links = linkify.match(newChatMessage);
+    // Simple URL regex for link detection
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    const links = newChatMessage.match(urlRegex) || [];
     
     const message = {
       id: Date.now().toString(),
@@ -439,15 +439,20 @@ export default function CompleteSharedLifeDashboard() {
       avatar: user.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.uid}`,
       text: newChatMessage,
       timestamp: new Date().toISOString(),
-      links: links ? links.map(link => link.url) : [],
+      links: links,
     };
 
     try {
+      if (!database) {
+        console.error('❌ Database not initialized');
+        return;
+      }
       const chatRef = ref(database, `shared-data/chat/${message.id}`);
       await set(chatRef, message);
       setNewChatMessage('');
     } catch (error) {
       console.error('❌ Error sending message:', error);
+      alert('Failed to send message. Check console for details.');
     }
   };
 
