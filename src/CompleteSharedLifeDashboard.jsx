@@ -265,6 +265,8 @@ export default function CompleteSharedLifeDashboard() {
   const [showRecipeModal, setShowRecipeModal] = useState(false);
   const [showRecipeDetail, setShowRecipeDetail] = useState(false);
   const [selectedRecipe, setSelectedRecipe] = useState(null);
+  const [showArchive, setShowArchive] = useState(false);
+  const [archiveType, setArchiveType] = useState(null);
   const [modalType, setModalType] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
