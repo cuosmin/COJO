@@ -265,6 +265,7 @@ export default function CompleteSharedLifeDashboard() {
   const [newTravelUserIds, setNewTravelUserIds] = useState([]);
   const [newTravelCategory, setNewTravelCategory] = useState('Holiday');
   const [newExpenseCategory, setNewExpenseCategory] = useState('Groceries');
+  const [newExpenseTitle, setNewExpenseTitle] = useState('');
   const [newExpenseAmount, setNewExpenseAmount] = useState('');
   const [newExpenseDate, setNewExpenseDate] = useState(new Date().toISOString().split('T')[0]);
   const [citySuggestions, setCitySuggestions] = useState([]);
@@ -479,10 +480,11 @@ export default function CompleteSharedLifeDashboard() {
 
   // ==================== EXPENSES ====================
   const addExpense = () => {
-    if (newExpenseAmount && newExpenseAmount > 0) {
+    if (newExpenseAmount && newExpenseAmount > 0 && newExpenseTitle) {
       const expense = {
         id: editingId || Date.now().toString(),
         category: newExpenseCategory,
+        title: newExpenseTitle,
         amount: parseFloat(newExpenseAmount),
         date: newExpenseDate,
       };
@@ -615,6 +617,7 @@ export default function CompleteSharedLifeDashboard() {
     setNewTravelUserIds([]);
     setNewTravelCategory('Holiday');
     setNewExpenseCategory('Groceries');
+    setNewExpenseTitle('');
     setNewExpenseAmount('');
     setNewExpenseDate(new Date().toISOString().split('T')[0]);
     setCitySuggestions([]);
@@ -635,6 +638,7 @@ export default function CompleteSharedLifeDashboard() {
       setNewItemPhoto(item.photo);
     } else if (type === 'expense') {
       setNewExpenseCategory(item.category);
+      setNewExpenseTitle(item.title || '');
       setNewExpenseAmount(item.amount.toString());
       setNewExpenseDate(item.date);
     } else if (type === 'travel') {
@@ -929,11 +933,7 @@ export default function CompleteSharedLifeDashboard() {
                   justifyContent: 'flex-end',
                 }}
               >
-                <div style={{ fontSize: '48px', fontWeight: '700', marginBottom: '8px' }}>€{expenses.filter(e => {
-                  const expDate = new Date(e.date);
-                  const now = new Date();
-                  return expDate.getMonth() === now.getMonth() && expDate.getFullYear() === now.getFullYear();
-                }).reduce((sum, e) => sum + e.amount, 0).toFixed(2)}</div>
+                <div style={{ fontSize: '48px', fontWeight: '700', marginBottom: '8px' }}>€{getExpensesForMonth(currentMonth).reduce((sum, e) => sum + e.amount, 0).toFixed(2)}</div>
                 <div style={{ fontSize: '14px', color: '#999' }}>spent together this month</div>
               </div>
             </div>
@@ -1873,8 +1873,13 @@ export default function CompleteSharedLifeDashboard() {
           </div>
 
           <div>
+            <label style={{ fontSize: '14px', color: '#666', marginBottom: '8px', display: 'block' }}>Description</label>
+            <input type="text" value={newExpenseTitle} onChange={(e) => setNewExpenseTitle(e.target.value)} placeholder="e.g., Grocery shopping" style={{ width: '100%', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px', boxSizing: 'border-box' }} />
+          </div>
+
+          <div>
             <label style={{ fontSize: '14px', color: '#666', marginBottom: '8px', display: 'block' }}>Date</label>
-            <input type="date" value={newExpenseDate} onChange={(e) => setNewExpenseDate(e.target.value)} style={{ width: '100%', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px', boxSizing: 'border-box', lineHeight: '1.5' }} />
+            <input type="date" value={newExpenseDate} onChange={(e) => setNewExpenseDate(e.target.value)} style={{ width: '100%', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px', boxSizing: 'border-box', lineHeight: '1.5', WebkitAppearance: 'none', MozAppearance: 'textfield' }} />
           </div>
 
           <div>
@@ -1990,12 +1995,12 @@ export default function CompleteSharedLifeDashboard() {
           
           <div>
             <label style={{ fontSize: '12px', color: '#666', marginBottom: '6px', display: 'block' }}>Start date</label>
-            <input type="date" value={newTravelStart} onChange={(e) => setNewTravelStart(e.target.value)} style={{ width: '100%', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px', boxSizing: 'border-box', lineHeight: '1.5' }} />
+            <input type="date" value={newTravelStart} onChange={(e) => setNewTravelStart(e.target.value)} style={{ width: '100%', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px', boxSizing: 'border-box', lineHeight: '1.5', WebkitAppearance: 'none', MozAppearance: 'textfield' }} />
           </div>
 
           <div>
             <label style={{ fontSize: '12px', color: '#666', marginBottom: '6px', display: 'block' }}>End date</label>
-            <input type="date" value={newTravelEnd} onChange={(e) => setNewTravelEnd(e.target.value)} style={{ width: '100%', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px', boxSizing: 'border-box', lineHeight: '1.5' }} />
+            <input type="date" value={newTravelEnd} onChange={(e) => setNewTravelEnd(e.target.value)} style={{ width: '100%', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px', boxSizing: 'border-box', lineHeight: '1.5', WebkitAppearance: 'none', MozAppearance: 'textfield' }} />
           </div>
 
           <button onClick={addTravel} style={{ width: '100%', background: ACCENT_COLOR, border: 'none', borderRadius: '12px', padding: '14px', color: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: '600' }}>
