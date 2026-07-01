@@ -711,7 +711,9 @@ export default function CompleteSharedLifeDashboard() {
     saveData(plants, meals, expenses, updated);
   };
 
-  const getTravelDaysThisMonth = () => {
+  // Removed: getTravelDaysThisMonth - no longer used in redesigned Home tab
+
+  const getTravelDaysThisMonthOld = () => {
     const now = new Date();
     const year = now.getFullYear();
     const month = now.getMonth();
@@ -1016,10 +1018,6 @@ export default function CompleteSharedLifeDashboard() {
             <div style={{ display: 'grid', gap: '12px' }}>
               {/* Currently traveling card - Hero card */}
               {currentTraveler && (() => {
-                const avatar = currentTraveler.userIds && currentTraveler.userIds[0] === user?.uid ? user?.photoURL : 
-                               currentTraveler.userIds && currentTraveler.userIds[0] ? users.find(u => u.uid === currentTraveler.userIds[0])?.photoURL :
-                               currentTraveler.userId === user?.uid ? user?.photoURL : users.find(u => u.uid === currentTraveler.userId)?.photoURL;
-                
                 return (
                   <div
                     style={{
