@@ -482,11 +482,11 @@ export default function CompleteSharedLifeDashboard() {
 
   // ==================== EXPENSES ====================
   const addExpense = () => {
-    if (newExpenseAmount && newExpenseAmount > 0 && newExpenseTitle) {
+    if (newExpenseAmount && newExpenseAmount > 0) {
       const expense = {
         id: editingId || Date.now().toString(),
         category: newExpenseCategory,
-        title: newExpenseTitle,
+        title: newExpenseTitle || 'Untitled',
         amount: parseFloat(newExpenseAmount),
         date: newExpenseDate,
       };
@@ -1252,8 +1252,8 @@ export default function CompleteSharedLifeDashboard() {
             ) : (
               <div style={{ display: 'grid', gap: '24px' }}>
                 {/* CIRCULAR CHART */}
-                <div style={{ background: `rgba(255, 255, 255, 0.02)`, borderRadius: '20px', padding: '24px', border: `1px solid rgba(18, 52, 255, 0.1)`, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                  <ResponsiveContainer width="100%" height={280}>
+                <div style={{ background: 'transparent', borderRadius: '20px', padding: '24px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  <ResponsiveContainer width="100%" height={260}>
                     <PieChart>
                       <Pie
                         data={BUDGET_CATEGORIES.map(cat => {
@@ -1263,11 +1263,12 @@ export default function CompleteSharedLifeDashboard() {
                         }).filter(item => item.value > 0)}
                         cx="50%"
                         cy="50%"
-                        innerRadius={70}
-                        outerRadius={100}
+                        innerRadius={82}
+                        outerRadius={108}
                         startAngle={90}
                         endAngle={-270}
                         dataKey="value"
+                        stroke="none"
                       >
                         {BUDGET_CATEGORIES.map((cat, index) => (
                           <Cell key={`cell-${index}`} fill={cat.color} />
@@ -1276,13 +1277,14 @@ export default function CompleteSharedLifeDashboard() {
                     </PieChart>
                   </ResponsiveContainer>
                   
-                  <div style={{ textAlign: 'center', marginTop: '-80px', position: 'relative', zIndex: 10 }}>
-                    <p style={{ fontSize: '32px', fontWeight: '700', margin: 0, color: '#fff' }}>
+                  <div style={{ textAlign: 'center', marginTop: '-70px', position: 'relative', zIndex: 10 }}>
+                    <p style={{ fontSize: '28px', fontWeight: '700', margin: 0, color: '#fff', lineHeight: '1' }}>
                       €{getExpensesForMonth(currentMonth).reduce((sum, e) => sum + e.amount, 0).toFixed(2)}
                     </p>
-                    <p style={{ fontSize: '12px', color: '#999', margin: '4px 0 0', marginBottom: '20px' }}>
-                      {currentMonth.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                    <p style={{ fontSize: '11px', color: '#999', margin: '6px 0 0', letterSpacing: '0.5px' }}>
+                      {currentMonth.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }).toUpperCase()}
                     </p>
+                  </div>
                   </div>
                 </div>
 
@@ -1971,7 +1973,7 @@ export default function CompleteSharedLifeDashboard() {
           </div>
 
           <div>
-            <label style={{ fontSize: '14px', color: '#666', marginBottom: '8px', display: 'block' }}>Description</label>
+            <label style={{ fontSize: '14px', color: '#666', marginBottom: '8px', display: 'block' }}>Description <span style={{ color: '#999', fontSize: '12px' }}>(optional)</span></label>
             <input type="text" value={newExpenseTitle} onChange={(e) => setNewExpenseTitle(e.target.value)} placeholder="e.g., Grocery shopping" style={{ width: '100%', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px', boxSizing: 'border-box' }} />
           </div>
 
