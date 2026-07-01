@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Home, Leaf, UtensilsCrossed, Wallet, Heart, LogOut,
-  Trash2, Check, X, Sliders, Bell, Lock, Plus, Palette, Calendar, Droplet
+  Trash2, Check, X, Sliders, Bell, Plus, Palette, Droplet
 } from 'lucide-react';
 import { auth } from './firebaseConfig';
 import { signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
@@ -184,7 +184,7 @@ export default function CompleteSharedLifeDashboard() {
   };
 
   // Check if any plants need watering
-  const checkPlantWateringReminders = () => {
+  const checkPlantWateringReminders = React.useCallback(() => {
     if (plants.length === 0) return;
 
     plants.forEach(plant => {
@@ -200,7 +200,7 @@ export default function CompleteSharedLifeDashboard() {
         });
       }
     });
-  };
+  }, [plants]);
 
   // Check reminders periodically
   useEffect(() => {
@@ -209,7 +209,7 @@ export default function CompleteSharedLifeDashboard() {
     }, 60000); // Check every minute
 
     return () => clearInterval(interval);
-  }, [plants]);
+  }, [checkPlantWateringReminders]);
 
   const loadSharedData = () => {
     try {
