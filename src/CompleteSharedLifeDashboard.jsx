@@ -233,6 +233,8 @@ export default function CompleteSharedLifeDashboard() {
   const [showSettings, setShowSettings] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showRecipeModal, setShowRecipeModal] = useState(false);
+  const [showArchive, setShowArchive] = useState(false);
+  const [archiveType, setArchiveType] = useState(null);
   const [selectedRecipe, setSelectedRecipe] = useState(null);
   const [modalType, setModalType] = useState(null);
   const [editingId, setEditingId] = useState(null);
@@ -245,6 +247,7 @@ export default function CompleteSharedLifeDashboard() {
   const [travels, setTravels] = useState([]);
   const [users, setUsers] = useState([]);
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [archiveMonth, setArchiveMonth] = useState(new Date());
 
   // Modal states
   const [newItemName, setNewItemName] = useState('');
@@ -564,6 +567,36 @@ export default function CompleteSharedLifeDashboard() {
       grouped[cat.name] = expenses.filter(e => e.category === cat.name);
     });
     return grouped;
+  };
+
+  const getExpensesForMonth = (date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    return expenses.filter(e => {
+      const expDate = new Date(e.date);
+      return expDate.getFullYear() === year && expDate.getMonth() === month;
+    });
+  };
+
+  const getExpensesByCategoryForMonth = (date) => {
+    const monthExpenses = getExpensesForMonth(date);
+    const grouped = {};
+    BUDGET_CATEGORIES.forEach(cat => {
+      grouped[cat.name] = monthExpenses.filter(e => e.category === cat.name);
+    });
+    return grouped;
+  };
+
+  const getTravelsForMonth = (date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    return travels.filter(t => {
+      const start = new Date(t.startDate);
+      const end = new Date(t.endDate);
+      return (start.getMonth() === month && start.getFullYear() === year) ||
+             (end.getMonth() === month && end.getFullYear() === year) ||
+             (start < new Date(year, month, 1) && end > new Date(year, month + 1, 0));
+    });
   };
 
   // ==================== HELPERS ====================
@@ -1054,39 +1087,60 @@ export default function CompleteSharedLifeDashboard() {
           <div style={{ padding: '20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
               <h2 style={{ fontSize: '28px', fontWeight: '700', margin: 0 }}>Budget</h2>
-              <button
-                onClick={() => {
-                  setModalType('expense');
-                  setEditingId(null);
-                  setShowAddModal(true);
-                  setNewExpenseCategory('Groceries');
-                  setNewExpenseAmount('');
-                  setNewExpenseDate(new Date().toISOString().split('T')[0]);
-                }}
-                style={{
-                  background: ACCENT_COLOR,
-                  border: 'none',
-                  borderRadius: '12px',
-                  padding: '10px 16px',
-                  color: '#fff',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                }}
-              >
-                <Plus size={18} /> Add
-              </button>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  onClick={() => {
+                    setShowArchive(true);
+                    setArchiveType('budget');
+                    setArchiveMonth(new Date());
+                  }}
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    borderRadius: '12px',
+                    padding: '10px 16px',
+                    color: '#999',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                  }}
+                >
+                  Archive
+                </button>
+                <button
+                  onClick={() => {
+                    setModalType('expense');
+                    setEditingId(null);
+                    setShowAddModal(true);
+                    setNewExpenseCategory('Groceries');
+                    setNewExpenseAmount('');
+                    setNewExpenseDate(new Date().toISOString().split('T')[0]);
+                  }}
+                  style={{
+                    background: ACCENT_COLOR,
+                    border: 'none',
+                    borderRadius: '12px',
+                    padding: '10px 16px',
+                    color: '#fff',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                  }}
+                >
+                  <Plus size={18} /> Add
+                </button>
+              </div>
             </div>
 
-            {expenses.length === 0 ? (
-              <EmptyState icon={Wallet} title="No expenses logged" subtitle="Track your spending together" />
+            {getExpensesForMonth(currentMonth).length === 0 ? (
+              <EmptyState icon={Wallet} title="No expenses this month" subtitle="Track your spending together" />
             ) : (
               <div style={{ display: 'grid', gap: '12px' }}>
                 {BUDGET_CATEGORIES.map(category => {
-                  const categoryExpenses = expensesByCategory[category.name];
+                  const categoryExpenses = getExpensesByCategoryForMonth(currentMonth)[category.name];
                   const total = categoryExpenses.reduce((sum, exp) => sum + exp.amount, 0);
                   
                   if (categoryExpenses.length === 0) return null;
@@ -1131,32 +1185,53 @@ export default function CompleteSharedLifeDashboard() {
           <div style={{ padding: '20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
               <h2 style={{ fontSize: '28px', fontWeight: '700', margin: 0 }}>Travel</h2>
-              <button
-                onClick={() => {
-                  setModalType('travel');
-                  setEditingId(null);
-                  setShowAddModal(true);
-                  setNewTravelStart('');
-                  setNewTravelEnd('');
-                  setNewTravelLocation('');
-                  setNewTravelUserId(user?.uid || '');
-                }}
-                style={{
-                  background: ACCENT_COLOR,
-                  border: 'none',
-                  borderRadius: '12px',
-                  padding: '10px 16px',
-                  color: '#fff',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                }}
-              >
-                <Plus size={18} /> Add
-              </button>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  onClick={() => {
+                    setShowArchive(true);
+                    setArchiveType('travel');
+                    setArchiveMonth(new Date());
+                  }}
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    borderRadius: '12px',
+                    padding: '10px 16px',
+                    color: '#999',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                  }}
+                >
+                  Archive
+                </button>
+                <button
+                  onClick={() => {
+                    setModalType('travel');
+                    setEditingId(null);
+                    setShowAddModal(true);
+                    setNewTravelStart('');
+                    setNewTravelEnd('');
+                    setNewTravelLocation('');
+                    setNewTravelUserId(user?.uid || '');
+                  }}
+                  style={{
+                    background: ACCENT_COLOR,
+                    border: 'none',
+                    borderRadius: '12px',
+                    padding: '10px 16px',
+                    color: '#fff',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                  }}
+                >
+                  <Plus size={18} /> Add
+                </button>
+              </div>
             </div>
 
             {travels.length === 0 ? (
@@ -1174,9 +1249,9 @@ export default function CompleteSharedLifeDashboard() {
                 />
 
                 <div style={{ marginTop: '24px' }}>
-                  <h3 style={{ fontSize: '16px', fontWeight: '600', margin: '0 0 12px' }}>Trips</h3>
+                  <h3 style={{ fontSize: '16px', fontWeight: '600', margin: '0 0 12px' }}>Trips this month</h3>
                   <div style={{ display: 'grid', gap: '12px' }}>
-                    {travels.map(travel => {
+                    {getTravelsForMonth(currentMonth).map(travel => {
                       const info = getTravelerInfo(travel.userId);
                       return (
                         <div
@@ -1225,6 +1300,159 @@ export default function CompleteSharedLifeDashboard() {
           </div>
         )}
       </div>
+
+      {/* ARCHIVE MODAL - BUDGET */}
+      {showArchive && archiveType === 'budget' && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.7)',
+          backdropFilter: 'blur(10px)',
+          display: 'flex',
+          alignItems: 'flex-end',
+          zIndex: 1000,
+        }}>
+          <div style={{
+            width: '100%',
+            background: '#000',
+            borderRadius: '20px 20px 0 0',
+            padding: '24px',
+            maxHeight: '80vh',
+            overflowY: 'auto',
+            animation: 'slideUp 0.3s ease-out',
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h2 style={{ fontSize: '24px', fontWeight: '700', margin: 0 }}>Budget Archive</h2>
+              <button onClick={() => setShowArchive(false)} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '28px' }}>×</button>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <button onClick={() => setArchiveMonth(new Date(archiveMonth.getFullYear(), archiveMonth.getMonth() - 1))} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '18px' }}>←</button>
+              <h3 style={{ fontSize: '18px', fontWeight: '600', margin: 0 }}>
+                {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][archiveMonth.getMonth()]} {archiveMonth.getFullYear()}
+              </h3>
+              <button onClick={() => setArchiveMonth(new Date(archiveMonth.getFullYear(), archiveMonth.getMonth() + 1))} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '18px' }}>→</button>
+            </div>
+
+            {getExpensesForMonth(archiveMonth).length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '40px 20px', color: '#666' }}>
+                <p>No expenses in this month</p>
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gap: '12px' }}>
+                {BUDGET_CATEGORIES.map(category => {
+                  const categoryExpenses = getExpensesByCategoryForMonth(archiveMonth)[category.name];
+                  const total = categoryExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+                  
+                  if (categoryExpenses.length === 0) return null;
+                  
+                  const Icon = category.icon;
+                  return (
+                    <div key={category.name} style={{ background: `rgba(255, 255, 255, 0.02)`, borderRadius: '16px', padding: '16px', border: `1px solid rgba(18, 52, 255, 0.15)` }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+                        <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: `${category.color}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: category.color }}>
+                          <Icon size={20} />
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <h3 style={{ fontSize: '16px', fontWeight: '600', margin: 0 }}>{category.name}</h3>
+                          <p style={{ fontSize: '12px', color: '#666', margin: 0 }}>{categoryExpenses.length} items</p>
+                        </div>
+                        <div style={{ fontSize: '18px', fontWeight: '700', color: category.color }}>€{total.toFixed(2)}</div>
+                      </div>
+
+                      <div style={{ display: 'grid', gap: '8px' }}>
+                        {categoryExpenses.map(exp => (
+                          <div key={exp.id} style={{ background: `rgba(255, 255, 255, 0.02)`, borderRadius: '12px', padding: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: `1px solid rgba(255, 255, 255, 0.05)` }}>
+                            <div>
+                              <p style={{ fontSize: '14px', margin: 0, fontWeight: '500' }}>€{exp.amount.toFixed(2)}</p>
+                              <p style={{ fontSize: '12px', color: '#666', margin: '2px 0 0' }}>{exp.date}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ARCHIVE MODAL - TRAVEL */}
+      {showArchive && archiveType === 'travel' && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.7)',
+          backdropFilter: 'blur(10px)',
+          display: 'flex',
+          alignItems: 'flex-end',
+          zIndex: 1000,
+        }}>
+          <div style={{
+            width: '100%',
+            background: '#000',
+            borderRadius: '20px 20px 0 0',
+            padding: '24px',
+            maxHeight: '80vh',
+            overflowY: 'auto',
+            animation: 'slideUp 0.3s ease-out',
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h2 style={{ fontSize: '24px', fontWeight: '700', margin: 0 }}>Travel Archive</h2>
+              <button onClick={() => setShowArchive(false)} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '28px' }}>×</button>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <button onClick={() => setArchiveMonth(new Date(archiveMonth.getFullYear(), archiveMonth.getMonth() - 1))} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '18px' }}>←</button>
+              <h3 style={{ fontSize: '18px', fontWeight: '600', margin: 0 }}>
+                {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][archiveMonth.getMonth()]} {archiveMonth.getFullYear()}
+              </h3>
+              <button onClick={() => setArchiveMonth(new Date(archiveMonth.getFullYear(), archiveMonth.getMonth() + 1))} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '18px' }}>→</button>
+            </div>
+
+            {getTravelsForMonth(archiveMonth).length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '40px 20px', color: '#666' }}>
+                <p>No trips in this month</p>
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gap: '12px' }}>
+                {getTravelsForMonth(archiveMonth).map(travel => {
+                  const info = getTravelerInfo(travel.userId);
+                  return (
+                    <div key={travel.id} style={{
+                      background: `rgba(18, 52, 255, 0.08)`,
+                      border: `1px solid rgba(18, 52, 255, 0.15)`,
+                      borderRadius: '16px',
+                      padding: '16px',
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '12px' }}>
+                        <MapPin size={20} style={{ color: ACCENT_COLOR, marginTop: '2px', flexShrink: 0 }} />
+                        <div style={{ flex: 1 }}>
+                          <h3 style={{ fontSize: '16px', fontWeight: '600', margin: '0 0 4px' }}>{travel.location}</h3>
+                          <p style={{ fontSize: '12px', color: '#666', margin: '0 0 4px' }}>
+                            {travel.startDate} → {travel.endDate}
+                          </p>
+                          <p style={{ fontSize: '12px', color: '#999', margin: 0 }}>
+                            {info.name}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Bottom Menu */}
       <div
