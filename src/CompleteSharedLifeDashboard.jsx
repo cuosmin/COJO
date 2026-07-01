@@ -684,22 +684,90 @@ export default function CompleteSharedLifeDashboard() {
 
   if (!user) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: BG_COLOR, padding: '20px' }}>
-        <div style={{ maxWidth: '400px', textAlign: 'center' }}>
-          <img src={`/cojo_logo.svg?v=${Date.now()}`} alt="COJO" style={{ height: '80px', marginBottom: '30px' }} />
-          <p style={{ color: '#999', marginBottom: '40px', fontSize: '16px' }}>Sharing life together.</p>
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '100vh',
+        background: '#1234ff',
+        padding: '20px',
+        flexDirection: 'column',
+        backgroundImage: 'url(/splash_screen.jpg)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundAttachment: 'fixed',
+        position: 'relative',
+      }}>
+        {/* Dark overlay for text readability */}
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'linear-gradient(to bottom, transparent 30%, rgba(0,0,0,0.3) 100%)',
+          pointerEvents: 'none',
+        }} />
+        
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          minHeight: '100vh',
+          maxWidth: '500px',
+          width: '100%',
+          position: 'relative',
+          zIndex: 1,
+          padding: '40px 20px',
+        }}>
+          {/* Top section - Logo and tagline */}
+          <div style={{ textAlign: 'center', marginTop: '60px' }}>
+            <h1 style={{
+              fontSize: '48px',
+              fontWeight: '800',
+              margin: '0 0 20px',
+              color: '#fff',
+              letterSpacing: '-1px',
+            }}>
+              COJO
+            </h1>
+            <p style={{
+              fontSize: '18px',
+              color: '#fff',
+              margin: 0,
+              fontWeight: '300',
+              letterSpacing: '0.5px',
+            }}>
+              Sharing life together.
+            </p>
+          </div>
+
+          {/* Bottom section - Sign in button */}
           <button
             onClick={handleLogin}
             style={{
               width: '100%',
-              padding: '14px',
+              maxWidth: '300px',
+              padding: '16px',
               background: ACCENT_COLOR,
               color: '#fff',
               border: 'none',
               borderRadius: '12px',
-              fontSize: '16px',
+              fontSize: '18px',
               fontWeight: '600',
               cursor: 'pointer',
+              marginBottom: '40px',
+              boxShadow: '0 8px 24px rgba(18, 52, 255, 0.3)',
+              transition: 'all 0.3s ease',
+            }}
+            onMouseOver={(e) => {
+              e.target.style.transform = 'translateY(-2px)';
+              e.target.style.boxShadow = '0 12px 32px rgba(18, 52, 255, 0.4)';
+            }}
+            onMouseOut={(e) => {
+              e.target.style.transform = 'translateY(0)';
+              e.target.style.boxShadow = '0 8px 24px rgba(18, 52, 255, 0.3)';
             }}
           >
             Sign in
