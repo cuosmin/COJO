@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import {
   Home, Leaf, UtensilsCrossed, Wallet, Heart, MapPin, Settings, LogOut,
-  Plus, Trash2, Check, X
+  Plus, Trash2, Check, X, User, Sliders, Bell, Lock
 } from 'lucide-react';
 import { auth } from './firebaseConfig';
 import { signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
-import { ref, onValue, set } from 'firebase/database';
+import { ref, onValue, set, update } from 'firebase/database';
 import { getDatabase } from 'firebase/database';
 
 const provider = new GoogleAuthProvider();
@@ -14,30 +14,109 @@ const database = getDatabase();
 const ACCENT_COLOR = '#1234ff';
 const BG_COLOR = '#0A1014';
 
+// Empty state component
+const EmptyState = ({ icon: Icon, title, subtitle, onAdd }) => (
+  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '400px', padding: '40px 20px' }}>
+    <div style={{ background: `rgba(18, 52, 255, 0.1)`, borderRadius: '60px', padding: '40px', marginBottom: '20px' }}>
+      <Icon size={60} style={{ color: ACCENT_COLOR }} />
+    </div>
+    <h3 style={{ fontSize: '18px', fontWeight: '600', margin: '0 0 8px', textAlign: 'center' }}>{title}</h3>
+    <p style={{ fontSize: '14px', color: '#888', margin: '0 0 24px', textAlign: 'center' }}>{subtitle}</p>
+    <button
+      onClick={onAdd}
+      style={{
+        background: ACCENT_COLOR,
+        border: 'none',
+        borderRadius: '12px',
+        padding: '12px 24px',
+        color: '#fff',
+        cursor: 'pointer',
+        fontSize: '16px',
+        fontWeight: '600',
+      }}
+    >
+      Add new
+    </button>
+  </div>
+);
+
+// Modal overlay for adding items
+const AddModal = ({ isOpen, title, onClose, onSubmit, children }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        top: '0',
+        left: '0',
+        right: '0',
+        bottom: '0',
+        background: `rgba(0, 0, 0, 0.6)`,
+        backdropFilter: 'blur(10px)',
+        zIndex: 300,
+        display: 'flex',
+        alignItems: 'flex-end',
+      }}
+      onClick={onClose}
+    >
+      <div
+        style={{
+          width: '100%',
+          background: BG_COLOR,
+          borderTop: `1px solid rgba(18, 52, 255, 0.2)`,
+          borderRadius: '24px 24px 0 0',
+          padding: '24px',
+          maxHeight: '80vh',
+          overflowY: 'auto',
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <h3 style={{ fontSize: '20px', fontWeight: '600', margin: 0 }}>{title}</h3>
+          <button
+            onClick={onClose}
+            style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '24px' }}
+          >
+            <X size={24} />
+          </button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+};
+
 export default function CompleteSharedLifeDashboard() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('home');
   const [showSettings, setShowSettings] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [modalType, setModalType] = useState(null);
 
   // Data state
   const [plants, setPlants] = useState([]);
   const [meals, setMeals] = useState([]);
   const [expenses, setExpenses] = useState([]);
   const [intimacy, setIntimacy] = useState([]);
-  const [travelMeals, setTravelMeals] = useState([]);
 
-  // UI state
-  const [newItem, setNewItem] = useState('');
-  const [unsplashBg, setUnsplashBg] = useState(null);
+  // Modal input state
+  const [newItemName, setNewItemName] = useState('');
+  const [newItemPhoto, setNewItemPhoto] = useState(null);
+  const [unsplashSearchResults, setUnsplashSearchResults] = useState([]);
+  const [searching, setSearching] = useState(false);
+
+  // Sync status
+  const [syncStatus, setSyncStatus] = useState('synced');
 
   // Auth
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((currentUser) => {
       setUser(currentUser);
       if (currentUser) {
-        loadSharedData(currentUser.uid);
-        fetchUnsplashImage();
+        console.log('User logged in:', currentUser.uid);
+        loadSharedData();
       } else {
         setLoading(false);
       }
@@ -45,67 +124,107 @@ export default function CompleteSharedLifeDashboard() {
     return () => unsubscribe();
   }, []);
 
-  const fetchUnsplashImage = async () => {
+  const loadSharedData = () => {
     try {
-      const response = await fetch(
-        `https://api.unsplash.com/photos/random?query=lifestyle,couples&w=800&h=600&client_id=YOUR_UNSPLASH_ACCESS_KEY`
+      const sharedRef = ref(database, 'shared-data/default');
+      const unsubscribe = onValue(
+        sharedRef,
+        (snapshot) => {
+          if (snapshot.exists()) {
+            const data = snapshot.val();
+            console.log('Data loaded from Firebase:', data);
+            setPlants(data.plants || []);
+            setMeals(data.meals || []);
+            setExpenses(data.expenses || []);
+            setIntimacy(data.intimacy || []);
+          } else {
+            console.log('No data found in Firebase');
+            setPlants([]);
+            setMeals([]);
+            setExpenses([]);
+            setIntimacy([]);
+          }
+          setLoading(false);
+          setSyncStatus('synced');
+        },
+        (error) => {
+          console.error('Firebase error:', error);
+          setLoading(false);
+          setSyncStatus('error');
+        }
       );
-      const data = await response.json();
-      if (data.urls) {
-        setUnsplashBg(data.urls.regular);
-      }
+      return unsubscribe;
     } catch (error) {
-      console.error('Failed to fetch Unsplash image:', error);
+      console.error('Error setting up Firebase listener:', error);
+      setLoading(false);
     }
   };
 
-  const loadSharedData = (userId) => {
-    const sharedRef = ref(database, 'shared-data/default');
-    onValue(sharedRef, (snapshot) => {
-      if (snapshot.exists()) {
-        const data = snapshot.val();
-        setPlants(data.plants || []);
-        setMeals(data.meals || []);
-        setExpenses(data.expenses || []);
-        setIntimacy(data.intimacy || []);
-        setTravelMeals(data.travelMeals || []);
-      }
-      setLoading(false);
-    });
-  };
-
-  const saveData = async (newPlants, newMeals, newExpenses, newIntimacy, newTravelMeals) => {
+  const saveData = async (newPlants, newMeals, newExpenses, newIntimacy) => {
     try {
+      setSyncStatus('syncing');
       const sharedRef = ref(database, 'shared-data/default');
       await set(sharedRef, {
         plants: newPlants,
         meals: newMeals,
         expenses: newExpenses,
         intimacy: newIntimacy,
-        travelMeals: newTravelMeals,
         lastUpdated: new Date().toISOString(),
+        lastUpdatedBy: user?.email,
       });
+      console.log('Data saved successfully to Firebase');
+      setSyncStatus('synced');
     } catch (error) {
       console.error('Error saving:', error);
+      setSyncStatus('error');
     }
   };
 
+  // Search Unsplash
+  const searchUnsplash = async (query) => {
+    if (!query.trim()) {
+      setUnsplashSearchResults([]);
+      return;
+    }
+
+    setSearching(true);
+    try {
+      const response = await fetch(
+        `https://api.unsplash.com/search/photos?query=${query}&per_page=6&client_id=YOUR_UNSPLASH_ACCESS_KEY`
+      );
+      const data = await response.json();
+      setUnsplashSearchResults(data.results || []);
+    } catch (error) {
+      console.error('Failed to search Unsplash:', error);
+    }
+    setSearching(false);
+  };
+
   // ==================== PLANTS ====================
+  const openAddPlantModal = () => {
+    setModalType('plant');
+    setShowAddModal(true);
+    setNewItemName('');
+    setNewItemPhoto(null);
+  };
+
   const addPlant = () => {
-    if (newItem.trim()) {
+    if (newItemName.trim()) {
       const plant = {
         id: Date.now().toString(),
-        name: newItem,
+        name: newItemName,
         addedDate: new Date().toISOString(),
         lastWatered: new Date().toISOString(),
         wateringFreqDays: 7,
         healthLevel: 100,
-        photo: unsplashBg,
+        photo: newItemPhoto || `https://images.unsplash.com/photo-1599599810694-b5ac4dd84e02?w=400&h=400&fit=crop&v=${Date.now()}`,
       };
       const updated = [...plants, plant];
       setPlants(updated);
-      saveData(updated, meals, expenses, intimacy, travelMeals);
-      setNewItem('');
+      saveData(updated, meals, expenses, intimacy);
+      setShowAddModal(false);
+      setNewItemName('');
+      setNewItemPhoto(null);
     }
   };
 
@@ -114,29 +233,38 @@ export default function CompleteSharedLifeDashboard() {
       p.id === id ? { ...p, lastWatered: new Date().toISOString(), healthLevel: Math.min(100, p.healthLevel + 10) } : p
     );
     setPlants(updated);
-    saveData(updated, meals, expenses, intimacy, travelMeals);
+    saveData(updated, meals, expenses, intimacy);
   };
 
   const deletePlant = (id) => {
     const updated = plants.filter(p => p.id !== id);
     setPlants(updated);
-    saveData(updated, meals, expenses, intimacy, travelMeals);
+    saveData(updated, meals, expenses, intimacy);
   };
 
   // ==================== MEALS ====================
+  const openAddMealModal = () => {
+    setModalType('meal');
+    setShowAddModal(true);
+    setNewItemName('');
+    setNewItemPhoto(null);
+  };
+
   const addMeal = () => {
-    if (newItem.trim()) {
+    if (newItemName.trim()) {
       const meal = {
         id: Date.now().toString(),
-        name: newItem,
+        name: newItemName,
         plannedDate: new Date().toISOString().split('T')[0],
         shoppingNeeded: false,
-        photo: unsplashBg,
+        photo: newItemPhoto || `https://images.unsplash.com/photo-1495575621581-20dbe3ce2bad?w=400&h=400&fit=crop&v=${Date.now()}`,
       };
       const updated = [...meals, meal];
       setMeals(updated);
-      saveData(plants, updated, expenses, intimacy, travelMeals);
-      setNewItem('');
+      saveData(plants, updated, expenses, intimacy);
+      setShowAddModal(false);
+      setNewItemName('');
+      setNewItemPhoto(null);
     }
   };
 
@@ -145,29 +273,36 @@ export default function CompleteSharedLifeDashboard() {
       m.id === id ? { ...m, shoppingNeeded: !m.shoppingNeeded } : m
     );
     setMeals(updated);
-    saveData(plants, updated, expenses, intimacy, travelMeals);
+    saveData(plants, updated, expenses, intimacy);
   };
 
   const deleteMeal = (id) => {
     const updated = meals.filter(m => m.id !== id);
     setMeals(updated);
-    saveData(plants, updated, expenses, intimacy, travelMeals);
+    saveData(plants, updated, expenses, intimacy);
   };
 
   // ==================== EXPENSES ====================
+  const openAddExpenseModal = () => {
+    setModalType('expense');
+    setShowAddModal(true);
+    setNewItemName('');
+  };
+
   const addExpense = () => {
-    if (newItem.trim()) {
+    if (newItemName.trim()) {
       const expense = {
         id: Date.now().toString(),
-        description: newItem,
+        description: newItemName,
         category: 'food',
         amount: 0,
         date: new Date().toISOString().split('T')[0],
       };
       const updated = [...expenses, expense];
       setExpenses(updated);
-      saveData(plants, meals, updated, intimacy, travelMeals);
-      setNewItem('');
+      saveData(plants, meals, updated, intimacy);
+      setShowAddModal(false);
+      setNewItemName('');
     }
   };
 
@@ -176,29 +311,36 @@ export default function CompleteSharedLifeDashboard() {
       e.id === id ? { ...e, amount: parseFloat(amount) } : e
     );
     setExpenses(updated);
-    saveData(plants, meals, updated, intimacy, travelMeals);
+    saveData(plants, meals, updated, intimacy);
   };
 
   const deleteExpense = (id) => {
     const updated = expenses.filter(e => e.id !== id);
     setExpenses(updated);
-    saveData(plants, meals, updated, intimacy, travelMeals);
+    saveData(plants, meals, updated, intimacy);
   };
 
   // ==================== INTIMACY ====================
+  const openAddIntimacyModal = () => {
+    setModalType('intimacy');
+    setShowAddModal(true);
+    setNewItemName('');
+  };
+
   const addIntimacyEvent = () => {
-    if (newItem.trim()) {
+    if (newItemName.trim()) {
       const event = {
         id: Date.now().toString(),
-        title: newItem,
+        title: newItemName,
         scheduledDate: new Date().toISOString().split('T')[0],
         completed: false,
         mood: 'neutral',
       };
       const updated = [...intimacy, event];
       setIntimacy(updated);
-      saveData(plants, meals, expenses, updated, travelMeals);
-      setNewItem('');
+      saveData(plants, meals, expenses, updated);
+      setShowAddModal(false);
+      setNewItemName('');
     }
   };
 
@@ -207,43 +349,13 @@ export default function CompleteSharedLifeDashboard() {
       i.id === id ? { ...i, completed: !i.completed } : i
     );
     setIntimacy(updated);
-    saveData(plants, meals, expenses, updated, travelMeals);
+    saveData(plants, meals, expenses, updated);
   };
 
   const deleteIntimacy = (id) => {
     const updated = intimacy.filter(i => i.id !== id);
     setIntimacy(updated);
-    saveData(plants, meals, expenses, updated, travelMeals);
-  };
-
-  // ==================== TRAVEL ====================
-  const addTravelMeal = () => {
-    if (newItem.trim()) {
-      const meal = {
-        id: Date.now().toString(),
-        hotelMeal: newItem,
-        homeRecipe: '',
-        date: new Date().toISOString().split('T')[0],
-      };
-      const updated = [...travelMeals, meal];
-      setTravelMeals(updated);
-      saveData(plants, meals, expenses, intimacy, updated);
-      setNewItem('');
-    }
-  };
-
-  const updateTravelMeal = (id, homeRecipe) => {
-    const updated = travelMeals.map(tm =>
-      tm.id === id ? { ...tm, homeRecipe } : tm
-    );
-    setTravelMeals(updated);
-    saveData(plants, meals, expenses, intimacy, updated);
-  };
-
-  const deleteTravelMeal = (id) => {
-    const updated = travelMeals.filter(tm => tm.id !== id);
-    setTravelMeals(updated);
-    saveData(plants, meals, expenses, intimacy, updated);
+    saveData(plants, meals, expenses, updated);
   };
 
   // ==================== AUTH ====================
@@ -258,6 +370,7 @@ export default function CompleteSharedLifeDashboard() {
   const handleLogout = async () => {
     try {
       await signOut(auth);
+      setShowSettings(false);
     } catch (error) {
       console.error('Logout error:', error);
     }
@@ -276,7 +389,7 @@ export default function CompleteSharedLifeDashboard() {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: BG_COLOR }}>
         <div style={{ textAlign: 'center' }}>
-          <img src="/cojo_logo.svg" alt="COJO" style={{ height: '60px', marginBottom: '20px' }} />
+          <img src={`/cojo_logo.svg?v=${Date.now()}`} alt="COJO" style={{ height: '60px', marginBottom: '20px' }} />
           <div style={{ color: '#fff', fontSize: '14px' }}>Loading...</div>
         </div>
       </div>
@@ -287,7 +400,7 @@ export default function CompleteSharedLifeDashboard() {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: BG_COLOR, padding: '20px' }}>
         <div style={{ maxWidth: '400px', textAlign: 'center' }}>
-          <img src="/cojo_logo.svg" alt="COJO" style={{ height: '80px', marginBottom: '30px' }} />
+          <img src={`/cojo_logo.svg?v=${Date.now()}`} alt="COJO" style={{ height: '80px', marginBottom: '30px' }} />
           <p style={{ color: '#ccc', marginBottom: '40px', fontSize: '16px' }}>Sharing life together.</p>
           <button
             onClick={handleLogin}
@@ -303,8 +416,6 @@ export default function CompleteSharedLifeDashboard() {
               cursor: 'pointer',
               transition: 'all 0.3s',
             }}
-            onMouseEnter={(e) => e.target.style.boxShadow = `0 8px 24px ${ACCENT_COLOR}40`}
-            onMouseLeave={(e) => e.target.style.boxShadow = 'none'}
           >
             Sign in
           </button>
@@ -315,21 +426,50 @@ export default function CompleteSharedLifeDashboard() {
 
   return (
     <div style={{ background: BG_COLOR, minHeight: '100vh', color: '#fff' }}>
+      {/* HEADER - Avatar | Logo | Settings */}
+      <div style={{ padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `1px solid rgba(18, 52, 255, 0.1)` }}>
+        {/* Avatar Left */}
+        <div
+          onClick={() => setShowSettings(true)}
+          style={{
+            width: '40px',
+            height: '40px',
+            borderRadius: '50%',
+            background: `url(${user?.photoURL}) no-repeat center / cover`,
+            cursor: 'pointer',
+            border: `2px solid ${ACCENT_COLOR}`,
+          }}
+        />
+
+        {/* Logo Center */}
+        <img src={`/cojo_logo.svg?v=${Date.now()}`} alt="COJO" style={{ height: '32px' }} />
+
+        {/* Settings Right */}
+        <button
+          onClick={() => setShowSettings(true)}
+          style={{
+            background: 'none',
+            border: 'none',
+            color: '#fff',
+            cursor: 'pointer',
+            padding: '8px',
+          }}
+        >
+          <Sliders size={24} />
+        </button>
+      </div>
+
       {/* Content Area */}
-      <div style={{ paddingBottom: '100px' }}>
+      <div style={{ paddingBottom: '120px' }}>
         {/* HOME TAB */}
         {activeTab === 'home' && (
           <div style={{ padding: '20px' }}>
-            <div style={{ marginBottom: '20px' }}>
-              <img src="/cojo_logo.svg" alt="COJO" style={{ height: '40px', marginBottom: '20px' }} />
-            </div>
+            <h2 style={{ fontSize: '28px', fontWeight: '700', margin: '0 0 24px' }}>Home</h2>
 
             <div style={{ display: 'grid', gap: '12px' }}>
               <div
                 style={{
-                  background: `linear-gradient(135deg, rgba(18, 52, 255, 0.1) 0%, rgba(10, 16, 20, 0.5) 100%), url(${unsplashBg})`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
+                  background: `linear-gradient(135deg, rgba(18, 52, 255, 0.15) 0%, rgba(10, 16, 20, 0.5) 100%)`,
                   borderRadius: '20px',
                   padding: '24px',
                   border: `1px solid rgba(18, 52, 255, 0.2)`,
@@ -346,9 +486,7 @@ export default function CompleteSharedLifeDashboard() {
 
               <div
                 style={{
-                  background: `linear-gradient(135deg, rgba(18, 52, 255, 0.1) 0%, rgba(10, 16, 20, 0.5) 100%), url(${unsplashBg})`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
+                  background: `linear-gradient(135deg, rgba(18, 52, 255, 0.15) 0%, rgba(10, 16, 20, 0.5) 100%)`,
                   borderRadius: '20px',
                   padding: '24px',
                   border: `1px solid rgba(18, 52, 255, 0.2)`,
@@ -367,9 +505,7 @@ export default function CompleteSharedLifeDashboard() {
 
               <div
                 style={{
-                  background: `linear-gradient(135deg, rgba(18, 52, 255, 0.1) 0%, rgba(10, 16, 20, 0.5) 100%), url(${unsplashBg})`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
+                  background: `linear-gradient(135deg, rgba(18, 52, 255, 0.15) 0%, rgba(10, 16, 20, 0.5) 100%)`,
                   borderRadius: '20px',
                   padding: '24px',
                   border: `1px solid rgba(18, 52, 255, 0.2)`,
@@ -390,501 +526,320 @@ export default function CompleteSharedLifeDashboard() {
         {/* PLANTS TAB */}
         {activeTab === 'plants' && (
           <div style={{ padding: '20px' }}>
-            <h2 style={{ marginBottom: '20px', fontSize: '24px', fontWeight: '600' }}>Plants</h2>
+            <h2 style={{ fontSize: '28px', fontWeight: '700', margin: '0 0 24px' }}>Plants</h2>
 
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '24px' }}>
-              <input
-                type="text"
-                value={newItem}
-                onChange={(e) => setNewItem(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && addPlant()}
-                placeholder="Add plant..."
-                style={{
-                  flex: 1,
-                  background: `rgba(255, 255, 255, 0.05)`,
-                  border: `1px solid rgba(18, 52, 255, 0.2)`,
-                  borderRadius: '12px',
-                  padding: '12px',
-                  color: '#fff',
-                  fontSize: '16px',
-                }}
+            {plants.length === 0 ? (
+              <EmptyState
+                icon={Leaf}
+                title="No plants yet"
+                subtitle="Let's start growing together"
+                onAdd={openAddPlantModal}
               />
-              <button
-                onClick={addPlant}
-                style={{
-                  background: ACCENT_COLOR,
-                  border: 'none',
-                  borderRadius: '12px',
-                  padding: '12px 16px',
-                  color: '#fff',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s',
-                }}
-              >
-                <Plus size={20} />
-              </button>
-            </div>
+            ) : (
+              <div style={{ display: 'grid', gap: '12px' }}>
+                {plants.map(plant => (
+                  <div
+                    key={plant.id}
+                    style={{
+                      background: `linear-gradient(135deg, rgba(18, 52, 255, 0.15) 0%, rgba(10, 16, 20, 0.5) 100%), url(${plant.photo}?w=400&h=300&fit=crop&v=${Date.now()})`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                      borderRadius: '16px',
+                      padding: '16px',
+                      border: `1px solid rgba(18, 52, 255, 0.2)`,
+                      backdropFilter: 'blur(10px)',
+                      minHeight: '140px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                    }}
+                  >
+                    <div>
+                      <h3 style={{ fontSize: '18px', fontWeight: '600', margin: '0 0 4px' }}>{plant.name}</h3>
+                      <p style={{ fontSize: '12px', color: '#aaa', margin: 0 }}>Last watered {getDaysSinceWatered(plant.lastWatered)}d ago</p>
+                    </div>
 
-            <div style={{ display: 'grid', gap: '12px' }}>
-              {plants.map(plant => (
-                <div
-                  key={plant.id}
-                  style={{
-                    background: `linear-gradient(135deg, rgba(18, 52, 255, 0.1) 0%, rgba(10, 16, 20, 0.5) 100%), url(${plant.photo})`,
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                    borderRadius: '16px',
-                    padding: '16px',
-                    border: `1px solid rgba(18, 52, 255, 0.2)`,
-                    backdropFilter: 'blur(10px)',
-                    minHeight: '140px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'space-between',
-                  }}
-                >
-                  <div>
-                    <h3 style={{ fontSize: '18px', fontWeight: '600', margin: '0 0 4px' }}>{plant.name}</h3>
-                    <p style={{ fontSize: '12px', color: '#aaa', margin: 0 }}>Last watered {getDaysSinceWatered(plant.lastWatered)}d ago</p>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button
+                        onClick={() => waterPlant(plant.id)}
+                        style={{
+                          flex: 1,
+                          background: '#34c759',
+                          border: 'none',
+                          borderRadius: '10px',
+                          padding: '10px',
+                          color: '#fff',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '6px',
+                          fontSize: '14px',
+                          fontWeight: '500',
+                        }}
+                      >
+                        <Check size={16} /> Water
+                      </button>
+                      <button
+                        onClick={() => deletePlant(plant.id)}
+                        style={{
+                          background: 'rgba(255, 59, 48, 0.2)',
+                          border: 'none',
+                          borderRadius: '10px',
+                          padding: '10px 12px',
+                          color: '#ff3b30',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </div>
-
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <button
-                      onClick={() => waterPlant(plant.id)}
-                      style={{
-                        flex: 1,
-                        background: '#34c759',
-                        border: 'none',
-                        borderRadius: '10px',
-                        padding: '10px',
-                        color: '#fff',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '6px',
-                        fontSize: '14px',
-                        fontWeight: '500',
-                      }}
-                    >
-                      <Check size={16} /> Water
-                    </button>
-                    <button
-                      onClick={() => deletePlant(plant.id)}
-                      style={{
-                        background: 'rgba(255, 59, 48, 0.2)',
-                        border: 'none',
-                        borderRadius: '10px',
-                        padding: '10px 12px',
-                        color: '#ff3b30',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
         {/* MEALS TAB */}
         {activeTab === 'food' && (
           <div style={{ padding: '20px' }}>
-            <h2 style={{ marginBottom: '20px', fontSize: '24px', fontWeight: '600' }}>Meals</h2>
+            <h2 style={{ fontSize: '28px', fontWeight: '700', margin: '0 0 24px' }}>Meals</h2>
 
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '24px' }}>
-              <input
-                type="text"
-                value={newItem}
-                onChange={(e) => setNewItem(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && addMeal()}
-                placeholder="Add meal..."
-                style={{
-                  flex: 1,
-                  background: `rgba(255, 255, 255, 0.05)`,
-                  border: `1px solid rgba(18, 52, 255, 0.2)`,
-                  borderRadius: '12px',
-                  padding: '12px',
-                  color: '#fff',
-                  fontSize: '16px',
-                }}
+            {meals.length === 0 ? (
+              <EmptyState
+                icon={UtensilsCrossed}
+                title="No meals planned"
+                subtitle="Let's start planning together"
+                onAdd={openAddMealModal}
               />
-              <button
-                onClick={addMeal}
-                style={{
-                  background: ACCENT_COLOR,
-                  border: 'none',
-                  borderRadius: '12px',
-                  padding: '12px 16px',
-                  color: '#fff',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s',
-                }}
-              >
-                <Plus size={20} />
-              </button>
-            </div>
+            ) : (
+              <div style={{ display: 'grid', gap: '12px' }}>
+                {meals.map(meal => (
+                  <div
+                    key={meal.id}
+                    style={{
+                      background: `linear-gradient(135deg, rgba(18, 52, 255, 0.15) 0%, rgba(10, 16, 20, 0.5) 100%), url(${meal.photo}?w=400&h=300&fit=crop&v=${Date.now()})`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                      borderRadius: '16px',
+                      padding: '16px',
+                      border: `1px solid rgba(18, 52, 255, 0.2)`,
+                      backdropFilter: 'blur(10px)',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <div>
+                      <h3 style={{ fontSize: '16px', fontWeight: '600', margin: '0 0 4px' }}>{meal.name}</h3>
+                      <p style={{ fontSize: '12px', color: '#aaa', margin: 0 }}>{meal.plannedDate}</p>
+                    </div>
 
-            <div style={{ display: 'grid', gap: '12px' }}>
-              {meals.map(meal => (
-                <div
-                  key={meal.id}
-                  style={{
-                    background: `linear-gradient(135deg, rgba(18, 52, 255, 0.1) 0%, rgba(10, 16, 20, 0.5) 100%), url(${meal.photo})`,
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                    borderRadius: '16px',
-                    padding: '16px',
-                    border: `1px solid rgba(18, 52, 255, 0.2)`,
-                    backdropFilter: 'blur(10px)',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                  }}
-                >
-                  <div>
-                    <h3 style={{ fontSize: '16px', fontWeight: '600', margin: '0 0 4px' }}>{meal.name}</h3>
-                    <p style={{ fontSize: '12px', color: '#aaa', margin: 0 }}>{meal.plannedDate}</p>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button
+                        onClick={() => toggleMealShopping(meal.id)}
+                        style={{
+                          background: meal.shoppingNeeded ? `rgba(18, 52, 255, 0.3)` : 'rgba(255, 255, 255, 0.1)',
+                          border: `1px solid rgba(18, 52, 255, ${meal.shoppingNeeded ? 0.4 : 0.2})`,
+                          borderRadius: '8px',
+                          padding: '6px 12px',
+                          color: '#fff',
+                          cursor: 'pointer',
+                          fontSize: '12px',
+                        }}
+                      >
+                        {meal.shoppingNeeded ? '✓ Shop' : 'Shop'}
+                      </button>
+                      <button
+                        onClick={() => deleteMeal(meal.id)}
+                        style={{
+                          background: 'rgba(255, 59, 48, 0.2)',
+                          border: 'none',
+                          borderRadius: '8px',
+                          padding: '6px 8px',
+                          color: '#ff3b30',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
                   </div>
-
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <button
-                      onClick={() => toggleMealShopping(meal.id)}
-                      style={{
-                        background: meal.shoppingNeeded ? 'rgba(18, 52, 255, 0.3)' : 'rgba(255, 255, 255, 0.1)',
-                        border: `1px solid rgba(18, 52, 255, ${meal.shoppingNeeded ? 0.4 : 0.2})`,
-                        borderRadius: '8px',
-                        padding: '6px 12px',
-                        color: '#fff',
-                        cursor: 'pointer',
-                        fontSize: '12px',
-                      }}
-                    >
-                      {meal.shoppingNeeded ? '✓ Shop' : 'Shop'}
-                    </button>
-                    <button
-                      onClick={() => deleteMeal(meal.id)}
-                      style={{
-                        background: 'rgba(255, 59, 48, 0.2)',
-                        border: 'none',
-                        borderRadius: '8px',
-                        padding: '6px 8px',
-                        color: '#ff3b30',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
         {/* BUDGET TAB */}
         {activeTab === 'budget' && (
           <div style={{ padding: '20px' }}>
-            <h2 style={{ marginBottom: '20px', fontSize: '24px', fontWeight: '600' }}>Budget</h2>
+            <h2 style={{ fontSize: '28px', fontWeight: '700', margin: '0 0 24px' }}>Budget</h2>
 
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '24px' }}>
-              <input
-                type="text"
-                value={newItem}
-                onChange={(e) => setNewItem(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && addExpense()}
-                placeholder="Add expense..."
-                style={{
-                  flex: 1,
-                  background: `rgba(255, 255, 255, 0.05)`,
-                  border: `1px solid rgba(18, 52, 255, 0.2)`,
-                  borderRadius: '12px',
-                  padding: '12px',
-                  color: '#fff',
-                  fontSize: '16px',
-                }}
+            {expenses.length === 0 ? (
+              <EmptyState
+                icon={Wallet}
+                title="No expenses logged"
+                subtitle="Track your spending together"
+                onAdd={openAddExpenseModal}
               />
-              <button
-                onClick={addExpense}
-                style={{
-                  background: ACCENT_COLOR,
-                  border: 'none',
-                  borderRadius: '12px',
-                  padding: '12px 16px',
-                  color: '#fff',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s',
-                }}
-              >
-                <Plus size={20} />
-              </button>
-            </div>
+            ) : (
+              <div style={{ display: 'grid', gap: '12px' }}>
+                {expenses.map(exp => (
+                  <div
+                    key={exp.id}
+                    style={{
+                      background: `rgba(255, 255, 255, 0.05)`,
+                      border: `1px solid rgba(18, 52, 255, 0.2)`,
+                      borderRadius: '12px',
+                      padding: '12px 16px',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <div>
+                      <h3 style={{ fontSize: '14px', fontWeight: '500', margin: '0 0 4px' }}>{exp.description}</h3>
+                      <p style={{ fontSize: '12px', color: '#aaa', margin: 0 }}>{exp.date}</p>
+                    </div>
 
-            <div style={{ display: 'grid', gap: '12px' }}>
-              {expenses.map(exp => (
-                <div
-                  key={exp.id}
-                  style={{
-                    background: `rgba(255, 255, 255, 0.05)`,
-                    border: `1px solid rgba(18, 52, 255, 0.2)`,
-                    borderRadius: '12px',
-                    padding: '12px 16px',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                  }}
-                >
-                  <div>
-                    <h3 style={{ fontSize: '14px', fontWeight: '500', margin: '0 0 4px' }}>{exp.description}</h3>
-                    <p style={{ fontSize: '12px', color: '#aaa', margin: 0 }}>{exp.date}</p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <input
+                        type="number"
+                        value={exp.amount}
+                        onChange={(e) => updateExpense(exp.id, e.target.value)}
+                        placeholder="0"
+                        style={{
+                          width: '70px',
+                          background: `rgba(255, 255, 255, 0.05)`,
+                          border: `1px solid rgba(18, 52, 255, 0.2)`,
+                          borderRadius: '8px',
+                          padding: '6px',
+                          color: '#fff',
+                          textAlign: 'right',
+                          fontSize: '14px',
+                        }}
+                      />
+                      <span style={{ color: '#aaa', fontSize: '14px', minWidth: '20px' }}>€</span>
+                      <button
+                        onClick={() => deleteExpense(exp.id)}
+                        style={{
+                          background: 'rgba(255, 59, 48, 0.2)',
+                          border: 'none',
+                          borderRadius: '8px',
+                          padding: '6px 8px',
+                          color: '#ff3b30',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
                   </div>
-
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <input
-                      type="number"
-                      value={exp.amount}
-                      onChange={(e) => updateExpense(exp.id, e.target.value)}
-                      placeholder="0"
-                      style={{
-                        width: '70px',
-                        background: `rgba(255, 255, 255, 0.05)`,
-                        border: `1px solid rgba(18, 52, 255, 0.2)`,
-                        borderRadius: '8px',
-                        padding: '6px',
-                        color: '#fff',
-                        textAlign: 'right',
-                        fontSize: '14px',
-                      }}
-                    />
-                    <span style={{ color: '#aaa', fontSize: '14px', minWidth: '20px' }}>€</span>
-                    <button
-                      onClick={() => deleteExpense(exp.id)}
-                      style={{
-                        background: 'rgba(255, 59, 48, 0.2)',
-                        border: 'none',
-                        borderRadius: '8px',
-                        padding: '6px 8px',
-                        color: '#ff3b30',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
         {/* INTIMACY TAB */}
         {activeTab === 'intimacy' && (
           <div style={{ padding: '20px' }}>
-            <h2 style={{ marginBottom: '20px', fontSize: '24px', fontWeight: '600' }}>Intimacy</h2>
+            <h2 style={{ fontSize: '28px', fontWeight: '700', margin: '0 0 24px' }}>Intimacy</h2>
 
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '24px' }}>
-              <input
-                type="text"
-                value={newItem}
-                onChange={(e) => setNewItem(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && addIntimacyEvent()}
-                placeholder="Add reminder..."
-                style={{
-                  flex: 1,
-                  background: `rgba(255, 255, 255, 0.05)`,
-                  border: `1px solid rgba(18, 52, 255, 0.2)`,
-                  borderRadius: '12px',
-                  padding: '12px',
-                  color: '#fff',
-                  fontSize: '16px',
-                }}
+            {intimacy.length === 0 ? (
+              <EmptyState
+                icon={Heart}
+                title="No reminders yet"
+                subtitle="Keep the spark alive"
+                onAdd={openAddIntimacyModal}
               />
-              <button
-                onClick={addIntimacyEvent}
-                style={{
-                  background: ACCENT_COLOR,
-                  border: 'none',
-                  borderRadius: '12px',
-                  padding: '12px 16px',
-                  color: '#fff',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s',
-                }}
-              >
-                <Plus size={20} />
-              </button>
-            </div>
-
-            <div style={{ display: 'grid', gap: '12px' }}>
-              {intimacy.map(event => (
-                <div
-                  key={event.id}
-                  style={{
-                    background: event.completed ? `rgba(18, 52, 255, 0.2)` : `rgba(255, 255, 255, 0.05)`,
-                    border: `1px solid rgba(18, 52, 255, ${event.completed ? 0.4 : 0.2})`,
-                    borderRadius: '12px',
-                    padding: '12px 16px',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                  }}
-                >
-                  <div>
-                    <h3 style={{ fontSize: '14px', fontWeight: '500', margin: '0 0 4px', textDecoration: event.completed ? 'line-through' : 'none', opacity: event.completed ? 0.6 : 1 }}>
-                      {event.title}
-                    </h3>
-                    <p style={{ fontSize: '12px', color: '#aaa', margin: 0 }}>{event.scheduledDate}</p>
-                  </div>
-
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <button
-                      onClick={() => toggleIntimacyComplete(event.id)}
-                      style={{
-                        background: event.completed ? '#34c759' : 'rgba(255, 255, 255, 0.1)',
-                        border: 'none',
-                        borderRadius: '8px',
-                        padding: '6px 12px',
-                        color: event.completed ? '#fff' : '#aaa',
-                        cursor: 'pointer',
-                        fontSize: '12px',
-                      }}
-                    >
-                      {event.completed ? '✓' : 'Mark'}
-                    </button>
-                    <button
-                      onClick={() => deleteIntimacy(event.id)}
-                      style={{
-                        background: 'rgba(255, 59, 48, 0.2)',
-                        border: 'none',
-                        borderRadius: '8px',
-                        padding: '6px 8px',
-                        color: '#ff3b30',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* TRAVEL TAB */}
-        {activeTab === 'travel' && (
-          <div style={{ padding: '20px' }}>
-            <h2 style={{ marginBottom: '20px', fontSize: '24px', fontWeight: '600' }}>Travel</h2>
-
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '24px' }}>
-              <input
-                type="text"
-                value={newItem}
-                onChange={(e) => setNewItem(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && addTravelMeal()}
-                placeholder="Hotel meal..."
-                style={{
-                  flex: 1,
-                  background: `rgba(255, 255, 255, 0.05)`,
-                  border: `1px solid rgba(18, 52, 255, 0.2)`,
-                  borderRadius: '12px',
-                  padding: '12px',
-                  color: '#fff',
-                  fontSize: '16px',
-                }}
-              />
-              <button
-                onClick={addTravelMeal}
-                style={{
-                  background: ACCENT_COLOR,
-                  border: 'none',
-                  borderRadius: '12px',
-                  padding: '12px 16px',
-                  color: '#fff',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s',
-                }}
-              >
-                <Plus size={20} />
-              </button>
-            </div>
-
-            <div style={{ display: 'grid', gap: '12px' }}>
-              {travelMeals.map(tm => (
-                <div
-                  key={tm.id}
-                  style={{
-                    background: `rgba(255, 255, 255, 0.05)`,
-                    border: `1px solid rgba(18, 52, 255, 0.2)`,
-                    borderRadius: '12px',
-                    padding: '12px',
-                  }}
-                >
-                  <h3 style={{ fontSize: '14px', fontWeight: '500', margin: '0 0 8px' }}>Hotel: {tm.hotelMeal}</h3>
-                  <textarea
-                    value={tm.homeRecipe}
-                    onChange={(e) => updateTravelMeal(tm.id, e.target.value)}
-                    placeholder="Your recipe..."
+            ) : (
+              <div style={{ display: 'grid', gap: '12px' }}>
+                {intimacy.map(event => (
+                  <div
+                    key={event.id}
                     style={{
-                      width: '100%',
-                      minHeight: '60px',
-                      background: `rgba(18, 52, 255, 0.1)`,
-                      border: `1px solid rgba(18, 52, 255, 0.2)`,
-                      borderRadius: '8px',
-                      padding: '8px',
-                      color: '#fff',
-                      fontSize: '12px',
-                      marginBottom: '8px',
-                      fontFamily: 'inherit',
-                    }}
-                  />
-                  <button
-                    onClick={() => deleteTravelMeal(tm.id)}
-                    style={{
-                      background: 'rgba(255, 59, 48, 0.2)',
-                      border: 'none',
-                      borderRadius: '8px',
-                      padding: '6px 12px',
-                      color: '#ff3b30',
-                      cursor: 'pointer',
-                      fontSize: '12px',
+                      background: event.completed ? `rgba(18, 52, 255, 0.2)` : `rgba(255, 255, 255, 0.05)`,
+                      border: `1px solid rgba(18, 52, 255, ${event.completed ? 0.4 : 0.2})`,
+                      borderRadius: '12px',
+                      padding: '12px 16px',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
                     }}
                   >
-                    Delete
-                  </button>
-                </div>
-              ))}
-            </div>
+                    <div>
+                      <h3 style={{ fontSize: '14px', fontWeight: '500', margin: '0 0 4px', textDecoration: event.completed ? 'line-through' : 'none', opacity: event.completed ? 0.6 : 1 }}>
+                        {event.title}
+                      </h3>
+                      <p style={{ fontSize: '12px', color: '#aaa', margin: 0 }}>{event.scheduledDate}</p>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button
+                        onClick={() => toggleIntimacyComplete(event.id)}
+                        style={{
+                          background: event.completed ? '#34c759' : 'rgba(255, 255, 255, 0.1)',
+                          border: 'none',
+                          borderRadius: '8px',
+                          padding: '6px 12px',
+                          color: event.completed ? '#fff' : '#aaa',
+                          cursor: 'pointer',
+                          fontSize: '12px',
+                        }}
+                      >
+                        {event.completed ? '✓' : 'Mark'}
+                      </button>
+                      <button
+                        onClick={() => deleteIntimacy(event.id)}
+                        style={{
+                          background: 'rgba(255, 59, 48, 0.2)',
+                          border: 'none',
+                          borderRadius: '8px',
+                          padding: '6px 8px',
+                          color: '#ff3b30',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
 
-      {/* Glass Morphism Bottom Menu - Instagram Style */}
+      {/* Glass Morphism Pill Menu - Bottom */}
       <div
         style={{
           position: 'fixed',
-          bottom: '0',
-          left: '0',
-          right: '0',
+          bottom: '20px',
+          left: '50%',
+          transform: 'translateX(-50%)',
           display: 'flex',
-          justifyContent: 'space-around',
+          justifyContent: 'center',
           alignItems: 'center',
-          padding: '8px 0 20px',
-          background: `rgba(10, 16, 20, 0.7)`,
-          backdropFilter: 'blur(20px)',
-          borderTop: `1px solid rgba(18, 52, 255, 0.2)`,
+          gap: '12px',
+          padding: '12px 16px',
+          background: `rgba(10, 16, 20, 0.8)`,
+          backdropFilter: 'blur(30px)',
+          borderRadius: '60px',
+          border: `1px solid rgba(18, 52, 255, 0.3)`,
           zIndex: 100,
+          boxShadow: `0 8px 32px rgba(18, 52, 255, 0.1)`,
         }}
       >
         {[
-          { id: 'home', label: 'Home', icon: Home },
-          { id: 'plants', label: 'Plants', icon: Leaf },
-          { id: 'food', label: 'Meals', icon: UtensilsCrossed },
-          { id: 'budget', label: 'Budget', icon: Wallet },
-          { id: 'intimacy', label: 'Intimacy', icon: Heart },
-          { id: 'travel', label: 'Travel', icon: MapPin },
+          { id: 'home', icon: Home },
+          { id: 'plants', icon: Leaf },
+          { id: 'food', icon: UtensilsCrossed },
+          { id: 'budget', icon: Wallet },
+          { id: 'intimacy', icon: Heart },
         ].map(tab => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -893,45 +848,24 @@ export default function CompleteSharedLifeDashboard() {
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               style={{
-                background: isActive ? `rgba(18, 52, 255, 0.3)` : 'transparent',
+                background: isActive ? `rgba(18, 52, 255, 0.4)` : 'transparent',
                 border: 'none',
-                borderRadius: '12px',
-                padding: '8px 12px',
-                color: isActive ? ACCENT_COLOR : '#888',
+                borderRadius: '50%',
+                padding: '12px',
+                width: '48px',
+                height: '48px',
+                color: isActive ? ACCENT_COLOR : '#666',
                 cursor: 'pointer',
                 display: 'flex',
-                flexDirection: 'column',
                 alignItems: 'center',
-                gap: '4px',
-                fontSize: '10px',
+                justifyContent: 'center',
                 transition: 'all 0.3s',
               }}
             >
               <Icon size={24} />
-              <span>{tab.label}</span>
             </button>
           );
         })}
-        <button
-          onClick={() => setShowSettings(!showSettings)}
-          style={{
-            background: showSettings ? `rgba(18, 52, 255, 0.3)` : 'transparent',
-            border: 'none',
-            borderRadius: '12px',
-            padding: '8px 12px',
-            color: showSettings ? ACCENT_COLOR : '#888',
-            cursor: 'pointer',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: '4px',
-            fontSize: '10px',
-            transition: 'all 0.3s',
-          }}
-        >
-          <Settings size={24} />
-          <span>Settings</span>
-        </button>
       </div>
 
       {/* Settings Panel */}
@@ -958,52 +892,351 @@ export default function CompleteSharedLifeDashboard() {
               borderTop: `1px solid rgba(18, 52, 255, 0.2)`,
               borderRadius: '20px 20px 0 0',
               padding: '20px',
-              maxHeight: '60vh',
+              maxHeight: '80vh',
               overflowY: 'auto',
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h3 style={{ fontSize: '18px', fontWeight: '600', margin: 0 }}>Settings</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h3 style={{ fontSize: '20px', fontWeight: '600', margin: 0 }}>Settings</h3>
               <button
                 onClick={() => setShowSettings(false)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: '#fff',
-                  cursor: 'pointer',
-                  fontSize: '24px',
-                }}
+                style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '24px' }}
               >
                 <X size={24} />
               </button>
             </div>
 
-            <div style={{ display: 'grid', gap: '12px' }}>
-              <button
-                onClick={handleLogout}
-                style={{
-                  width: '100%',
-                  background: 'rgba(255, 59, 48, 0.2)',
-                  border: `1px solid rgba(255, 59, 48, 0.3)`,
-                  borderRadius: '12px',
+            {/* User Info */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px', padding: '16px', background: `rgba(18, 52, 255, 0.1)`, borderRadius: '12px' }}>
+              <img
+                src={user?.photoURL}
+                alt="Avatar"
+                style={{ width: '48px', height: '48px', borderRadius: '50%' }}
+              />
+              <div>
+                <p style={{ margin: '0 0 4px', fontWeight: '600' }}>{user?.displayName}</p>
+                <p style={{ margin: 0, fontSize: '12px', color: '#888' }}>{user?.email}</p>
+              </div>
+            </div>
+
+            {/* Sync Status */}
+            <div style={{ marginBottom: '24px', padding: '12px', background: `rgba(52, 199, 89, 0.1)`, borderRadius: '8px', border: `1px solid rgba(52, 199, 89, 0.2)` }}>
+              <p style={{ margin: 0, fontSize: '12px', color: '#34c759' }}>✓ All data synced across devices</p>
+              <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#888' }}>Last updated: {new Date().toLocaleTimeString()}</p>
+            </div>
+
+            {/* Configuration Section */}
+            <div style={{ marginBottom: '24px' }}>
+              <h4 style={{ fontSize: '14px', fontWeight: '600', margin: '0 0 12px', color: '#aaa', textTransform: 'uppercase' }}>Configuration</h4>
+              
+              <div style={{ display: 'grid', gap: '8px' }}>
+                <button style={{
+                  background: `rgba(18, 52, 255, 0.1)`,
+                  border: `1px solid rgba(18, 52, 255, 0.2)`,
+                  borderRadius: '8px',
                   padding: '12px',
-                  color: '#ff3b30',
+                  color: '#fff',
                   cursor: 'pointer',
+                  textAlign: 'left',
+                  fontSize: '14px',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  fontSize: '16px',
-                  fontWeight: '500',
-                }}
-              >
-                <LogOut size={18} /> Sign Out
-              </button>
+                  gap: '12px',
+                }}>
+                  <Bell size={18} />
+                  Notifications
+                </button>
+
+                <button style={{
+                  background: `rgba(18, 52, 255, 0.1)`,
+                  border: `1px solid rgba(18, 52, 255, 0.2)`,
+                  borderRadius: '8px',
+                  padding: '12px',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  fontSize: '14px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                }}>
+                  <Lock size={18} />
+                  Privacy & Security
+                </button>
+              </div>
             </div>
+
+            {/* Sign Out */}
+            <button
+              onClick={handleLogout}
+              style={{
+                width: '100%',
+                background: 'rgba(255, 59, 48, 0.2)',
+                border: `1px solid rgba(255, 59, 48, 0.3)`,
+                borderRadius: '12px',
+                padding: '12px',
+                color: '#ff3b30',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                fontSize: '16px',
+                fontWeight: '500',
+              }}
+            >
+              <LogOut size={18} /> Sign Out
+            </button>
           </div>
         </div>
       )}
+
+      {/* Add Plant Modal */}
+      <AddModal
+        isOpen={showAddModal && modalType === 'plant'}
+        title="Add Plant"
+        onClose={() => setShowAddModal(false)}
+        onSubmit={addPlant}
+      >
+        <div style={{ display: 'grid', gap: '16px' }}>
+          <input
+            type="text"
+            value={newItemName}
+            onChange={(e) => setNewItemName(e.target.value)}
+            placeholder="Plant name..."
+            style={{
+              background: `rgba(255, 255, 255, 0.05)`,
+              border: `1px solid rgba(18, 52, 255, 0.2)`,
+              borderRadius: '12px',
+              padding: '12px',
+              color: '#fff',
+              fontSize: '16px',
+            }}
+          />
+
+          <div>
+            <label style={{ fontSize: '14px', color: '#aaa', marginBottom: '8px', display: 'block' }}>Search photo</label>
+            <input
+              type="text"
+              placeholder="e.g. monstera, cactus..."
+              onChange={(e) => searchUnsplash(e.target.value)}
+              style={{
+                width: '100%',
+                background: `rgba(255, 255, 255, 0.05)`,
+                border: `1px solid rgba(18, 52, 255, 0.2)`,
+                borderRadius: '12px',
+                padding: '12px',
+                color: '#fff',
+                fontSize: '16px',
+                marginBottom: '12px',
+              }}
+            />
+
+            {unsplashSearchResults.length > 0 && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+                {unsplashSearchResults.map((photo) => (
+                  <img
+                    key={photo.id}
+                    src={`${photo.urls.thumb}?w=120&h=120&fit=crop&v=${Date.now()}`}
+                    alt=""
+                    onClick={() => setNewItemPhoto(photo.urls.regular)}
+                    style={{
+                      width: '100%',
+                      height: '100px',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      border: newItemPhoto === photo.urls.regular ? `2px solid ${ACCENT_COLOR}` : 'none',
+                    }}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+
+          <button
+            onClick={addPlant}
+            style={{
+              width: '100%',
+              background: ACCENT_COLOR,
+              border: 'none',
+              borderRadius: '12px',
+              padding: '14px',
+              color: '#fff',
+              cursor: 'pointer',
+              fontSize: '16px',
+              fontWeight: '600',
+            }}
+          >
+            Add Plant
+          </button>
+        </div>
+      </AddModal>
+
+      {/* Add Meal Modal */}
+      <AddModal
+        isOpen={showAddModal && modalType === 'meal'}
+        title="Add Meal"
+        onClose={() => setShowAddModal(false)}
+        onSubmit={addMeal}
+      >
+        <div style={{ display: 'grid', gap: '16px' }}>
+          <input
+            type="text"
+            value={newItemName}
+            onChange={(e) => setNewItemName(e.target.value)}
+            placeholder="Meal name..."
+            style={{
+              background: `rgba(255, 255, 255, 0.05)`,
+              border: `1px solid rgba(18, 52, 255, 0.2)`,
+              borderRadius: '12px',
+              padding: '12px',
+              color: '#fff',
+              fontSize: '16px',
+            }}
+          />
+
+          <div>
+            <label style={{ fontSize: '14px', color: '#aaa', marginBottom: '8px', display: 'block' }}>Search photo</label>
+            <input
+              type="text"
+              placeholder="e.g. pasta, salad..."
+              onChange={(e) => searchUnsplash(e.target.value)}
+              style={{
+                width: '100%',
+                background: `rgba(255, 255, 255, 0.05)`,
+                border: `1px solid rgba(18, 52, 255, 0.2)`,
+                borderRadius: '12px',
+                padding: '12px',
+                color: '#fff',
+                fontSize: '16px',
+                marginBottom: '12px',
+              }}
+            />
+
+            {unsplashSearchResults.length > 0 && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+                {unsplashSearchResults.map((photo) => (
+                  <img
+                    key={photo.id}
+                    src={`${photo.urls.thumb}?w=120&h=120&fit=crop&v=${Date.now()}`}
+                    alt=""
+                    onClick={() => setNewItemPhoto(photo.urls.regular)}
+                    style={{
+                      width: '100%',
+                      height: '100px',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      border: newItemPhoto === photo.urls.regular ? `2px solid ${ACCENT_COLOR}` : 'none',
+                    }}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+
+          <button
+            onClick={addMeal}
+            style={{
+              width: '100%',
+              background: ACCENT_COLOR,
+              border: 'none',
+              borderRadius: '12px',
+              padding: '14px',
+              color: '#fff',
+              cursor: 'pointer',
+              fontSize: '16px',
+              fontWeight: '600',
+            }}
+          >
+            Add Meal
+          </button>
+        </div>
+      </AddModal>
+
+      {/* Add Expense Modal */}
+      <AddModal
+        isOpen={showAddModal && modalType === 'expense'}
+        title="Add Expense"
+        onClose={() => setShowAddModal(false)}
+        onSubmit={addExpense}
+      >
+        <div style={{ display: 'grid', gap: '16px' }}>
+          <input
+            type="text"
+            value={newItemName}
+            onChange={(e) => setNewItemName(e.target.value)}
+            placeholder="What did you spend on?"
+            style={{
+              background: `rgba(255, 255, 255, 0.05)`,
+              border: `1px solid rgba(18, 52, 255, 0.2)`,
+              borderRadius: '12px',
+              padding: '12px',
+              color: '#fff',
+              fontSize: '16px',
+            }}
+          />
+
+          <button
+            onClick={addExpense}
+            style={{
+              width: '100%',
+              background: ACCENT_COLOR,
+              border: 'none',
+              borderRadius: '12px',
+              padding: '14px',
+              color: '#fff',
+              cursor: 'pointer',
+              fontSize: '16px',
+              fontWeight: '600',
+            }}
+          >
+            Add Expense
+          </button>
+        </div>
+      </AddModal>
+
+      {/* Add Intimacy Modal */}
+      <AddModal
+        isOpen={showAddModal && modalType === 'intimacy'}
+        title="Add Reminder"
+        onClose={() => setShowAddModal(false)}
+        onSubmit={addIntimacyEvent}
+      >
+        <div style={{ display: 'grid', gap: '16px' }}>
+          <input
+            type="text"
+            value={newItemName}
+            onChange={(e) => setNewItemName(e.target.value)}
+            placeholder="What would you like to plan?"
+            style={{
+              background: `rgba(255, 255, 255, 0.05)`,
+              border: `1px solid rgba(18, 52, 255, 0.2)`,
+              borderRadius: '12px',
+              padding: '12px',
+              color: '#fff',
+              fontSize: '16px',
+            }}
+          />
+
+          <button
+            onClick={addIntimacyEvent}
+            style={{
+              width: '100%',
+              background: ACCENT_COLOR,
+              border: 'none',
+              borderRadius: '12px',
+              padding: '14px',
+              color: '#fff',
+              cursor: 'pointer',
+              fontSize: '16px',
+              fontWeight: '600',
+            }}
+          >
+            Add Reminder
+          </button>
+        </div>
+      </AddModal>
     </div>
   );
 }
