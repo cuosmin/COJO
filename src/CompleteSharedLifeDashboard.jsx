@@ -168,7 +168,6 @@ export default function CompleteSharedLifeDashboard() {
         console.log('✓ User logged in:', currentUser.email);
         loadSharedData();
         checkNotificationPermission();
-        checkPlantWateringReminders();
       } else {
         setLoading(false);
       }
