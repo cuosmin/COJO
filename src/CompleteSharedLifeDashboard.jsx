@@ -922,10 +922,9 @@ export default function CompleteSharedLifeDashboard() {
                     <div
                       key={plant.id}
                       style={{
-                        background: `linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.95) 100%), url(${plant.photo}?w=400&h=300&fit=crop)`,
+                        background: `linear-gradient(to bottom, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.98) 100%), url(${plant.photo}?w=400&h=300&fit=crop)`,
                         backgroundSize: 'cover',
                         backgroundPosition: 'center',
-                        backgroundAttachment: 'scroll',
                         borderRadius: '16px',
                         padding: '16px',
                         border: `1px solid rgba(${status.needsWatering ? '255, 59, 48' : '18, 52, 255'}, 0.15)`,
@@ -1025,10 +1024,9 @@ export default function CompleteSharedLifeDashboard() {
                   <div
                     key={meal.id}
                     style={{
-                      background: `linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.95) 100%), url(${meal.photo}?w=400&h=300&fit=crop)`,
+                      background: `linear-gradient(to bottom, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.98) 100%), url(${meal.photo}?w=400&h=300&fit=crop)`,
                       backgroundSize: 'cover',
                       backgroundPosition: 'center',
-                      backgroundAttachment: 'scroll',
                       borderRadius: '16px',
                       padding: '16px',
                       border: `1px solid rgba(18, 52, 255, 0.15)`,
@@ -1774,7 +1772,7 @@ export default function CompleteSharedLifeDashboard() {
 
           <div>
             <label style={{ fontSize: '14px', color: '#666', marginBottom: '8px', display: 'block' }}>Date</label>
-            <input type="date" value={newExpenseDate} onChange={(e) => setNewExpenseDate(e.target.value)} style={{ width: '100%', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px' }} />
+            <input type="date" value={newExpenseDate} onChange={(e) => setNewExpenseDate(e.target.value)} style={{ width: '100%', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px', boxSizing: 'border-box', lineHeight: '1.5' }} />
           </div>
 
           <div>
@@ -1890,12 +1888,12 @@ export default function CompleteSharedLifeDashboard() {
           
           <div>
             <label style={{ fontSize: '12px', color: '#666', marginBottom: '6px', display: 'block' }}>Start date</label>
-            <input type="date" value={newTravelStart} onChange={(e) => setNewTravelStart(e.target.value)} style={{ width: '100%', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px', boxSizing: 'border-box' }} />
+            <input type="date" value={newTravelStart} onChange={(e) => setNewTravelStart(e.target.value)} style={{ width: '100%', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px', boxSizing: 'border-box', lineHeight: '1.5' }} />
           </div>
 
           <div>
             <label style={{ fontSize: '12px', color: '#666', marginBottom: '6px', display: 'block' }}>End date</label>
-            <input type="date" value={newTravelEnd} onChange={(e) => setNewTravelEnd(e.target.value)} style={{ width: '100%', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px', boxSizing: 'border-box' }} />
+            <input type="date" value={newTravelEnd} onChange={(e) => setNewTravelEnd(e.target.value)} style={{ width: '100%', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px', boxSizing: 'border-box', lineHeight: '1.5' }} />
           </div>
 
           <button onClick={addTravel} style={{ width: '100%', background: ACCENT_COLOR, border: 'none', borderRadius: '12px', padding: '14px', color: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: '600' }}>
