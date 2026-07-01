@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Home, Leaf, UtensilsCrossed, Wallet, Heart, LogOut,
-  Trash2, Check, X, Sliders, Bell, Lock
+  Trash2, Check, X, Sliders, Bell, Lock, Plus, ChefHat
 } from 'lucide-react';
 import { auth } from './firebaseConfig';
 import { signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
@@ -15,33 +15,18 @@ const ACCENT_COLOR = '#1234ff';
 const BG_COLOR = '#0A1014';
 
 // Empty state component
-const EmptyState = ({ icon: Icon, title, subtitle, onAdd }) => (
+const EmptyState = ({ icon: Icon, title, subtitle }) => (
   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '400px', padding: '40px 20px' }}>
     <div style={{ background: `rgba(18, 52, 255, 0.1)`, borderRadius: '60px', padding: '40px', marginBottom: '20px' }}>
       <Icon size={60} style={{ color: ACCENT_COLOR }} />
     </div>
     <h3 style={{ fontSize: '18px', fontWeight: '600', margin: '0 0 8px', textAlign: 'center' }}>{title}</h3>
-    <p style={{ fontSize: '14px', color: '#888', margin: '0 0 24px', textAlign: 'center' }}>{subtitle}</p>
-    <button
-      onClick={onAdd}
-      style={{
-        background: ACCENT_COLOR,
-        border: 'none',
-        borderRadius: '12px',
-        padding: '12px 24px',
-        color: '#fff',
-        cursor: 'pointer',
-        fontSize: '16px',
-        fontWeight: '600',
-      }}
-    >
-      Add new
-    </button>
+    <p style={{ fontSize: '14px', color: '#888', margin: 0, textAlign: 'center' }}>{subtitle}</p>
   </div>
 );
 
 // Modal overlay for adding items
-const AddModal = ({ isOpen, title, onClose, onSubmit, children }) => {
+const AddModal = ({ isOpen, title, onClose, children }) => {
   if (!isOpen) return null;
 
   return (
@@ -100,9 +85,11 @@ export default function CompleteSharedLifeDashboard() {
   const [meals, setMeals] = useState([]);
   const [expenses, setExpenses] = useState([]);
   const [intimacy, setIntimacy] = useState([]);
+  const [dashboardBg, setDashboardBg] = useState(null);
 
   // Modal input state
   const [newItemName, setNewItemName] = useState('');
+  const [newItemRecipe, setNewItemRecipe] = useState('');
   const [newItemPhoto, setNewItemPhoto] = useState(null);
   const [unsplashSearchResults, setUnsplashSearchResults] = useState([]);
 
@@ -133,6 +120,7 @@ export default function CompleteSharedLifeDashboard() {
             setMeals(data.meals || []);
             setExpenses(data.expenses || []);
             setIntimacy(data.intimacy || []);
+            setDashboardBg(data.dashboardBg || null);
           } else {
             console.log('No data found in Firebase');
             setPlants([]);
@@ -154,7 +142,7 @@ export default function CompleteSharedLifeDashboard() {
     }
   };
 
-  const saveData = async (newPlants, newMeals, newExpenses, newIntimacy) => {
+  const saveData = async (newPlants, newMeals, newExpenses, newIntimacy, newDashboardBg = dashboardBg) => {
     try {
       const sharedRef = ref(database, 'shared-data/default');
       await set(sharedRef, {
@@ -162,6 +150,7 @@ export default function CompleteSharedLifeDashboard() {
         meals: newMeals,
         expenses: newExpenses,
         intimacy: newIntimacy,
+        dashboardBg: newDashboardBg,
         lastUpdated: new Date().toISOString(),
         lastUpdatedBy: user?.email,
       });
@@ -236,6 +225,7 @@ export default function CompleteSharedLifeDashboard() {
     setModalType('meal');
     setShowAddModal(true);
     setNewItemName('');
+    setNewItemRecipe('');
     setNewItemPhoto(null);
   };
 
@@ -244,6 +234,7 @@ export default function CompleteSharedLifeDashboard() {
       const meal = {
         id: Date.now().toString(),
         name: newItemName,
+        recipe: newItemRecipe,
         plannedDate: new Date().toISOString().split('T')[0],
         shoppingNeeded: false,
         photo: newItemPhoto || `https://images.unsplash.com/photo-1495575621581-20dbe3ce2bad?w=400&h=400&fit=crop&v=${Date.now()}`,
@@ -253,8 +244,17 @@ export default function CompleteSharedLifeDashboard() {
       saveData(plants, updated, expenses, intimacy);
       setShowAddModal(false);
       setNewItemName('');
+      setNewItemRecipe('');
       setNewItemPhoto(null);
     }
+  };
+
+  const updateMealRecipe = (id, recipe) => {
+    const updated = meals.map(m =>
+      m.id === id ? { ...m, recipe } : m
+    );
+    setMeals(updated);
+    saveData(plants, updated, expenses, intimacy);
   };
 
   const toggleMealShopping = (id) => {
@@ -347,6 +347,12 @@ export default function CompleteSharedLifeDashboard() {
     saveData(plants, meals, expenses, updated);
   };
 
+  // ==================== DASHBOARD ====================
+  const setDashboardBackground = (imageUrl) => {
+    setDashboardBg(imageUrl);
+    saveData(plants, meals, expenses, intimacy, imageUrl);
+  };
+
   // ==================== AUTH ====================
   const handleLogin = async () => {
     try {
@@ -417,7 +423,6 @@ export default function CompleteSharedLifeDashboard() {
     <div style={{ background: BG_COLOR, minHeight: '100vh', color: '#fff' }}>
       {/* HEADER - Avatar | Logo | Settings */}
       <div style={{ padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `1px solid rgba(18, 52, 255, 0.1)` }}>
-        {/* Avatar Left */}
         <div
           onClick={() => setShowSettings(true)}
           style={{
@@ -430,10 +435,8 @@ export default function CompleteSharedLifeDashboard() {
           }}
         />
 
-        {/* Logo Center */}
         <img src={`/cojo_logo.svg?v=${Date.now()}`} alt="COJO" style={{ height: '32px' }} />
 
-        {/* Settings Right */}
         <button
           onClick={() => setShowSettings(true)}
           style={{
@@ -455,15 +458,56 @@ export default function CompleteSharedLifeDashboard() {
           <div style={{ padding: '20px' }}>
             <h2 style={{ fontSize: '28px', fontWeight: '700', margin: '0 0 24px' }}>Home</h2>
 
+            {/* Dashboard Customization */}
+            <div style={{ marginBottom: '24px', padding: '16px', background: `rgba(18, 52, 255, 0.1)`, borderRadius: '12px', border: `1px solid rgba(18, 52, 255, 0.2)` }}>
+              <label style={{ fontSize: '12px', color: '#aaa', marginBottom: '8px', display: 'block', fontWeight: '600' }}>Customize Dashboard Background</label>
+              <input
+                type="text"
+                placeholder="Search Unsplash... (e.g., sunset, mountains)"
+                onChange={(e) => searchUnsplash(e.target.value)}
+                style={{
+                  width: '100%',
+                  background: `rgba(255, 255, 255, 0.05)`,
+                  border: `1px solid rgba(18, 52, 255, 0.2)`,
+                  borderRadius: '8px',
+                  padding: '8px',
+                  color: '#fff',
+                  fontSize: '14px',
+                  marginBottom: '8px',
+                }}
+              />
+              {unsplashSearchResults.length > 0 && (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
+                  {unsplashSearchResults.map((photo) => (
+                    <img
+                      key={photo.id}
+                      src={`${photo.urls.thumb}?w=80&h=80&fit=crop`}
+                      alt=""
+                      onClick={() => setDashboardBackground(photo.urls.regular)}
+                      style={{
+                        width: '100%',
+                        height: '60px',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        border: dashboardBg === photo.urls.regular ? `2px solid ${ACCENT_COLOR}` : 'none',
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+
             <div style={{ display: 'grid', gap: '12px' }}>
               <div
                 style={{
-                  background: `linear-gradient(135deg, rgba(18, 52, 255, 0.15) 0%, rgba(10, 16, 20, 0.5) 100%)`,
+                  background: `linear-gradient(135deg, rgba(18, 52, 255, 0.15) 0%, rgba(10, 16, 20, 0.5) 100%), url(${dashboardBg || 'https://images.unsplash.com/photo-1469022563149-aa64dbd37dae?w=800&h=400&fit=crop'})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
                   borderRadius: '20px',
-                  padding: '24px',
+                  padding: '32px 24px',
                   border: `1px solid rgba(18, 52, 255, 0.2)`,
                   backdropFilter: 'blur(10px)',
-                  minHeight: '140px',
+                  minHeight: '180px',
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'flex-end',
@@ -477,10 +521,10 @@ export default function CompleteSharedLifeDashboard() {
                 style={{
                   background: `linear-gradient(135deg, rgba(18, 52, 255, 0.15) 0%, rgba(10, 16, 20, 0.5) 100%)`,
                   borderRadius: '20px',
-                  padding: '24px',
+                  padding: '32px 24px',
                   border: `1px solid rgba(18, 52, 255, 0.2)`,
                   backdropFilter: 'blur(10px)',
-                  minHeight: '140px',
+                  minHeight: '180px',
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'flex-end',
@@ -496,10 +540,10 @@ export default function CompleteSharedLifeDashboard() {
                 style={{
                   background: `linear-gradient(135deg, rgba(18, 52, 255, 0.15) 0%, rgba(10, 16, 20, 0.5) 100%)`,
                   borderRadius: '20px',
-                  padding: '24px',
+                  padding: '32px 24px',
                   border: `1px solid rgba(18, 52, 255, 0.2)`,
                   backdropFilter: 'blur(10px)',
-                  minHeight: '140px',
+                  minHeight: '180px',
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'flex-end',
@@ -515,14 +559,32 @@ export default function CompleteSharedLifeDashboard() {
         {/* PLANTS TAB */}
         {activeTab === 'plants' && (
           <div style={{ padding: '20px' }}>
-            <h2 style={{ fontSize: '28px', fontWeight: '700', margin: '0 0 24px' }}>Plants</h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h2 style={{ fontSize: '28px', fontWeight: '700', margin: 0 }}>Plants</h2>
+              <button
+                onClick={openAddPlantModal}
+                style={{
+                  background: ACCENT_COLOR,
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '8px 12px',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  fontSize: '14px',
+                }}
+              >
+                <Plus size={18} /> Add
+              </button>
+            </div>
 
             {plants.length === 0 ? (
               <EmptyState
                 icon={Leaf}
                 title="No plants yet"
                 subtitle="Let's start growing together"
-                onAdd={openAddPlantModal}
               />
             ) : (
               <div style={{ display: 'grid', gap: '12px' }}>
@@ -534,10 +596,10 @@ export default function CompleteSharedLifeDashboard() {
                       backgroundSize: 'cover',
                       backgroundPosition: 'center',
                       borderRadius: '16px',
-                      padding: '16px',
+                      padding: '20px',
                       border: `1px solid rgba(18, 52, 255, 0.2)`,
                       backdropFilter: 'blur(10px)',
-                      minHeight: '140px',
+                      minHeight: '180px',
                       display: 'flex',
                       flexDirection: 'column',
                       justifyContent: 'space-between',
@@ -593,14 +655,32 @@ export default function CompleteSharedLifeDashboard() {
         {/* MEALS TAB */}
         {activeTab === 'food' && (
           <div style={{ padding: '20px' }}>
-            <h2 style={{ fontSize: '28px', fontWeight: '700', margin: '0 0 24px' }}>Meals</h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h2 style={{ fontSize: '28px', fontWeight: '700', margin: 0 }}>Meals</h2>
+              <button
+                onClick={openAddMealModal}
+                style={{
+                  background: ACCENT_COLOR,
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '8px 12px',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  fontSize: '14px',
+                }}
+              >
+                <Plus size={18} /> Add
+              </button>
+            </div>
 
             {meals.length === 0 ? (
               <EmptyState
                 icon={UtensilsCrossed}
                 title="No meals planned"
                 subtitle="Let's start planning together"
-                onAdd={openAddMealModal}
               />
             ) : (
               <div style={{ display: 'grid', gap: '12px' }}>
@@ -615,24 +695,28 @@ export default function CompleteSharedLifeDashboard() {
                       padding: '16px',
                       border: `1px solid rgba(18, 52, 255, 0.2)`,
                       backdropFilter: 'blur(10px)',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
                     }}
                   >
-                    <div>
+                    <div style={{ marginBottom: '12px' }}>
                       <h3 style={{ fontSize: '16px', fontWeight: '600', margin: '0 0 4px' }}>{meal.name}</h3>
-                      <p style={{ fontSize: '12px', color: '#aaa', margin: 0 }}>{meal.plannedDate}</p>
+                      <p style={{ fontSize: '12px', color: '#aaa', margin: '0 0 8px' }}>{meal.plannedDate}</p>
+                      {meal.recipe && (
+                        <details style={{ fontSize: '12px', color: '#ccc' }}>
+                          <summary style={{ cursor: 'pointer', fontWeight: '500' }}>View Recipe</summary>
+                          <p style={{ margin: '8px 0 0', whiteSpace: 'pre-wrap' }}>{meal.recipe}</p>
+                        </details>
+                      )}
                     </div>
 
                     <div style={{ display: 'flex', gap: '8px' }}>
                       <button
                         onClick={() => toggleMealShopping(meal.id)}
                         style={{
+                          flex: 1,
                           background: meal.shoppingNeeded ? `rgba(18, 52, 255, 0.3)` : 'rgba(255, 255, 255, 0.1)',
                           border: `1px solid rgba(18, 52, 255, ${meal.shoppingNeeded ? 0.4 : 0.2})`,
                           borderRadius: '8px',
-                          padding: '6px 12px',
+                          padding: '8px 12px',
                           color: '#fff',
                           cursor: 'pointer',
                           fontSize: '12px',
@@ -641,12 +725,34 @@ export default function CompleteSharedLifeDashboard() {
                         {meal.shoppingNeeded ? '✓ Shop' : 'Shop'}
                       </button>
                       <button
+                        onClick={() => {
+                          setModalType('editMeal');
+                          setShowAddModal(true);
+                          setNewItemName(meal.name);
+                          setNewItemRecipe(meal.recipe);
+                        }}
+                        style={{
+                          background: `rgba(18, 52, 255, 0.2)`,
+                          border: 'none',
+                          borderRadius: '8px',
+                          padding: '8px 12px',
+                          color: ACCENT_COLOR,
+                          cursor: 'pointer',
+                          fontSize: '12px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                        }}
+                      >
+                        <ChefHat size={14} />
+                      </button>
+                      <button
                         onClick={() => deleteMeal(meal.id)}
                         style={{
                           background: 'rgba(255, 59, 48, 0.2)',
                           border: 'none',
                           borderRadius: '8px',
-                          padding: '6px 8px',
+                          padding: '8px',
                           color: '#ff3b30',
                           cursor: 'pointer',
                         }}
@@ -664,14 +770,32 @@ export default function CompleteSharedLifeDashboard() {
         {/* BUDGET TAB */}
         {activeTab === 'budget' && (
           <div style={{ padding: '20px' }}>
-            <h2 style={{ fontSize: '28px', fontWeight: '700', margin: '0 0 24px' }}>Budget</h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h2 style={{ fontSize: '28px', fontWeight: '700', margin: 0 }}>Budget</h2>
+              <button
+                onClick={openAddExpenseModal}
+                style={{
+                  background: ACCENT_COLOR,
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '8px 12px',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  fontSize: '14px',
+                }}
+              >
+                <Plus size={18} /> Add
+              </button>
+            </div>
 
             {expenses.length === 0 ? (
               <EmptyState
                 icon={Wallet}
                 title="No expenses logged"
                 subtitle="Track your spending together"
-                onAdd={openAddExpenseModal}
               />
             ) : (
               <div style={{ display: 'grid', gap: '12px' }}>
@@ -682,7 +806,7 @@ export default function CompleteSharedLifeDashboard() {
                       background: `rgba(255, 255, 255, 0.05)`,
                       border: `1px solid rgba(18, 52, 255, 0.2)`,
                       borderRadius: '12px',
-                      padding: '12px 16px',
+                      padding: '14px 16px',
                       display: 'flex',
                       justifyContent: 'space-between',
                       alignItems: 'center',
@@ -735,14 +859,32 @@ export default function CompleteSharedLifeDashboard() {
         {/* INTIMACY TAB */}
         {activeTab === 'intimacy' && (
           <div style={{ padding: '20px' }}>
-            <h2 style={{ fontSize: '28px', fontWeight: '700', margin: '0 0 24px' }}>Intimacy</h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h2 style={{ fontSize: '28px', fontWeight: '700', margin: 0 }}>Intimacy</h2>
+              <button
+                onClick={openAddIntimacyModal}
+                style={{
+                  background: ACCENT_COLOR,
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '8px 12px',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  fontSize: '14px',
+                }}
+              >
+                <Plus size={18} /> Add
+              </button>
+            </div>
 
             {intimacy.length === 0 ? (
               <EmptyState
                 icon={Heart}
                 title="No reminders yet"
                 subtitle="Keep the spark alive"
-                onAdd={openAddIntimacyModal}
               />
             ) : (
               <div style={{ display: 'grid', gap: '12px' }}>
@@ -753,7 +895,7 @@ export default function CompleteSharedLifeDashboard() {
                       background: event.completed ? `rgba(18, 52, 255, 0.2)` : `rgba(255, 255, 255, 0.05)`,
                       border: `1px solid rgba(18, 52, 255, ${event.completed ? 0.4 : 0.2})`,
                       borderRadius: '12px',
-                      padding: '12px 16px',
+                      padding: '14px 16px',
                       display: 'flex',
                       justifyContent: 'space-between',
                       alignItems: 'center',
@@ -917,9 +1059,26 @@ export default function CompleteSharedLifeDashboard() {
 
             {/* Configuration Section */}
             <div style={{ marginBottom: '24px' }}>
-              <h4 style={{ fontSize: '14px', fontWeight: '600', margin: '0 0 12px', color: '#aaa', textTransform: 'uppercase' }}>Configuration</h4>
+              <h4 style={{ fontSize: '14px', fontWeight: '600', margin: '0 0 12px', color: '#aaa', textTransform: 'uppercase' }}>Integrations</h4>
               
               <div style={{ display: 'grid', gap: '8px' }}>
+                <button style={{
+                  background: `rgba(18, 52, 255, 0.1)`,
+                  border: `1px solid rgba(18, 52, 255, 0.2)`,
+                  borderRadius: '8px',
+                  padding: '12px',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  fontSize: '14px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  title: 'Coming soon: Connect your Revolut account for automatic expense tracking'
+                }}>
+                  💳 Revolut Integration (Coming Soon)
+                </button>
+
                 <button style={{
                   background: `rgba(18, 52, 255, 0.1)`,
                   border: `1px solid rgba(18, 52, 255, 0.2)`,
@@ -986,7 +1145,6 @@ export default function CompleteSharedLifeDashboard() {
         isOpen={showAddModal && modalType === 'plant'}
         title="Add Plant"
         onClose={() => setShowAddModal(false)}
-        onSubmit={addPlant}
       >
         <div style={{ display: 'grid', gap: '16px' }}>
           <input
@@ -1067,7 +1225,6 @@ export default function CompleteSharedLifeDashboard() {
         isOpen={showAddModal && modalType === 'meal'}
         title="Add Meal"
         onClose={() => setShowAddModal(false)}
-        onSubmit={addMeal}
       >
         <div style={{ display: 'grid', gap: '16px' }}>
           <input
@@ -1082,6 +1239,23 @@ export default function CompleteSharedLifeDashboard() {
               padding: '12px',
               color: '#fff',
               fontSize: '16px',
+            }}
+          />
+
+          <textarea
+            value={newItemRecipe}
+            onChange={(e) => setNewItemRecipe(e.target.value)}
+            placeholder="Add recipe (optional)..."
+            style={{
+              background: `rgba(255, 255, 255, 0.05)`,
+              border: `1px solid rgba(18, 52, 255, 0.2)`,
+              borderRadius: '12px',
+              padding: '12px',
+              color: '#fff',
+              fontSize: '16px',
+              minHeight: '100px',
+              fontFamily: 'inherit',
+              resize: 'vertical',
             }}
           />
 
@@ -1148,7 +1322,6 @@ export default function CompleteSharedLifeDashboard() {
         isOpen={showAddModal && modalType === 'expense'}
         title="Add Expense"
         onClose={() => setShowAddModal(false)}
-        onSubmit={addExpense}
       >
         <div style={{ display: 'grid', gap: '16px' }}>
           <input
@@ -1190,7 +1363,6 @@ export default function CompleteSharedLifeDashboard() {
         isOpen={showAddModal && modalType === 'intimacy'}
         title="Add Reminder"
         onClose={() => setShowAddModal(false)}
-        onSubmit={addIntimacyEvent}
       >
         <div style={{ display: 'grid', gap: '16px' }}>
           <input
