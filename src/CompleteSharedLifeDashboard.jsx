@@ -482,12 +482,13 @@ export default function CompleteSharedLifeDashboard() {
 
   // ==================== EXPENSES ====================
   const addExpense = () => {
-    if (newExpenseAmount && newExpenseAmount > 0) {
+    const amount = parseFloat(newExpenseAmount);
+    if (newExpenseAmount && amount > 0) {
       const expense = {
         id: editingId || Date.now().toString(),
         category: newExpenseCategory,
         title: newExpenseTitle || 'Untitled',
-        amount: parseFloat(newExpenseAmount),
+        amount: amount,
         date: newExpenseDate,
       };
       
@@ -1277,11 +1278,11 @@ export default function CompleteSharedLifeDashboard() {
                     </PieChart>
                   </ResponsiveContainer>
                   
-                  <div style={{ textAlign: 'center', marginTop: '-70px', position: 'relative', zIndex: 10 }}>
-                    <p style={{ fontSize: '28px', fontWeight: '700', margin: 0, color: '#fff', lineHeight: '1' }}>
+                  <div style={{ textAlign: 'center', marginTop: '-85px', position: 'relative', zIndex: 10 }}>
+                    <p style={{ fontSize: '22px', fontWeight: '700', margin: 0, color: '#fff', lineHeight: '1.2' }}>
                       €{getExpensesForMonth(currentMonth).reduce((sum, e) => sum + e.amount, 0).toFixed(2)}
                     </p>
-                    <p style={{ fontSize: '11px', color: '#999', margin: '6px 0 0', letterSpacing: '0.5px' }}>
+                    <p style={{ fontSize: '10px', color: '#999', margin: '3px 0 0', letterSpacing: '0.5px' }}>
                       {currentMonth.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }).toUpperCase()}
                     </p>
                   </div>
