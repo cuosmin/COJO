@@ -1766,7 +1766,7 @@ export default function CompleteSharedLifeDashboard() {
             <select value={newExpenseCategory} onChange={(e) => setNewExpenseCategory(e.target.value)} style={{ width: '100%', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px' }}>
               {BUDGET_CATEGORIES.map(cat => (
                 <option key={cat.name} value={cat.name} style={{ background: BG_COLOR }}>
-                  {cat.icon} {cat.name}
+                  {cat.name}
                 </option>
               ))}
             </select>
