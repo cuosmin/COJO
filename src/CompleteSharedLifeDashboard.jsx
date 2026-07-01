@@ -561,14 +561,6 @@ export default function CompleteSharedLifeDashboard() {
     return { name: otherUser?.displayName || 'Partner', avatar: otherUser?.photoURL };
   };
 
-  const getExpensesByCategory = () => {
-    const grouped = {};
-    BUDGET_CATEGORIES.forEach(cat => {
-      grouped[cat.name] = expenses.filter(e => e.category === cat.name);
-    });
-    return grouped;
-  };
-
   const getExpensesForMonth = (date) => {
     const year = date.getFullYear();
     const month = date.getMonth();
