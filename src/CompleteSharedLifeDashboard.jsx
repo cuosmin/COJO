@@ -986,10 +986,10 @@ export default function CompleteSharedLifeDashboard() {
                         backgroundSize: 'cover',
                         backgroundPosition: 'center',
                         borderRadius: '16px',
-                        border: `1px solid rgba(${status.needsWatering ? '255, 59, 48' : '18, 52, 255'}, 0.15)`,
                         minHeight: '200px',
                         position: 'relative',
                         overflow: 'hidden',
+                        boxShadow: `0 0 0 1px rgba(${status.needsWatering ? '255, 59, 48' : '18, 52, 255'}, 0.15)`,
                       }}
                     >
                       {/* Gradient overlay */}
@@ -1109,10 +1109,10 @@ export default function CompleteSharedLifeDashboard() {
                       backgroundSize: 'cover',
                       backgroundPosition: 'center',
                       borderRadius: '16px',
-                      border: `1px solid rgba(18, 52, 255, 0.15)`,
                       minHeight: '200px',
                       position: 'relative',
                       overflow: 'hidden',
+                      boxShadow: `0 0 0 1px rgba(18, 52, 255, 0.15)`,
                     }}
                   >
                     {/* Gradient overlay */}
