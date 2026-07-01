@@ -152,6 +152,9 @@ const AddModal = ({ isOpen, title, onClose, children }) => {
 const CalendarMonth = ({ travels, currentMonth, onMonthChange }) => {
   const year = currentMonth.getFullYear();
   const month = currentMonth.getMonth();
+  const today = new Date();
+  const isCurrentMonth = today.getMonth() === month && today.getFullYear() === year;
+  const todayDate = today.getDate();
 
   const firstDay = new Date(year, month, 1);
   const lastDay = new Date(year, month + 1, 0);
@@ -179,55 +182,75 @@ const CalendarMonth = ({ travels, currentMonth, onMonthChange }) => {
   };
 
   const weekDays = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+  // Split days into weeks
+  const weeks = [];
+  for (let i = 0; i < days.length; i += 7) {
+    weeks.push(days.slice(i, i + 7));
+  }
 
   return (
-    <div style={{ background: `rgba(255, 255, 255, 0.02)`, borderRadius: '16px', padding: '20px', border: `1px solid rgba(18, 52, 255, 0.15)` }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <button onClick={() => onMonthChange(-1)} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '18px' }}>←</button>
-        <h3 style={{ fontSize: '18px', fontWeight: '600', margin: 0 }}>{monthNames[month]} {year}</h3>
-        <button onClick={() => onMonthChange(1)} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '18px' }}>→</button>
+    <div style={{ background: 'transparent', padding: '0', margin: '0 -20px 24px -20px', width: 'calc(100% + 40px)' }}>
+      {/* Month Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingLeft: '20px', paddingRight: '20px', marginBottom: '16px' }}>
+        <button onClick={() => onMonthChange(-1)} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '24px', padding: '8px', fontWeight: '300' }}>‹</button>
+        <h2 style={{ fontSize: '34px', fontWeight: '600', margin: 0, flex: 1, textAlign: 'center' }}>{monthNames[month]}</h2>
+        <button onClick={() => onMonthChange(1)} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '24px', padding: '8px', fontWeight: '300' }}>›</button>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px', marginBottom: '12px' }}>
+      {/* Weekday Headers */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 0, paddingLeft: '20px', paddingRight: '20px', marginBottom: '12px' }}>
         {weekDays.map(day => (
-          <div key={day} style={{ textAlign: 'center', fontSize: '12px', fontWeight: '600', color: '#666', padding: '8px' }}>{day}</div>
+          <div key={day} style={{ textAlign: 'center', fontSize: '13px', fontWeight: '500', color: '#999', paddingTop: '8px', paddingBottom: '8px' }}>{day}</div>
         ))}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px' }}>
-        {days.map((day, idx) => {
-          const indicators = day ? getTravelIndicators(day) : [];
-          return (
-            <div
-              key={idx}
-              style={{
-                aspectRatio: '1',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                borderRadius: '12px',
-                background: day ? `rgba(255, 255, 255, 0.02)` : 'transparent',
-                border: day && indicators.length > 0 ? `2px solid ${ACCENT_COLOR}` : `1px solid rgba(255, 255, 255, 0.05)`,
-                cursor: day ? 'pointer' : 'default',
-                position: 'relative',
-                fontSize: '14px',
-                fontWeight: day ? '500' : '400',
-                color: day ? '#fff' : '#333',
-              }}
-            >
-              {day}
-              {indicators.length > 0 && (
-                <div style={{ position: 'absolute', bottom: '4px', left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: '2px' }}>
-                  {indicators.map((_, i) => (
-                    <div key={i} style={{ width: '4px', height: '4px', borderRadius: '50%', background: ACCENT_COLOR }} />
-                  ))}
+      {/* Calendar Grid with Week Dividers */}
+      {weeks.map((week, weekIdx) => (
+        <div key={weekIdx}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 0, paddingLeft: '20px', paddingRight: '20px', paddingTop: '12px', paddingBottom: '12px' }}>
+            {week.map((day, dayIdx) => {
+              const indicators = day ? getTravelIndicators(day) : [];
+              const isToday = isCurrentMonth && day === todayDate;
+              
+              return (
+                <div key={dayIdx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', minHeight: '50px' }}>
+                  <div
+                    style={{
+                      width: '40px',
+                      height: '40px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      borderRadius: '50%',
+                      background: isToday ? '#ff3b30' : 'transparent',
+                      cursor: day ? 'pointer' : 'default',
+                      fontSize: '16px',
+                      fontWeight: '400',
+                      color: isToday ? '#fff' : day ? '#fff' : 'transparent',
+                    }}
+                  >
+                    {day}
+                  </div>
+                  {indicators.length > 0 && (
+                    <div style={{ display: 'flex', gap: '3px', marginTop: '6px', minHeight: '4px', justifyContent: 'center' }}>
+                      {indicators.slice(0, 3).map((indicator, i) => (
+                        <div key={i} style={{ width: '4px', height: '4px', borderRadius: '50%', background: ACCENT_COLOR }} />
+                      ))}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
+              );
+            })}
+          </div>
+          
+          {/* Week Divider */}
+          {weekIdx < weeks.length - 1 && (
+            <div style={{ height: '1px', background: 'rgba(255, 255, 255, 0.1)', margin: '0 20px' }} />
+          )}
+        </div>
+      ))}
     </div>
   );
 };
