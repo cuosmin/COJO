@@ -1232,7 +1232,8 @@ export default function CompleteSharedLifeDashboard() {
                     setNewTravelStart('');
                     setNewTravelEnd('');
                     setNewTravelLocation('');
-                    setNewTravelUserId(user?.uid || '');
+                    setNewTravelUserIds(user?.uid ? [user.uid] : []);
+                    setNewTravelCategory('Holiday');
                   }}
                   style={{
                     background: ACCENT_COLOR,
