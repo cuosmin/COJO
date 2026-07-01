@@ -1007,13 +1007,14 @@ export default function CompleteSharedLifeDashboard() {
         {/* HOME TAB */}
         {activeTab === 'home' && (
           <div style={{ padding: '20px' }}>
+            {/* Title with button space alignment */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
               <h2 style={{ fontSize: '28px', fontWeight: '700', margin: 0 }}>Home</h2>
               <div style={{ width: '20px' }} />
             </div>
 
             <div style={{ display: 'grid', gap: '12px' }}>
-              {/* Currently traveling card - FIRST */}
+              {/* Currently traveling card - Hero card */}
               {currentTraveler && (() => {
                 const avatar = currentTraveler.userIds && currentTraveler.userIds[0] === user?.uid ? user?.photoURL : 
                                currentTraveler.userIds && currentTraveler.userIds[0] ? users.find(u => u.uid === currentTraveler.userIds[0])?.photoURL :
@@ -1022,10 +1023,10 @@ export default function CompleteSharedLifeDashboard() {
                 return (
                   <div
                     style={{
-                      background: `linear-gradient(135deg, rgba(18, 52, 255, 0.15) 0%, rgba(0, 0, 0, 0.8) 100%)`,
+                      background: `linear-gradient(135deg, rgba(52, 199, 89, 0.15) 0%, rgba(0, 0, 0, 0.8) 100%)`,
                       borderRadius: '16px',
                       padding: '24px',
-                      border: `1px solid rgba(18, 52, 255, 0.15)`,
+                      border: `1px solid rgba(52, 199, 89, 0.15)`,
                       backdropFilter: 'blur(10px)',
                       minHeight: '160px',
                       display: 'flex',
@@ -1034,20 +1035,12 @@ export default function CompleteSharedLifeDashboard() {
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-                      <div
-                        style={{
-                          width: '48px',
-                          height: '48px',
-                          borderRadius: '50%',
-                          background: `url(${avatar}) no-repeat center / cover`,
-                          border: `2px solid ${ACCENT_COLOR}`,
-                        }}
-                      />
+                      <Palmtree size={32} color="#34c759" />
                       <div>
                         <div style={{ fontSize: '14px', color: '#999', marginBottom: '2px' }}>
-                          {currentTraveler.userIds && currentTraveler.userIds.length > 1 ? 'are currently in' : 'is currently in'}
+                          {currentTraveler.userIds && currentTraveler.userIds.length > 1 ? '✈️ are currently in' : '✈️ is currently in'}
                         </div>
-                        <div style={{ fontSize: '24px', fontWeight: '700', color: ACCENT_COLOR }}>
+                        <div style={{ fontSize: '24px', fontWeight: '700', color: '#34c759' }}>
                           {currentTraveler.location}
                         </div>
                       </div>
@@ -1056,73 +1049,207 @@ export default function CompleteSharedLifeDashboard() {
                 );
               })()}
 
-              {/* Plants needing water - FIRST CARD */}
-              <div
-                style={{
-                  background: plantsNeedingWater > 0 
-                    ? 'linear-gradient(135deg, rgba(255, 59, 48, 0.15) 0%, rgba(0, 0, 0, 0.8) 100%)'
-                    : 'linear-gradient(135deg, rgba(18, 52, 255, 0.15) 0%, rgba(0, 0, 0, 0.8) 100%)',
-                  borderRadius: '16px',
-                  padding: '32px 24px',
-                  border: plantsNeedingWater > 0 
-                    ? '1px solid rgba(255, 59, 48, 0.15)'
-                    : '1px solid rgba(18, 52, 255, 0.15)',
-                  backdropFilter: 'blur(10px)',
-                  minHeight: '160px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'flex-end',
-                }}
-              >
-                {plantsNeedingWater > 0 ? (
-                  <>
-                    <div style={{ fontSize: '48px', fontWeight: '700', marginBottom: '8px', color: '#ff3b30' }}>{plantsNeedingWater}</div>
-                    <div style={{ fontSize: '14px', color: '#999' }}>plants need watering today</div>
-                  </>
-                ) : (
-                  <>
-                    <div style={{ fontSize: '48px', fontWeight: '700', marginBottom: '8px' }}>All</div>
-                    <div style={{ fontSize: '14px', color: '#999' }}>plants are watered</div>
-                  </>
-                )}
+              {/* Wellness Rings - Activity Style */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+                {/* Plants Ring */}
+                <div
+                  style={{
+                    background: `linear-gradient(135deg, rgba(52, 199, 89, 0.15) 0%, rgba(0, 0, 0, 0.8) 100%)`,
+                    borderRadius: '16px',
+                    padding: '20px',
+                    border: `1px solid rgba(52, 199, 89, 0.15)`,
+                    textAlign: 'center',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'flex-end',
+                    minHeight: '180px',
+                  }}
+                >
+                  <svg width="80" height="80" style={{ marginBottom: '12px' }}>
+                    <circle cx="40" cy="40" r="35" fill="none" stroke="#333" strokeWidth="3" />
+                    <circle
+                      cx="40" cy="40" r="35" fill="none" stroke={plantsNeedingWater === 0 ? '#34c759' : '#ff3b30'} strokeWidth="3"
+                      strokeDasharray={`${(plants.length - plantsNeedingWater) / Math.max(plants.length, 1) * 219.8} 219.8`}
+                      style={{ transform: 'rotate(-90deg)', transformOrigin: '40px 40px' }}
+                    />
+                  </svg>
+                  <div style={{ fontSize: '16px', fontWeight: '600' }}>{plants.length - plantsNeedingWater}/{plants.length}</div>
+                  <div style={{ fontSize: '12px', color: '#999', marginTop: '4px' }}>Plants Happy</div>
+                </div>
+
+                {/* Meals Ring */}
+                <div
+                  style={{
+                    background: `linear-gradient(135deg, rgba(255, 193, 7, 0.15) 0%, rgba(0, 0, 0, 0.8) 100%)`,
+                    borderRadius: '16px',
+                    padding: '20px',
+                    border: `1px solid rgba(255, 193, 7, 0.15)`,
+                    textAlign: 'center',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'flex-end',
+                    minHeight: '180px',
+                  }}
+                >
+                  <svg width="80" height="80" style={{ marginBottom: '12px' }}>
+                    <circle cx="40" cy="40" r="35" fill="none" stroke="#333" strokeWidth="3" />
+                    <circle
+                      cx="40" cy="40" r="35" fill="none" stroke="#ffc107" strokeWidth="3"
+                      strokeDasharray={`${Math.min(meals.length / 20 * 219.8, 219.8)} 219.8`}
+                      style={{ transform: 'rotate(-90deg)', transformOrigin: '40px 40px' }}
+                    />
+                  </svg>
+                  <div style={{ fontSize: '16px', fontWeight: '600' }}>{meals.length}</div>
+                  <div style={{ fontSize: '12px', color: '#999', marginTop: '4px' }}>Recipes</div>
+                </div>
+
+                {/* Budget Ring */}
+                <div
+                  style={{
+                    background: `linear-gradient(135deg, rgba(18, 52, 255, 0.15) 0%, rgba(0, 0, 0, 0.8) 100%)`,
+                    borderRadius: '16px',
+                    padding: '20px',
+                    border: `1px solid rgba(18, 52, 255, 0.15)`,
+                    textAlign: 'center',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'flex-end',
+                    minHeight: '180px',
+                  }}
+                >
+                  <svg width="80" height="80" style={{ marginBottom: '12px' }}>
+                    <circle cx="40" cy="40" r="35" fill="none" stroke="#333" strokeWidth="3" />
+                    <circle
+                      cx="40" cy="40" r="35" fill="none" stroke={ACCENT_COLOR} strokeWidth="3"
+                      strokeDasharray={`${Math.min((getExpensesForMonth(currentMonth).reduce((sum, e) => sum + e.amount, 0)) / 1000 * 219.8, 219.8)} 219.8`}
+                      style={{ transform: 'rotate(-90deg)', transformOrigin: '40px 40px' }}
+                    />
+                  </svg>
+                  <div style={{ fontSize: '16px', fontWeight: '600' }}>€{getExpensesForMonth(currentMonth).reduce((sum, e) => sum + e.amount, 0).toFixed(0)}</div>
+                  <div style={{ fontSize: '12px', color: '#999', marginTop: '4px' }}>This Month</div>
+                </div>
               </div>
 
-              {/* Days apart this month */}
-              <div
-                style={{
-                  background: `linear-gradient(135deg, rgba(18, 52, 255, 0.15) 0%, rgba(0, 0, 0, 0.8) 100%)`,
-                  borderRadius: '16px',
-                  padding: '32px 24px',
-                  border: `1px solid rgba(18, 52, 255, 0.15)`,
-                  backdropFilter: 'blur(10px)',
-                  minHeight: '160px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'flex-end',
-                }}
-              >
-                <div style={{ fontSize: '48px', fontWeight: '700', marginBottom: '8px' }}>{getTravelDaysThisMonth()}</div>
-                <div style={{ fontSize: '14px', color: '#999' }}>days apart this month</div>
-              </div>
+              {/* Random Recipe Shuffle - Featured */}
+              {meals.length > 0 && (() => {
+                const randomMeal = meals[Math.floor(Math.random() * meals.length)];
+                return (
+                  <div
+                    onClick={() => {
+                      setSelectedRecipe(randomMeal);
+                      setShowRecipeDetail(true);
+                    }}
+                    style={{
+                      backgroundImage: `url(${randomMeal.photo}?w=600&h=300&fit=crop)`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                      borderRadius: '16px',
+                      minHeight: '200px',
+                      position: 'relative',
+                      overflow: 'hidden',
+                      cursor: 'pointer',
+                      border: `1px solid rgba(18, 52, 255, 0.15)`,
+                    }}
+                  >
+                    <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.8), rgba(0,0,0,0.2))' }} />
+                    <div style={{ position: 'absolute', top: '12px', right: '12px', zIndex: 10 }}>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedRecipe(meals[Math.floor(Math.random() * meals.length)]);
+                        }}
+                        style={{
+                          background: ACCENT_COLOR,
+                          border: 'none',
+                          borderRadius: '50%',
+                          width: '44px',
+                          height: '44px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: 'pointer',
+                          color: '#fff',
+                        }}
+                      >
+                        <Shuffle size={20} />
+                      </button>
+                    </div>
+                    <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '20px', zIndex: 5 }}>
+                      <div style={{ fontSize: '14px', color: '#ccc', marginBottom: '6px' }}>Today's Inspiration</div>
+                      <div style={{ fontSize: '22px', fontWeight: '700', color: '#fff' }}>{randomMeal.name}</div>
+                      {randomMeal.cookTime && (
+                        <div style={{ fontSize: '12px', color: '#999', marginTop: '8px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <Clock size={14} /> {randomMeal.cookTime} min
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
 
-              {/* Spent together this month */}
+              {/* Upcoming Plans - Notifications */}
+              {travels.filter(t => new Date(t.startDate) > new Date()).slice(0, 2).length > 0 && (
+                <div>
+                  <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '8px', color: '#999' }}>Upcoming Plans</div>
+                  <div style={{ display: 'grid', gap: '10px' }}>
+                    {travels.filter(t => new Date(t.startDate) > new Date()).slice(0, 2).map(travel => (
+                      <div
+                        key={travel.id}
+                        style={{
+                          background: `linear-gradient(135deg, rgba(255, 149, 0, 0.15) 0%, rgba(0, 0, 0, 0.8) 100%)`,
+                          borderRadius: '12px',
+                          padding: '12px 16px',
+                          border: `1px solid rgba(255, 149, 0, 0.15)`,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '12px',
+                        }}
+                      >
+                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#ff9500' }} />
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: '13px', fontWeight: '600' }}>{travel.location}</div>
+                          <div style={{ fontSize: '11px', color: '#999' }}>
+                            {new Date(travel.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {new Date(travel.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                          </div>
+                        </div>
+                        <Plane size={16} color="#ff9500" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Days Together Counter */}
               <div
                 style={{
-                  background: `linear-gradient(135deg, rgba(18, 52, 255, 0.15) 0%, rgba(0, 0, 0, 0.8) 100%)`,
+                  background: `linear-gradient(135deg, rgba(255, 45, 85, 0.15) 0%, rgba(0, 0, 0, 0.8) 100%)`,
                   borderRadius: '16px',
-                  padding: '32px 24px',
-                  border: `1px solid rgba(18, 52, 255, 0.15)`,
-                  backdropFilter: 'blur(10px)',
-                  minHeight: '160px',
+                  padding: '24px',
+                  border: `1px solid rgba(255, 45, 85, 0.15)`,
                   display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'flex-end',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
                 }}
               >
-                <div style={{ fontSize: '48px', fontWeight: '700', marginBottom: '8px' }}>€{getExpensesForMonth(currentMonth).reduce((sum, e) => sum + e.amount, 0).toFixed(2)}</div>
-                <div style={{ fontSize: '14px', color: '#999' }}>spent together this month</div>
+                <div>
+                  <div style={{ fontSize: '48px', fontWeight: '700', marginBottom: '4px' }}>
+                    {new Date().getDate() - parseInt(new Date(currentMonth).getDate() || 1) + 1}
+                  </div>
+                  <div style={{ fontSize: '14px', color: '#999' }}>days together this month</div>
+                </div>
+                <Heart size={48} fill="#ff2d55" color="#ff2d55" style={{ animation: 'pulse 2s infinite' }} />
               </div>
             </div>
+
+            <style>{`
+              @keyframes pulse {
+                0%, 100% { transform: scale(1); }
+                50% { transform: scale(1.05); }
+              }
+            `}</style>
           </div>
         )}
 
