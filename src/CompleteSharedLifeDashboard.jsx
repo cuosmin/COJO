@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import {
   Home, Leaf, UtensilsCrossed, Wallet, LogOut,
-  X, Sliders, Bell, Plus, Plane, Edit2, MapPin, Droplet, Archive, ChevronDown, Briefcase, Palmtree,
-  ShoppingCart as ShoppingBag, Heart, Wind, Smile, Clock, Shuffle,
+  X, Bell, Plus, Plane, Edit2, MapPin, Droplet, Archive, ChevronDown, Briefcase, Palmtree,
+  ShoppingCart as ShoppingBag, Heart, Wind, Smile, Clock, Shuffle, MessageCircle, Send,
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
+import LinkifyIt from 'linkify-it';
 import { auth } from './firebaseConfig';
 import { signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
 import { ref, onValue, set } from 'firebase/database';
@@ -270,6 +271,9 @@ export default function CompleteSharedLifeDashboard() {
   const [modalType, setModalType] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const [showChat, setShowChat] = useState(false);
+  const [chatMessages, setChatMessages] = useState([]);
+  const [newChatMessage, setNewChatMessage] = useState('');
 
   // Data
   const [plants, setPlants] = useState([]);
@@ -399,6 +403,52 @@ export default function CompleteSharedLifeDashboard() {
     if (!data) return [];
     if (Array.isArray(data)) return data;
     return Object.values(data).filter(item => item && typeof item === 'object');
+  };
+
+  // Load chat messages
+  useEffect(() => {
+    if (!user) return;
+    try {
+      const chatRef = ref(database, 'shared-data/chat');
+      const unsubscribe = onValue(
+        chatRef,
+        (snapshot) => {
+          if (snapshot.exists()) {
+            const messages = toArray(snapshot.val());
+            setChatMessages(messages.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp)));
+          }
+        }
+      );
+      return unsubscribe;
+    } catch (error) {
+      console.error('❌ Chat loading error:', error);
+    }
+  }, [user]);
+
+  // Send chat message
+  const sendChatMessage = async () => {
+    if (!newChatMessage.trim() || !user) return;
+
+    const linkify = new LinkifyIt();
+    const links = linkify.match(newChatMessage);
+    
+    const message = {
+      id: Date.now().toString(),
+      userId: user.uid,
+      displayName: user.displayName || 'User',
+      avatar: user.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.uid}`,
+      text: newChatMessage,
+      timestamp: new Date().toISOString(),
+      links: links ? links.map(link => link.url) : [],
+    };
+
+    try {
+      const chatRef = ref(database, `shared-data/chat/${message.id}`);
+      await set(chatRef, message);
+      setNewChatMessage('');
+    } catch (error) {
+      console.error('❌ Error sending message:', error);
+    }
   };
 
   const searchUnsplash = async (query) => {
@@ -878,16 +928,17 @@ export default function CompleteSharedLifeDashboard() {
         <img src={`/cojo_logo.svg?v=${Date.now()}`} alt="COJO" style={{ height: '32px' }} />
 
         <button
-          onClick={() => setShowSettings(true)}
+          onClick={() => setShowChat(true)}
           style={{
             background: 'none',
             border: 'none',
             color: '#fff',
             cursor: 'pointer',
             padding: '8px',
+            position: 'relative',
           }}
         >
-          <Sliders size={24} />
+          <MessageCircle size={24} />
         </button>
       </div>
 
@@ -1918,7 +1969,181 @@ export default function CompleteSharedLifeDashboard() {
       </div>
 
       {/* Settings Panel */}
-      {showSettings && (
+      {/* Chat Modal */}
+      {showChat && (
+        <div
+          style={{
+            position: 'fixed',
+            top: '0',
+            left: '0',
+            right: '0',
+            bottom: '0',
+            background: `rgba(0, 0, 0, 0.6)`,
+            backdropFilter: 'blur(10px)',
+            zIndex: 250,
+            display: 'flex',
+            alignItems: 'flex-end',
+          }}
+          onClick={() => setShowChat(false)}
+        >
+          <div
+            style={{
+              width: '100%',
+              height: '90vh',
+              background: BG_COLOR,
+              borderTop: `1px solid rgba(18, 52, 255, 0.2)`,
+              borderRadius: '20px 20px 0 0',
+              padding: '0',
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Chat Header */}
+            <div style={{ padding: '16px 20px', borderBottom: `1px solid rgba(18, 52, 255, 0.1)`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: '600', margin: 0 }}>Messages</h3>
+              <button
+                onClick={() => setShowChat(false)}
+                style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '24px' }}
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            {/* Messages Container */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px', display: 'grid', gap: '12px', alignContent: 'flex-start' }}>
+              {chatMessages.length === 0 ? (
+                <div style={{ textAlign: 'center', color: '#666', paddingTop: '40px' }}>
+                  <p>No messages yet. Say something cute! 💕</p>
+                </div>
+              ) : (
+                chatMessages.map((msg) => {
+                  const isOwnMessage = msg.userId === user?.uid;
+                  return (
+                    <div key={msg.id} style={{ display: 'flex', gap: '8px', justifyContent: isOwnMessage ? 'flex-end' : 'flex-start', alignItems: 'flex-end' }}>
+                      {!isOwnMessage && (
+                        <img
+                          src={msg.avatar}
+                          alt={msg.displayName}
+                          style={{ width: '32px', height: '32px', borderRadius: '50%', flexShrink: 0 }}
+                        />
+                      )}
+                      
+                      <div style={{ display: 'grid', gap: '4px', maxWidth: '70%' }}>
+                        {/* Message Bubble */}
+                        <div
+                          style={{
+                            background: isOwnMessage ? ACCENT_COLOR : 'rgba(255, 255, 255, 0.08)',
+                            borderRadius: isOwnMessage ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
+                            padding: '10px 14px',
+                            color: '#fff',
+                            wordBreak: 'break-word',
+                            fontSize: '14px',
+                            lineHeight: '1.4',
+                          }}
+                        >
+                          {msg.text}
+                        </div>
+
+                        {/* Link Previews */}
+                        {msg.links && msg.links.length > 0 && (
+                          <div style={{ display: 'grid', gap: '6px' }}>
+                            {msg.links.map((link, idx) => (
+                              <a
+                                key={idx}
+                                href={link}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{
+                                  display: 'block',
+                                  padding: '8px 10px',
+                                  background: 'rgba(18, 52, 255, 0.15)',
+                                  border: `1px solid ${ACCENT_COLOR}`,
+                                  borderRadius: '8px',
+                                  color: ACCENT_COLOR,
+                                  textDecoration: 'none',
+                                  fontSize: '12px',
+                                  fontWeight: '500',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  whiteSpace: 'nowrap',
+                                }}
+                                title={link}
+                              >
+                                🔗 {link}
+                              </a>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Timestamp */}
+                        <p style={{ fontSize: '11px', color: '#666', margin: 0, textAlign: isOwnMessage ? 'right' : 'left' }}>
+                          {new Date(msg.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                      </div>
+
+                      {isOwnMessage && (
+                        <img
+                          src={msg.avatar}
+                          alt={msg.displayName}
+                          style={{ width: '32px', height: '32px', borderRadius: '50%', flexShrink: 0 }}
+                        />
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Input Bar */}
+            <div style={{ padding: '12px 20px', borderTop: `1px solid rgba(18, 52, 255, 0.1)`, display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <input
+                type="text"
+                value={newChatMessage}
+                onChange={(e) => setNewChatMessage(e.target.value)}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    sendChatMessage();
+                  }
+                }}
+                placeholder="Send a message..."
+                style={{
+                  flex: 1,
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: `1px solid rgba(18, 52, 255, 0.2)`,
+                  borderRadius: '20px',
+                  padding: '10px 16px',
+                  color: '#fff',
+                  fontSize: '14px',
+                }}
+              />
+              <button
+                onClick={sendChatMessage}
+                disabled={!newChatMessage.trim()}
+                style={{
+                  background: newChatMessage.trim() ? ACCENT_COLOR : 'rgba(18, 52, 255, 0.3)',
+                  border: 'none',
+                  borderRadius: '50%',
+                  width: '40px',
+                  height: '40px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#fff',
+                  cursor: newChatMessage.trim() ? 'pointer' : 'default',
+                  transition: 'all 0.2s',
+                }}
+              >
+                <Send size={18} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Settings Modal */}
+      
         <div
           style={{
             position: 'fixed',
