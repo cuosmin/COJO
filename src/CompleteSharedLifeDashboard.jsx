@@ -29,7 +29,6 @@ const BUDGET_CATEGORIES = [
 const TRAVEL_CATEGORIES = [
   { name: 'Business', color: '#1234ff', icon: Briefcase },
   { name: 'Holiday', color: '#34c759', icon: Palmtree },
-  { name: 'Events', color: '#ff3b30', icon: Heart },
 ];
 
 // Major cities for autocomplete
@@ -1003,32 +1002,30 @@ export default function CompleteSharedLifeDashboard() {
                     style={{
                       background: `linear-gradient(135deg, rgba(100, 100, 100, 0.12) 0%, rgba(0, 0, 0, 0.6) 100%)`,
                       borderRadius: '16px',
-                      padding: '24px',
+                      padding: '16px',
                       border: `1px solid rgba(255, 255, 255, 0.08)`,
                       backdropFilter: 'blur(10px)',
-                      minHeight: '160px',
                       display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'flex-end',
+                      alignItems: 'center',
+                      gap: '12px',
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-                      <div
-                        style={{
-                          width: '40px',
-                          height: '40px',
-                          borderRadius: '50%',
-                          background: `url(${avatar}) no-repeat center / cover`,
-                          border: `1.5px solid ${ACCENT_COLOR}`,
-                        }}
-                      />
-                      <div>
-                        <div style={{ fontSize: '12px', color: '#999', marginBottom: '2px' }}>
-                          Currently in
-                        </div>
-                        <div style={{ fontSize: '22px', fontWeight: '700', color: '#fff' }}>
-                          {currentTraveler.location}
-                        </div>
+                    <div
+                      style={{
+                        width: '48px',
+                        height: '48px',
+                        borderRadius: '50%',
+                        background: `url(${avatar}) no-repeat center / cover`,
+                        border: `1.5px solid ${ACCENT_COLOR}`,
+                        flexShrink: 0,
+                      }}
+                    />
+                    <div>
+                      <div style={{ fontSize: '12px', color: '#999' }}>
+                        is currently in
+                      </div>
+                      <div style={{ fontSize: '18px', fontWeight: '700', color: '#fff' }}>
+                        {currentTraveler.location}
                       </div>
                     </div>
                   </div>
@@ -1211,19 +1208,27 @@ export default function CompleteSharedLifeDashboard() {
                       {/* Dietary Labels */}
                       {randomMeal.dietaryLabels && randomMeal.dietaryLabels.length > 0 && (
                         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                          {randomMeal.dietaryLabels.map((label, idx) => (
-                            <span key={idx} style={{
-                              background: 'rgba(255, 255, 255, 0.15)',
-                              backdropFilter: 'blur(10px)',
-                              padding: '3px 8px',
-                              borderRadius: '6px',
-                              fontSize: '10px',
-                              fontWeight: '600',
-                              color: '#fff',
-                            }}>
-                              {label}
-                            </span>
-                          ))}
+                          {randomMeal.dietaryLabels.map(label => {
+                            const colors = {
+                              'vegetarian': '#34c759',
+                              'vegan': '#00c7be',
+                              'gluten-free': '#ff9500',
+                              'lactose-free': '#ff3b30',
+                            };
+                            return (
+                              <div key={label} style={{
+                                background: `${colors[label]}40`,
+                                borderRadius: '12px',
+                                padding: '4px 8px',
+                                border: `1px solid ${colors[label]}`,
+                                fontSize: '10px',
+                                fontWeight: '600',
+                                color: colors[label],
+                              }}>
+                                {label}
+                              </div>
+                            );
+                          })}
                         </div>
                       )}
                     </div>
@@ -1251,7 +1256,7 @@ export default function CompleteSharedLifeDashboard() {
                   const travel = thisWeekTravels[0];
                   return (
                     <div
-                      onClick={() => setActiveTab('calendar')}
+                      onClick={() => setActiveTab('travels')}
                       style={{
                         background: `linear-gradient(135deg, rgba(255, 149, 0, 0.15) 0%, rgba(0, 0, 0, 0.8) 100%)`,
                         borderRadius: '16px',
@@ -1279,7 +1284,7 @@ export default function CompleteSharedLifeDashboard() {
                 } else {
                   return (
                     <div
-                      onClick={() => setActiveTab('calendar')}
+                      onClick={() => setActiveTab('travels')}
                       style={{
                         background: `linear-gradient(135deg, rgba(255, 149, 0, 0.15) 0%, rgba(0, 0, 0, 0.8) 100%)`,
                         borderRadius: '16px',
