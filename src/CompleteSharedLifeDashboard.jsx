@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Home, Leaf, UtensilsCrossed, Wallet, LogOut,
-  Trash2, Check, X, Sliders, Bell, Plus, Palette, Plane, Edit2, MapPin
+  Trash2, Check, X, Sliders, Bell, Plus, Plane, Edit2, MapPin, ChefHat, ShoppingCart
 } from 'lucide-react';
 import { auth } from './firebaseConfig';
 import { signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
@@ -13,6 +13,14 @@ const database = getDatabase();
 
 const ACCENT_COLOR = '#1234ff';
 const BG_COLOR = '#000000';
+
+const BUDGET_CATEGORIES = [
+  { name: 'Groceries', icon: '🛒', color: '#ff3b30' },
+  { name: 'Travel', icon: '✈️', color: '#34c759' },
+  { name: 'Clothes', icon: '👕', color: '#ff9500' },
+  { name: 'House', icon: '🏠', color: '#5856d6' },
+  { name: 'Other', icon: '•', color: '#999' },
+];
 
 // Major cities for autocomplete
 const MAJOR_CITIES = [
@@ -41,6 +49,9 @@ const MAJOR_CITIES = [
   { name: 'Oslo', country: 'Norway' },
   { name: 'Bucharest', country: 'Romania' },
   { name: 'Athens', country: 'Greece' },
+  { name: 'Bordeaux', country: 'France' },
+  { name: 'Lyon', country: 'France' },
+  { name: 'Grenoble', country: 'France' },
 ];
 
 // Request notification permission
@@ -130,7 +141,7 @@ const AddModal = ({ isOpen, title, onClose, children }) => {
 };
 
 // Calendar Component for Travel Tab
-const CalendarMonth = ({ travels, onDateClick, currentMonth, onMonthChange }) => {
+const CalendarMonth = ({ travels, currentMonth, onMonthChange }) => {
   const year = currentMonth.getFullYear();
   const month = currentMonth.getMonth();
 
@@ -162,7 +173,7 @@ const CalendarMonth = ({ travels, onDateClick, currentMonth, onMonthChange }) =>
   const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
   return (
-    <div style={{ background: `rgba(255, 255, 255, 0.02)`, borderRadius: '16px', padding: '20px', border: `1px solid rgba(18, 52, 255, 0.1)` }}>
+    <div style={{ background: `rgba(255, 255, 255, 0.02)`, borderRadius: '16px', padding: '20px', border: `1px solid rgba(18, 52, 255, 0.15)` }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <button onClick={() => onMonthChange(-1)} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '18px' }}>←</button>
         <h3 style={{ fontSize: '18px', fontWeight: '600', margin: 0 }}>{monthNames[month]} {year}</h3>
@@ -181,13 +192,12 @@ const CalendarMonth = ({ travels, onDateClick, currentMonth, onMonthChange }) =>
           return (
             <div
               key={idx}
-              onClick={() => day && onDateClick && onDateClick(day)}
               style={{
                 aspectRatio: '1',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                borderRadius: '8px',
+                borderRadius: '12px',
                 background: day ? `rgba(255, 255, 255, 0.02)` : 'transparent',
                 border: day && indicators.length > 0 ? `2px solid ${ACCENT_COLOR}` : `1px solid rgba(255, 255, 255, 0.05)`,
                 cursor: day ? 'pointer' : 'default',
@@ -219,6 +229,8 @@ export default function CompleteSharedLifeDashboard() {
   const [activeTab, setActiveTab] = useState('home');
   const [showSettings, setShowSettings] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showRecipeModal, setShowRecipeModal] = useState(false);
+  const [selectedRecipe, setSelectedRecipe] = useState(null);
   const [modalType, setModalType] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
@@ -228,7 +240,7 @@ export default function CompleteSharedLifeDashboard() {
   const [meals, setMeals] = useState([]);
   const [expenses, setExpenses] = useState([]);
   const [travels, setTravels] = useState([]);
-  const [dashboardBg, setDashboardBg] = useState(null);
+  const [users, setUsers] = useState([]);
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
   // Modal states
@@ -239,7 +251,10 @@ export default function CompleteSharedLifeDashboard() {
   const [newTravelStart, setNewTravelStart] = useState('');
   const [newTravelEnd, setNewTravelEnd] = useState('');
   const [newTravelLocation, setNewTravelLocation] = useState('');
-  const [newTravelPerson, setNewTravelPerson] = useState('me');
+  const [newTravelUserId, setNewTravelUserId] = useState('');
+  const [newExpenseCategory, setNewExpenseCategory] = useState('Groceries');
+  const [newExpenseAmount, setNewExpenseAmount] = useState('');
+  const [newExpenseDate, setNewExpenseDate] = useState(new Date().toISOString().split('T')[0]);
   const [citySuggestions, setCitySuggestions] = useState([]);
   const [unsplashSearchResults, setUnsplashSearchResults] = useState([]);
 
@@ -250,12 +265,29 @@ export default function CompleteSharedLifeDashboard() {
       if (currentUser) {
         loadSharedData();
         checkNotificationPermission();
+        initializeUser(currentUser);
       } else {
         setLoading(false);
       }
     });
     return () => unsubscribe();
   }, []);
+
+  const initializeUser = async (currentUser) => {
+    try {
+      const usersRef = ref(database, 'shared-data/users');
+      onValue(usersRef, (snapshot) => {
+        if (snapshot.exists()) {
+          const usersData = snapshot.val();
+          setUsers(usersData.filter(u => u && u.uid));
+        } else {
+          setUsers([]);
+        }
+      });
+    } catch (error) {
+      console.error('Error loading users:', error);
+    }
+  };
 
   const checkNotificationPermission = () => {
     if ('Notification' in window) {
@@ -275,7 +307,6 @@ export default function CompleteSharedLifeDashboard() {
             setMeals(data.meals || []);
             setExpenses(data.expenses || []);
             setTravels(data.travels || []);
-            setDashboardBg(data.dashboardBg || null);
             localStorage.setItem('cojoBackup', JSON.stringify(data));
           }
           setLoading(false);
@@ -290,7 +321,6 @@ export default function CompleteSharedLifeDashboard() {
             setMeals(data.meals || []);
             setExpenses(data.expenses || []);
             setTravels(data.travels || []);
-            setDashboardBg(data.dashboardBg || null);
           }
         }
       );
@@ -300,7 +330,7 @@ export default function CompleteSharedLifeDashboard() {
     }
   };
 
-  const saveData = async (newPlants, newMeals, newExpenses, newTravels, newDashboardBg = dashboardBg) => {
+  const saveData = async (newPlants, newMeals, newExpenses, newTravels) => {
     try {
       const sharedRef = ref(database, 'shared-data/default');
       const data = {
@@ -308,7 +338,6 @@ export default function CompleteSharedLifeDashboard() {
         meals: newMeals,
         expenses: newExpenses,
         travels: newTravels,
-        dashboardBg: newDashboardBg,
         lastUpdated: new Date().toISOString(),
         lastUpdatedBy: user?.email,
       };
@@ -438,12 +467,12 @@ export default function CompleteSharedLifeDashboard() {
 
   // ==================== EXPENSES ====================
   const addExpense = () => {
-    if (newItemName.trim()) {
+    if (newExpenseAmount && newExpenseAmount > 0) {
       const expense = {
         id: editingId || Date.now().toString(),
-        description: newItemName,
-        amount: 0,
-        date: new Date().toISOString().split('T')[0],
+        category: newExpenseCategory,
+        amount: parseFloat(newExpenseAmount),
+        date: newExpenseDate,
       };
       
       let updated;
@@ -467,13 +496,13 @@ export default function CompleteSharedLifeDashboard() {
 
   // ==================== TRAVELS ====================
   const addTravel = () => {
-    if (newTravelStart && newTravelEnd && newTravelLocation && newTravelPerson) {
+    if (newTravelStart && newTravelEnd && newTravelLocation && newTravelUserId) {
       const travel = {
         id: editingId || Date.now().toString(),
         startDate: newTravelStart,
         endDate: newTravelEnd,
         location: newTravelLocation,
-        person: newTravelPerson,
+        userId: newTravelUserId,
       };
       
       let updated;
@@ -518,6 +547,22 @@ export default function CompleteSharedLifeDashboard() {
     return travels.find(t => t.startDate <= today && t.endDate >= today);
   };
 
+  const getTravelerInfo = (userId) => {
+    if (userId === user?.uid) {
+      return { name: user?.displayName || 'You', avatar: user?.photoURL };
+    }
+    const otherUser = users.find(u => u.uid === userId);
+    return { name: otherUser?.displayName || 'Partner', avatar: otherUser?.photoURL };
+  };
+
+  const getExpensesByCategory = () => {
+    const grouped = {};
+    BUDGET_CATEGORIES.forEach(cat => {
+      grouped[cat.name] = expenses.filter(e => e.category === cat.name);
+    });
+    return grouped;
+  };
+
   // ==================== HELPERS ====================
   const resetModal = () => {
     setShowAddModal(false);
@@ -530,7 +575,10 @@ export default function CompleteSharedLifeDashboard() {
     setNewTravelStart('');
     setNewTravelEnd('');
     setNewTravelLocation('');
-    setNewTravelPerson('me');
+    setNewTravelUserId('');
+    setNewExpenseCategory('Groceries');
+    setNewExpenseAmount('');
+    setNewExpenseDate(new Date().toISOString().split('T')[0]);
     setCitySuggestions([]);
   };
 
@@ -548,12 +596,14 @@ export default function CompleteSharedLifeDashboard() {
       setNewItemRecipe(item.recipe || '');
       setNewItemPhoto(item.photo);
     } else if (type === 'expense') {
-      setNewItemName(item.description);
+      setNewExpenseCategory(item.category);
+      setNewExpenseAmount(item.amount.toString());
+      setNewExpenseDate(item.date);
     } else if (type === 'travel') {
       setNewTravelStart(item.startDate);
       setNewTravelEnd(item.endDate);
       setNewTravelLocation(item.location);
-      setNewTravelPerson(item.person);
+      setNewTravelUserId(item.userId);
     }
   };
 
@@ -621,6 +671,7 @@ export default function CompleteSharedLifeDashboard() {
   }
 
   const currentTraveler = getCurrentTraveler();
+  const expensesByCategory = getExpensesByCategory();
 
   return (
     <div style={{ background: BG_COLOR, minHeight: '100vh', color: '#fff' }}>
@@ -634,7 +685,7 @@ export default function CompleteSharedLifeDashboard() {
         display: 'flex', 
         justifyContent: 'space-between', 
         alignItems: 'center', 
-        borderBottom: `1px solid rgba(18, 52, 255, 0.1)`,
+        borderBottom: `1px solid rgba(18, 52, 255, 0.15)`,
         background: '#000000',
         zIndex: 50,
       }}>
@@ -674,17 +725,55 @@ export default function CompleteSharedLifeDashboard() {
             <h2 style={{ fontSize: '28px', fontWeight: '700', margin: '0 0 24px' }}>Home</h2>
 
             <div style={{ display: 'grid', gap: '12px' }}>
-              {/* Main dashboard card with bg */}
+              {/* Currently traveling card - FIRST */}
+              {currentTraveler && (() => {
+                const info = getTravelerInfo(currentTraveler.userId);
+                return (
+                  <div
+                    style={{
+                      background: `linear-gradient(135deg, rgba(18, 52, 255, 0.15) 0%, rgba(0, 0, 0, 0.8) 100%)`,
+                      borderRadius: '16px',
+                      padding: '24px',
+                      border: `1px solid rgba(18, 52, 255, 0.15)`,
+                      backdropFilter: 'blur(10px)',
+                      minHeight: '160px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'flex-end',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+                      <div
+                        style={{
+                          width: '48px',
+                          height: '48px',
+                          borderRadius: '50%',
+                          background: `url(${info.avatar}) no-repeat center / cover`,
+                          border: `2px solid ${ACCENT_COLOR}`,
+                        }}
+                      />
+                      <div>
+                        <div style={{ fontSize: '14px', color: '#999', marginBottom: '2px' }}>
+                          {info.name} is currently in
+                        </div>
+                        <div style={{ fontSize: '24px', fontWeight: '700', color: ACCENT_COLOR }}>
+                          {currentTraveler.location}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Main dashboard card */}
               <div
                 style={{
-                  background: `linear-gradient(135deg, rgba(18, 52, 255, 0.15) 0%, rgba(0, 0, 0, 0.8) 100%), url(${dashboardBg || 'https://images.unsplash.com/photo-1469022563149-aa64dbd37dae?w=800&h=400&fit=crop'})`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
-                  borderRadius: '20px',
+                  background: `linear-gradient(135deg, rgba(18, 52, 255, 0.15) 0%, rgba(0, 0, 0, 0.8) 100%)`,
+                  borderRadius: '16px',
                   padding: '32px 24px',
-                  border: `1px solid rgba(18, 52, 255, 0.2)`,
+                  border: `1px solid rgba(18, 52, 255, 0.15)`,
                   backdropFilter: 'blur(10px)',
-                  minHeight: '180px',
+                  minHeight: '160px',
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'flex-end',
@@ -694,52 +783,15 @@ export default function CompleteSharedLifeDashboard() {
                 <div style={{ fontSize: '14px', color: '#999' }}>plants to care for</div>
               </div>
 
-              {/* Currently traveling card */}
-              {currentTraveler && (
-                <div
-                  style={{
-                    background: `linear-gradient(135deg, rgba(18, 52, 255, 0.15) 0%, rgba(0, 0, 0, 0.8) 100%)`,
-                    borderRadius: '20px',
-                    padding: '24px',
-                    border: `1px solid rgba(18, 52, 255, 0.2)`,
-                    backdropFilter: 'blur(10px)',
-                    minHeight: '180px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'flex-end',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-                    <div
-                      style={{
-                        width: '48px',
-                        height: '48px',
-                        borderRadius: '50%',
-                        background: currentTraveler.person === 'me' ? `url(${user?.photoURL}) no-repeat center / cover` : '#999',
-                        border: `2px solid ${ACCENT_COLOR}`,
-                      }}
-                    />
-                    <div>
-                      <div style={{ fontSize: '16px', fontWeight: '600' }}>
-                        {currentTraveler.person === 'me' ? 'You are' : 'Your partner is'} in
-                      </div>
-                      <div style={{ fontSize: '24px', fontWeight: '700', color: ACCENT_COLOR }}>
-                        {currentTraveler.location}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
               {/* Plants needing water */}
               <div
                 style={{
                   background: `linear-gradient(135deg, rgba(255, 59, 48, 0.15) 0%, rgba(0, 0, 0, 0.8) 100%)`,
-                  borderRadius: '20px',
+                  borderRadius: '16px',
                   padding: '32px 24px',
-                  border: `1px solid rgba(255, 59, 48, 0.2)`,
+                  border: `1px solid rgba(255, 59, 48, 0.15)`,
                   backdropFilter: 'blur(10px)',
-                  minHeight: '180px',
+                  minHeight: '160px',
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'flex-end',
@@ -753,11 +805,11 @@ export default function CompleteSharedLifeDashboard() {
               <div
                 style={{
                   background: `linear-gradient(135deg, rgba(18, 52, 255, 0.15) 0%, rgba(0, 0, 0, 0.8) 100%)`,
-                  borderRadius: '20px',
+                  borderRadius: '16px',
                   padding: '32px 24px',
-                  border: `1px solid rgba(18, 52, 255, 0.2)`,
+                  border: `1px solid rgba(18, 52, 255, 0.15)`,
                   backdropFilter: 'blur(10px)',
-                  minHeight: '180px',
+                  minHeight: '160px',
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'flex-end',
@@ -771,11 +823,11 @@ export default function CompleteSharedLifeDashboard() {
               <div
                 style={{
                   background: `linear-gradient(135deg, rgba(18, 52, 255, 0.15) 0%, rgba(0, 0, 0, 0.8) 100%)`,
-                  borderRadius: '20px',
+                  borderRadius: '16px',
                   padding: '32px 24px',
-                  border: `1px solid rgba(18, 52, 255, 0.2)`,
+                  border: `1px solid rgba(18, 52, 255, 0.15)`,
                   backdropFilter: 'blur(10px)',
-                  minHeight: '180px',
+                  minHeight: '160px',
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'flex-end',
@@ -805,14 +857,15 @@ export default function CompleteSharedLifeDashboard() {
                 style={{
                   background: ACCENT_COLOR,
                   border: 'none',
-                  borderRadius: '8px',
-                  padding: '8px 12px',
+                  borderRadius: '12px',
+                  padding: '10px 16px',
                   color: '#fff',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '6px',
                   fontSize: '14px',
+                  fontWeight: '600',
                 }}
               >
                 <Plus size={18} /> Add
@@ -829,18 +882,22 @@ export default function CompleteSharedLifeDashboard() {
                     <div
                       key={plant.id}
                       style={{
-                        background: `linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.8) 100%), url(${plant.photo}?w=400&h=300&fit=crop&v=${Date.now()})`,
+                        background: `linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.9) 100%), url(${plant.photo}?w=400&h=300&fit=crop)`,
                         backgroundSize: 'cover',
                         backgroundPosition: 'center',
                         borderRadius: '16px',
                         padding: '16px',
-                        border: `1px solid rgba(${status.needsWatering ? '255, 59, 48' : '18, 52, 255'}, 0.2)`,
+                        border: `1px solid rgba(${status.needsWatering ? '255, 59, 48' : '18, 52, 255'}, 0.15)`,
                         backdropFilter: 'blur(10px)',
+                        minHeight: '200px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'flex-end',
                       }}
                     >
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
                         <div>
-                          <h3 style={{ fontSize: '16px', fontWeight: '600', margin: '0 0 4px' }}>{plant.name}</h3>
+                          <h3 style={{ fontSize: '18px', fontWeight: '600', margin: '0 0 4px' }}>{plant.name}</h3>
                           <p style={{ fontSize: '12px', color: status.needsWatering ? '#ff3b30' : '#999', margin: 0 }}>
                             {status.needsWatering ? '💧 Needs watering now!' : `Next watering in ${status.daysUntil} days`}
                           </p>
@@ -855,7 +912,7 @@ export default function CompleteSharedLifeDashboard() {
                             padding: '4px',
                           }}
                         >
-                          <Edit2 size={18} />
+                          <Edit2 size={20} />
                         </button>
                       </div>
 
@@ -866,7 +923,7 @@ export default function CompleteSharedLifeDashboard() {
                             flex: 1,
                             background: status.needsWatering ? '#ff3b30' : '#34c759',
                             border: 'none',
-                            borderRadius: '10px',
+                            borderRadius: '12px',
                             padding: '10px',
                             color: '#fff',
                             cursor: 'pointer',
@@ -875,7 +932,7 @@ export default function CompleteSharedLifeDashboard() {
                             justifyContent: 'center',
                             gap: '6px',
                             fontSize: '14px',
-                            fontWeight: '500',
+                            fontWeight: '600',
                           }}
                         >
                           <Check size={16} /> Water
@@ -884,11 +941,12 @@ export default function CompleteSharedLifeDashboard() {
                           onClick={() => deletePlant(plant.id)}
                           style={{
                             background: 'rgba(255, 59, 48, 0.2)',
-                            border: 'none',
-                            borderRadius: '10px',
+                            border: '1px solid rgba(255, 59, 48, 0.3)',
+                            borderRadius: '12px',
                             padding: '10px 12px',
                             color: '#ff3b30',
                             cursor: 'pointer',
+                            fontWeight: '600',
                           }}
                         >
                           <Trash2 size={16} />
@@ -919,14 +977,15 @@ export default function CompleteSharedLifeDashboard() {
                 style={{
                   background: ACCENT_COLOR,
                   border: 'none',
-                  borderRadius: '8px',
-                  padding: '8px 12px',
+                  borderRadius: '12px',
+                  padding: '10px 16px',
                   color: '#fff',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '6px',
                   fontSize: '14px',
+                  fontWeight: '600',
                 }}
               >
                 <Plus size={18} /> Add
@@ -941,18 +1000,22 @@ export default function CompleteSharedLifeDashboard() {
                   <div
                     key={meal.id}
                     style={{
-                      background: `linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.8) 100%), url(${meal.photo}?w=400&h=300&fit=crop&v=${Date.now()})`,
+                      background: `linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.9) 100%), url(${meal.photo}?w=400&h=300&fit=crop)`,
                       backgroundSize: 'cover',
                       backgroundPosition: 'center',
                       borderRadius: '16px',
                       padding: '16px',
-                      border: `1px solid rgba(18, 52, 255, 0.2)`,
+                      border: `1px solid rgba(18, 52, 255, 0.15)`,
                       backdropFilter: 'blur(10px)',
+                      minHeight: '200px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'flex-end',
                     }}
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
                       <div>
-                        <h3 style={{ fontSize: '16px', fontWeight: '600', margin: '0 0 4px' }}>{meal.name}</h3>
+                        <h3 style={{ fontSize: '18px', fontWeight: '600', margin: '0 0 4px' }}>{meal.name}</h3>
                         <p style={{ fontSize: '12px', color: '#999', margin: 0 }}>{meal.plannedDate}</p>
                       </div>
                       <button
@@ -965,11 +1028,34 @@ export default function CompleteSharedLifeDashboard() {
                           padding: '4px',
                         }}
                       >
-                        <Edit2 size={18} />
+                        <Edit2 size={20} />
                       </button>
                     </div>
 
                     <div style={{ display: 'flex', gap: '8px' }}>
+                      <button
+                        onClick={() => {
+                          setSelectedRecipe(meal);
+                          setShowRecipeModal(true);
+                        }}
+                        style={{
+                          flex: 1,
+                          background: meal.recipe ? `rgba(18, 52, 255, 0.3)` : 'rgba(255, 255, 255, 0.1)',
+                          border: `1px solid rgba(18, 52, 255, ${meal.recipe ? 0.4 : 0.15})`,
+                          borderRadius: '12px',
+                          padding: '10px 12px',
+                          color: '#fff',
+                          cursor: 'pointer',
+                          fontSize: '14px',
+                          fontWeight: '600',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '6px',
+                        }}
+                      >
+                        <ChefHat size={16} /> Recipe
+                      </button>
                       <button
                         onClick={() => {
                           const updated = meals.map(m => m.id === meal.id ? { ...m, shoppingNeeded: !m.shoppingNeeded } : m);
@@ -977,30 +1063,30 @@ export default function CompleteSharedLifeDashboard() {
                           saveData(plants, updated, expenses, travels);
                         }}
                         style={{
-                          flex: 1,
-                          background: meal.shoppingNeeded ? `rgba(18, 52, 255, 0.3)` : 'rgba(255, 255, 255, 0.1)',
-                          border: `1px solid rgba(18, 52, 255, ${meal.shoppingNeeded ? 0.4 : 0.2})`,
-                          borderRadius: '8px',
-                          padding: '8px 12px',
-                          color: '#fff',
+                          background: meal.shoppingNeeded ? `rgba(52, 199, 89, 0.3)` : 'rgba(255, 255, 255, 0.1)',
+                          border: `1px solid rgba(${meal.shoppingNeeded ? '52, 199, 89' : '255, 255, 255'}, ${meal.shoppingNeeded ? 0.4 : 0.15})`,
+                          borderRadius: '12px',
+                          padding: '10px 12px',
+                          color: meal.shoppingNeeded ? '#34c759' : '#999',
                           cursor: 'pointer',
-                          fontSize: '12px',
+                          fontWeight: '600',
                         }}
                       >
-                        {meal.shoppingNeeded ? '✓ Shop' : 'Shop'}
+                        <ShoppingCart size={16} />
                       </button>
                       <button
                         onClick={() => deleteMeal(meal.id)}
                         style={{
                           background: 'rgba(255, 59, 48, 0.2)',
-                          border: 'none',
-                          borderRadius: '8px',
-                          padding: '8px',
+                          border: '1px solid rgba(255, 59, 48, 0.3)',
+                          borderRadius: '12px',
+                          padding: '10px 12px',
                           color: '#ff3b30',
                           cursor: 'pointer',
+                          fontWeight: '600',
                         }}
                       >
-                        <Trash2 size={14} />
+                        <Trash2 size={16} />
                       </button>
                     </div>
                   </div>
@@ -1020,19 +1106,22 @@ export default function CompleteSharedLifeDashboard() {
                   setModalType('expense');
                   setEditingId(null);
                   setShowAddModal(true);
-                  setNewItemName('');
+                  setNewExpenseCategory('Groceries');
+                  setNewExpenseAmount('');
+                  setNewExpenseDate(new Date().toISOString().split('T')[0]);
                 }}
                 style={{
                   background: ACCENT_COLOR,
                   border: 'none',
-                  borderRadius: '8px',
-                  padding: '8px 12px',
+                  borderRadius: '12px',
+                  padding: '10px 16px',
                   color: '#fff',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '6px',
                   fontSize: '14px',
+                  fontWeight: '600',
                 }}
               >
                 <Plus size={18} /> Add
@@ -1043,62 +1132,46 @@ export default function CompleteSharedLifeDashboard() {
               <EmptyState icon={Wallet} title="No expenses logged" subtitle="Track your spending together" />
             ) : (
               <div style={{ display: 'grid', gap: '12px' }}>
-                {expenses.map(exp => (
-                  <div
-                    key={exp.id}
-                    style={{
-                      background: `rgba(255, 255, 255, 0.05)`,
-                      border: `1px solid rgba(18, 52, 255, 0.2)`,
-                      borderRadius: '12px',
-                      padding: '14px 16px',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                    }}
-                  >
-                    <div>
-                      <h3 style={{ fontSize: '14px', fontWeight: '500', margin: '0 0 4px' }}>{exp.description}</h3>
-                      <p style={{ fontSize: '12px', color: '#666', margin: 0 }}>{exp.date}</p>
-                    </div>
+                {BUDGET_CATEGORIES.map(category => {
+                  const categoryExpenses = expensesByCategory[category.name];
+                  const total = categoryExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+                  
+                  if (categoryExpenses.length === 0) return null;
+                  
+                  return (
+                    <div key={category.name} style={{ background: `rgba(255, 255, 255, 0.02)`, borderRadius: '16px', padding: '16px', border: `1px solid rgba(18, 52, 255, 0.15)` }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+                        <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: `${category.color}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>
+                          {category.icon}
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <h3 style={{ fontSize: '16px', fontWeight: '600', margin: 0 }}>{category.name}</h3>
+                          <p style={{ fontSize: '12px', color: '#666', margin: 0 }}>{categoryExpenses.length} items</p>
+                        </div>
+                        <div style={{ fontSize: '18px', fontWeight: '700', color: category.color }}>€{total.toFixed(2)}</div>
+                      </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <input
-                        type="number"
-                        value={exp.amount || 0}
-                        onChange={(e) => {
-                          const updated = expenses.map(ex => ex.id === exp.id ? { ...ex, amount: parseFloat(e.target.value) } : ex);
-                          setExpenses(updated);
-                          saveData(plants, meals, updated, travels);
-                        }}
-                        placeholder="0"
-                        style={{
-                          width: '70px',
-                          background: `rgba(255, 255, 255, 0.05)`,
-                          border: `1px solid rgba(18, 52, 255, 0.2)`,
-                          borderRadius: '8px',
-                          padding: '6px',
-                          color: '#fff',
-                          textAlign: 'right',
-                          fontSize: '14px',
-                        }}
-                      />
-                      <span style={{ color: '#666', fontSize: '14px', minWidth: '20px' }}>€</span>
-                      <button
-                        onClick={() => deleteExpense(exp.id)}
-                        style={{
-                          background: 'rgba(255, 59, 48, 0.2)',
-                          border: 'none',
-                          borderRadius: '8px',
-                          padding: '6px 8px',
-                          color: '#ff3b30',
-                          cursor: 'pointer',
-                        }}
-                      >
-                        <Trash2 size={14} />
-                      </button>
+                      <div style={{ display: 'grid', gap: '8px' }}>
+                        {categoryExpenses.map(exp => (
+                          <div key={exp.id} style={{ background: `rgba(255, 255, 255, 0.02)`, borderRadius: '12px', padding: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: `1px solid rgba(255, 255, 255, 0.05)` }}>
+                            <div>
+                              <p style={{ fontSize: '14px', margin: 0, fontWeight: '500' }}>€{exp.amount.toFixed(2)}</p>
+                              <p style={{ fontSize: '12px', color: '#666', margin: '2px 0 0' }}>{exp.date}</p>
+                            </div>
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                              <button onClick={() => openEditModal('expense', exp)} style={{ background: 'none', border: 'none', color: ACCENT_COLOR, cursor: 'pointer', padding: '4px' }}>
+                                <Edit2 size={16} />
+                              </button>
+                              <button onClick={() => deleteExpense(exp.id)} style={{ background: 'none', border: 'none', color: '#ff3b30', cursor: 'pointer', padding: '4px' }}>
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -1117,19 +1190,20 @@ export default function CompleteSharedLifeDashboard() {
                   setNewTravelStart('');
                   setNewTravelEnd('');
                   setNewTravelLocation('');
-                  setNewTravelPerson('me');
+                  setNewTravelUserId(user?.uid || '');
                 }}
                 style={{
                   background: ACCENT_COLOR,
                   border: 'none',
-                  borderRadius: '8px',
-                  padding: '8px 12px',
+                  borderRadius: '12px',
+                  padding: '10px 16px',
                   color: '#fff',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '6px',
                   fontSize: '14px',
+                  fontWeight: '600',
                 }}
               >
                 <Plus size={18} /> Add
@@ -1153,61 +1227,68 @@ export default function CompleteSharedLifeDashboard() {
                 <div style={{ marginTop: '24px' }}>
                   <h3 style={{ fontSize: '16px', fontWeight: '600', margin: '0 0 12px' }}>Trips</h3>
                   <div style={{ display: 'grid', gap: '12px' }}>
-                    {travels.map(travel => (
-                      <div
-                        key={travel.id}
-                        style={{
-                          background: `rgba(18, 52, 255, 0.1)`,
-                          border: `1px solid rgba(18, 52, 255, 0.2)`,
-                          borderRadius: '12px',
-                          padding: '16px',
-                        }}
-                      >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-                          <div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                              <MapPin size={16} style={{ color: ACCENT_COLOR }} />
-                              <h3 style={{ fontSize: '16px', fontWeight: '600', margin: 0 }}>{travel.location}</h3>
-                            </div>
-                            <p style={{ fontSize: '12px', color: '#666', margin: '0 0 4px' }}>
-                              {travel.startDate} → {travel.endDate}
-                            </p>
-                            <p style={{ fontSize: '12px', color: '#999', margin: 0 }}>
-                              {travel.person === 'me' ? 'You' : 'Your partner'}
-                            </p>
-                          </div>
-                          <button
-                            onClick={() => openEditModal('travel', travel)}
-                            style={{
-                              background: 'none',
-                              border: 'none',
-                              color: ACCENT_COLOR,
-                              cursor: 'pointer',
-                              padding: '4px',
-                            }}
-                          >
-                            <Edit2 size={18} />
-                          </button>
-                        </div>
-
-                        <button
-                          onClick={() => deleteTravel(travel.id)}
+                    {travels.map(travel => {
+                      const info = getTravelerInfo(travel.userId);
+                      return (
+                        <div
+                          key={travel.id}
                           style={{
-                            width: '100%',
-                            background: 'rgba(255, 59, 48, 0.2)',
-                            border: 'none',
-                            borderRadius: '8px',
-                            padding: '8px',
-                            color: '#ff3b30',
-                            cursor: 'pointer',
-                            fontSize: '12px',
+                            background: `rgba(18, 52, 255, 0.08)`,
+                            border: `1px solid rgba(18, 52, 255, 0.15)`,
+                            borderRadius: '16px',
+                            padding: '16px',
                           }}
                         >
-                          <Trash2 size={14} style={{ marginRight: '4px' }} />
-                          Delete
-                        </button>
-                      </div>
-                    ))}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                            <div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                                <MapPin size={16} style={{ color: ACCENT_COLOR }} />
+                                <h3 style={{ fontSize: '16px', fontWeight: '600', margin: 0 }}>{travel.location}</h3>
+                              </div>
+                              <p style={{ fontSize: '12px', color: '#666', margin: '0 0 4px' }}>
+                                {travel.startDate} → {travel.endDate}
+                              </p>
+                              <p style={{ fontSize: '12px', color: '#999', margin: 0 }}>
+                                {info.name}
+                              </p>
+                            </div>
+                            <button
+                              onClick={() => openEditModal('travel', travel)}
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                color: ACCENT_COLOR,
+                                cursor: 'pointer',
+                                padding: '4px',
+                              }}
+                            >
+                              <Edit2 size={18} />
+                            </button>
+                          </div>
+
+                          <button
+                            onClick={() => deleteTravel(travel.id)}
+                            style={{
+                              width: '100%',
+                              background: 'rgba(255, 59, 48, 0.2)',
+                              border: '1px solid rgba(255, 59, 48, 0.3)',
+                              borderRadius: '12px',
+                              padding: '10px',
+                              color: '#ff3b30',
+                              cursor: 'pointer',
+                              fontSize: '14px',
+                              fontWeight: '600',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '6px',
+                            }}
+                          >
+                            <Trash2 size={16} /> Delete
+                          </button>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               </>
@@ -1335,7 +1416,7 @@ export default function CompleteSharedLifeDashboard() {
                     width: '100%',
                     background: ACCENT_COLOR,
                     border: 'none',
-                    borderRadius: '8px',
+                    borderRadius: '12px',
                     padding: '12px',
                     color: '#fff',
                     cursor: 'pointer',
@@ -1346,59 +1427,10 @@ export default function CompleteSharedLifeDashboard() {
                   🔔 Enable Notifications
                 </button>
               ) : (
-                <div style={{ padding: '12px', background: `rgba(52, 199, 89, 0.1)`, borderRadius: '8px', border: `1px solid rgba(52, 199, 89, 0.2)` }}>
+                <div style={{ padding: '12px', background: `rgba(52, 199, 89, 0.1)`, borderRadius: '12px', border: `1px solid rgba(52, 199, 89, 0.2)` }}>
                   <p style={{ margin: 0, fontSize: '12px', color: '#34c759' }}>✓ Notifications enabled</p>
                 </div>
               )}
-            </div>
-
-            {/* Customization */}
-            <div style={{ marginBottom: '24px' }}>
-              <h4 style={{ fontSize: '14px', fontWeight: '600', margin: '0 0 12px', color: '#666', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Palette size={16} /> Customize
-              </h4>
-
-              <div style={{ padding: '12px', background: `rgba(18, 52, 255, 0.1)`, borderRadius: '8px', border: `1px solid rgba(18, 52, 255, 0.2)` }}>
-                <label style={{ fontSize: '12px', color: '#666', marginBottom: '8px', display: 'block', fontWeight: '600' }}>Dashboard Background</label>
-                <input
-                  type="text"
-                  placeholder="Search Unsplash..."
-                  onChange={(e) => searchUnsplash(e.target.value)}
-                  style={{
-                    width: '100%',
-                    background: `rgba(255, 255, 255, 0.05)`,
-                    border: `1px solid rgba(18, 52, 255, 0.2)`,
-                    borderRadius: '8px',
-                    padding: '8px',
-                    color: '#fff',
-                    fontSize: '14px',
-                    marginBottom: '8px',
-                    boxSizing: 'border-box',
-                  }}
-                />
-                {unsplashSearchResults.length > 0 && (
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
-                    {unsplashSearchResults.map((photo) => (
-                      <img
-                        key={photo.id}
-                        src={`${photo.urls.thumb}?w=80&h=80&fit=crop`}
-                        alt=""
-                        onClick={() => {
-                          setDashboardBg(photo.urls.regular);
-                          saveData(plants, meals, expenses, travels, photo.urls.regular);
-                        }}
-                        style={{
-                          width: '100%',
-                          height: '60px',
-                          borderRadius: '6px',
-                          cursor: 'pointer',
-                          border: dashboardBg === photo.urls.regular ? `2px solid ${ACCENT_COLOR}` : 'none',
-                        }}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
             </div>
 
             {/* Sign Out */}
@@ -1417,11 +1449,63 @@ export default function CompleteSharedLifeDashboard() {
                 justifyContent: 'center',
                 gap: '8px',
                 fontSize: '16px',
-                fontWeight: '500',
+                fontWeight: '600',
               }}
             >
               <LogOut size={18} /> Sign Out
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Recipe Modal */}
+      {showRecipeModal && selectedRecipe && (
+        <div
+          style={{
+            position: 'fixed',
+            top: '0',
+            left: '0',
+            right: '0',
+            bottom: '0',
+            background: `rgba(0, 0, 0, 0.6)`,
+            backdropFilter: 'blur(10px)',
+            zIndex: 300,
+            display: 'flex',
+            alignItems: 'flex-end',
+          }}
+          onClick={() => setShowRecipeModal(false)}
+        >
+          <div
+            style={{
+              width: '100%',
+              background: BG_COLOR,
+              borderTop: `1px solid rgba(18, 52, 255, 0.2)`,
+              borderRadius: '24px 24px 0 0',
+              padding: '24px',
+              maxHeight: '80vh',
+              overflowY: 'auto',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h3 style={{ fontSize: '20px', fontWeight: '600', margin: 0 }}>{selectedRecipe.name}</h3>
+              <button
+                onClick={() => setShowRecipeModal(false)}
+                style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '24px' }}
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <div style={{ background: `rgba(18, 52, 255, 0.08)`, borderRadius: '16px', padding: '20px', border: `1px solid rgba(18, 52, 255, 0.15)` }}>
+              {selectedRecipe.recipe ? (
+                <p style={{ margin: 0, lineHeight: '1.6', color: '#ccc', whiteSpace: 'pre-wrap', fontSize: '14px' }}>
+                  {selectedRecipe.recipe}
+                </p>
+              ) : (
+                <p style={{ margin: 0, color: '#666', fontSize: '14px' }}>No recipe provided</p>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -1482,7 +1566,27 @@ export default function CompleteSharedLifeDashboard() {
       {/* Add Expense Modal */}
       <AddModal isOpen={showAddModal && modalType === 'expense'} title={editingId ? "Edit Expense" : "Add Expense"} onClose={resetModal}>
         <div style={{ display: 'grid', gap: '16px' }}>
-          <input type="text" value={newItemName} onChange={(e) => setNewItemName(e.target.value)} placeholder="What did you spend on?" style={{ background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px' }} />
+          <div>
+            <label style={{ fontSize: '14px', color: '#666', marginBottom: '8px', display: 'block' }}>Category</label>
+            <select value={newExpenseCategory} onChange={(e) => setNewExpenseCategory(e.target.value)} style={{ width: '100%', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px' }}>
+              {BUDGET_CATEGORIES.map(cat => (
+                <option key={cat.name} value={cat.name} style={{ background: BG_COLOR }}>
+                  {cat.icon} {cat.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label style={{ fontSize: '14px', color: '#666', marginBottom: '8px', display: 'block' }}>Date</label>
+            <input type="date" value={newExpenseDate} onChange={(e) => setNewExpenseDate(e.target.value)} style={{ width: '100%', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px' }} />
+          </div>
+
+          <div>
+            <label style={{ fontSize: '14px', color: '#666', marginBottom: '8px', display: 'block' }}>Amount (€)</label>
+            <input type="number" value={newExpenseAmount} onChange={(e) => setNewExpenseAmount(e.target.value)} placeholder="0.00" step="0.01" style={{ width: '100%', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px' }} />
+          </div>
+
           <button onClick={addExpense} style={{ width: '100%', background: ACCENT_COLOR, border: 'none', borderRadius: '12px', padding: '14px', color: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: '600' }}>
             {editingId ? 'Update Expense' : 'Add Expense'}
           </button>
@@ -1495,36 +1599,32 @@ export default function CompleteSharedLifeDashboard() {
           <div>
             <label style={{ fontSize: '12px', color: '#666', marginBottom: '6px', display: 'block' }}>Who is traveling?</label>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-              <button
-                onClick={() => setNewTravelPerson('me')}
-                style={{
-                  background: newTravelPerson === 'me' ? ACCENT_COLOR : `rgba(255, 255, 255, 0.05)`,
-                  border: `1px solid rgba(${newTravelPerson === 'me' ? '18, 52, 255' : '255, 255, 255'}, ${newTravelPerson === 'me' ? 0.4 : 0.1})`,
-                  borderRadius: '12px',
-                  padding: '12px',
-                  color: newTravelPerson === 'me' ? '#fff' : '#666',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                }}
-              >
-                You
-              </button>
-              <button
-                onClick={() => setNewTravelPerson('partner')}
-                style={{
-                  background: newTravelPerson === 'partner' ? ACCENT_COLOR : `rgba(255, 255, 255, 0.05)`,
-                  border: `1px solid rgba(${newTravelPerson === 'partner' ? '18, 52, 255' : '255, 255, 255'}, ${newTravelPerson === 'partner' ? 0.4 : 0.1})`,
-                  borderRadius: '12px',
-                  padding: '12px',
-                  color: newTravelPerson === 'partner' ? '#fff' : '#666',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                }}
-              >
-                Partner
-              </button>
+              {[
+                { id: user?.uid, name: user?.displayName || 'You', avatar: user?.photoURL },
+                ...users.filter(u => u.uid !== user?.uid),
+              ].map(person => (
+                <button
+                  key={person.id}
+                  onClick={() => setNewTravelUserId(person.id)}
+                  style={{
+                    background: newTravelUserId === person.id ? `${ACCENT_COLOR}40` : `rgba(255, 255, 255, 0.05)`,
+                    border: `1px solid rgba(${newTravelUserId === person.id ? '18, 52, 255' : '255, 255, 255'}, ${newTravelUserId === person.id ? 0.4 : 0.1})`,
+                    borderRadius: '12px',
+                    padding: '12px',
+                    color: newTravelUserId === person.id ? ACCENT_COLOR : '#999',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <img src={person.avatar} alt="" style={{ width: '24px', height: '24px', borderRadius: '50%' }} />
+                  {person.name}
+                </button>
+              ))}
             </div>
           </div>
 
