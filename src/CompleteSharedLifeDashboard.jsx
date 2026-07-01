@@ -999,7 +999,6 @@ export default function CompleteSharedLifeDashboard() {
                       background: `linear-gradient(135deg, rgba(52, 199, 89, 0.15) 0%, rgba(0, 0, 0, 0.8) 100%)`,
                       borderRadius: '16px',
                       padding: '24px',
-                      border: `1px solid rgba(52, 199, 89, 0.15)`,
                       backdropFilter: 'blur(10px)',
                       minHeight: '160px',
                       display: 'flex',
@@ -1022,89 +1021,100 @@ export default function CompleteSharedLifeDashboard() {
                 );
               })()}
 
-              {/* Wellness Rings - Activity Style */}
+              {/* Wellness Rings - Activity Style - 2 COLUMNS ONLY */}
               <div style={{ 
                 display: 'grid', 
-                gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))',
+                gridTemplateColumns: '1fr 1fr',
                 gap: '12px' 
               }}>
-                {/* Plants Ring */}
+                {/* Plants Ring - CLICKABLE */}
                 <div
+                  onClick={() => setActiveTab('plants')}
                   style={{
                     background: `linear-gradient(135deg, rgba(52, 199, 89, 0.15) 0%, rgba(0, 0, 0, 0.8) 100%)`,
                     borderRadius: '16px',
                     padding: '16px 12px',
-                    border: `1px solid rgba(52, 199, 89, 0.15)`,
                     textAlign: 'center',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'flex-end',
                     minHeight: '160px',
+                    cursor: 'pointer',
+                    transition: 'transform 0.2s',
                   }}
+                  onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
+                  onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
                 >
                   <svg width="70" height="70" style={{ marginBottom: '10px' }}>
-                    <circle cx="40" cy="40" r="35" fill="none" stroke="#333" strokeWidth="3" />
+                    <circle cx="35" cy="35" r="30" fill="none" stroke="#333" strokeWidth="2.5" />
                     <circle
-                      cx="40" cy="40" r="35" fill="none" stroke={plantsNeedingWater === 0 ? '#34c759' : '#ff3b30'} strokeWidth="3"
-                      strokeDasharray={`${(plants.length - plantsNeedingWater) / Math.max(plants.length, 1) * 219.8} 219.8`}
-                      style={{ transform: 'rotate(-90deg)', transformOrigin: '40px 40px' }}
+                      cx="35" cy="35" r="30" fill="none" stroke={plantsNeedingWater === 0 ? '#34c759' : '#ff3b30'} strokeWidth="2.5"
+                      strokeDasharray={`${(plants.length - plantsNeedingWater) / Math.max(plants.length, 1) * 188.4} 188.4`}
+                      style={{ transform: 'rotate(-90deg)', transformOrigin: '35px 35px', transition: 'stroke-dasharray 0.5s' }}
                     />
                   </svg>
                   <div style={{ fontSize: '16px', fontWeight: '600' }}>{plants.length - plantsNeedingWater}/{plants.length}</div>
                   <div style={{ fontSize: '12px', color: '#999', marginTop: '4px' }}>Plants Happy</div>
                 </div>
 
-                {/* Meals Ring */}
+                {/* Budget Ring with Pie Chart - CLICKABLE */}
                 <div
-                  style={{
-                    background: `linear-gradient(135deg, rgba(255, 193, 7, 0.15) 0%, rgba(0, 0, 0, 0.8) 100%)`,
-                    borderRadius: '16px',
-                    padding: '16px 12px',
-                    border: `1px solid rgba(255, 193, 7, 0.15)`,
-                    textAlign: 'center',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'flex-end',
-                    minHeight: '160px',
-                  }}
-                >
-                  <svg width="70" height="70" style={{ marginBottom: '10px' }}>
-                    <circle cx="40" cy="40" r="35" fill="none" stroke="#333" strokeWidth="3" />
-                    <circle
-                      cx="40" cy="40" r="35" fill="none" stroke="#ffc107" strokeWidth="3"
-                      strokeDasharray={`${Math.min(meals.length / 20 * 219.8, 219.8)} 219.8`}
-                      style={{ transform: 'rotate(-90deg)', transformOrigin: '40px 40px' }}
-                    />
-                  </svg>
-                  <div style={{ fontSize: '16px', fontWeight: '600' }}>{meals.length}</div>
-                  <div style={{ fontSize: '12px', color: '#999', marginTop: '4px' }}>Recipes</div>
-                </div>
-
-                {/* Budget Ring */}
-                <div
+                  onClick={() => setActiveTab('budget')}
                   style={{
                     background: `linear-gradient(135deg, rgba(18, 52, 255, 0.15) 0%, rgba(0, 0, 0, 0.8) 100%)`,
                     borderRadius: '16px',
                     padding: '16px 12px',
-                    border: `1px solid rgba(18, 52, 255, 0.15)`,
                     textAlign: 'center',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'flex-end',
                     minHeight: '160px',
+                    cursor: 'pointer',
+                    transition: 'transform 0.2s',
                   }}
+                  onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
+                  onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
                 >
-                  <svg width="70" height="70" style={{ marginBottom: '10px' }}>
-                    <circle cx="40" cy="40" r="35" fill="none" stroke="#333" strokeWidth="3" />
-                    <circle
-                      cx="40" cy="40" r="35" fill="none" stroke={ACCENT_COLOR} strokeWidth="3"
-                      strokeDasharray={`${Math.min((getExpensesForMonth(currentMonth).reduce((sum, e) => sum + e.amount, 0)) / 1000 * 219.8, 219.8)} 219.8`}
-                      style={{ transform: 'rotate(-90deg)', transformOrigin: '40px 40px' }}
-                    />
-                  </svg>
+                  <div style={{ position: 'relative', width: '70px', height: '70px', marginBottom: '10px' }}>
+                    <svg width="70" height="70" style={{ position: 'absolute' }}>
+                      <circle cx="35" cy="35" r="30" fill="none" stroke="#333" strokeWidth="2.5" />
+                      {(() => {
+                        const monthExpenses = getExpensesForMonth(currentMonth);
+                        const categoryTotals = {};
+                        const colors = ['#1234ff', '#34c759', '#ff3b30', '#ff9500', '#ffc107', '#5ac8fa'];
+                        
+                        monthExpenses.forEach((expense, idx) => {
+                          const cat = expense.category || 'Other';
+                          categoryTotals[cat] = (categoryTotals[cat] || 0) + expense.amount;
+                        });
+
+                        const total = Object.values(categoryTotals).reduce((a, b) => a + b, 0) || 1;
+                        let dashOffset = 0;
+                        const arcs = [];
+                        let colorIdx = 0;
+
+                        Object.entries(categoryTotals).forEach(([cat, amount]) => {
+                          const percentage = amount / total;
+                          const arcLength = percentage * 188.4;
+                          arcs.push(
+                            <circle
+                              key={cat}
+                              cx="35" cy="35" r="30" fill="none" stroke={colors[colorIdx % colors.length]} strokeWidth="2.5"
+                              strokeDasharray={`${arcLength} 188.4`}
+                              strokeDashoffset={-dashOffset}
+                              style={{ transform: 'rotate(-90deg)', transformOrigin: '35px 35px' }}
+                            />
+                          );
+                          dashOffset += arcLength;
+                          colorIdx++;
+                        });
+
+                        return arcs;
+                      })()}
+                    </svg>
+                  </div>
                   <div style={{ fontSize: '16px', fontWeight: '600' }}>€{getExpensesForMonth(currentMonth).reduce((sum, e) => sum + e.amount, 0).toFixed(0)}</div>
                   <div style={{ fontSize: '12px', color: '#999', marginTop: '4px' }}>This Month</div>
                 </div>
@@ -1118,6 +1128,7 @@ export default function CompleteSharedLifeDashboard() {
                     onClick={() => {
                       setSelectedRecipe(randomMeal);
                       setShowRecipeDetail(true);
+                      setActiveTab('recipes');
                     }}
                     style={{
                       backgroundImage: `url(${randomMeal.photo}?w=600&h=300&fit=crop)`,
@@ -1128,8 +1139,6 @@ export default function CompleteSharedLifeDashboard() {
                       position: 'relative',
                       overflow: 'hidden',
                       cursor: 'pointer',
-                      border: `1px solid rgba(18, 52, 255, 0.35)`,
-                      boxShadow: '0 0 0 1px rgba(18, 52, 255, 0.2)',
                     }}
                   >
                     <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.8), rgba(0,0,0,0.2))' }} />
@@ -1168,37 +1177,80 @@ export default function CompleteSharedLifeDashboard() {
                 );
               })()}
 
-              {/* Upcoming Plans - Notifications */}
-              {travels.filter(t => new Date(t.startDate) > new Date()).slice(0, 2).length > 0 && (
-                <div>
-                  <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '8px', color: '#999' }}>Upcoming Plans</div>
-                  <div style={{ display: 'grid', gap: '10px' }}>
-                    {travels.filter(t => new Date(t.startDate) > new Date()).slice(0, 2).map(travel => (
-                      <div
-                        key={travel.id}
-                        style={{
-                          background: `linear-gradient(135deg, rgba(255, 149, 0, 0.15) 0%, rgba(0, 0, 0, 0.8) 100%)`,
-                          borderRadius: '12px',
-                          padding: '12px 16px',
-                          border: `1px solid rgba(255, 149, 0, 0.15)`,
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '12px',
-                        }}
-                      >
-                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#ff9500' }} />
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontSize: '13px', fontWeight: '600' }}>{travel.location}</div>
-                          <div style={{ fontSize: '11px', color: '#999' }}>
-                            {new Date(travel.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {new Date(travel.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                          </div>
+              {/* This Week's Travels - Single Card or Multiple */}
+              {(() => {
+                const today = new Date();
+                const weekStart = new Date(today);
+                weekStart.setDate(today.getDate() - today.getDay());
+                const weekEnd = new Date(weekStart);
+                weekEnd.setDate(weekStart.getDate() + 6);
+
+                const thisWeekTravels = travels.filter(t => {
+                  const start = new Date(t.startDate);
+                  const end = new Date(t.endDate);
+                  return (start <= weekEnd && end >= weekStart);
+                });
+
+                if (thisWeekTravels.length === 0) return null;
+
+                if (thisWeekTravels.length === 1) {
+                  const travel = thisWeekTravels[0];
+                  return (
+                    <div
+                      onClick={() => setActiveTab('travels')}
+                      style={{
+                        background: `linear-gradient(135deg, rgba(255, 149, 0, 0.15) 0%, rgba(0, 0, 0, 0.8) 100%)`,
+                        borderRadius: '16px',
+                        padding: '20px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        cursor: 'pointer',
+                        transition: 'transform 0.2s',
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
+                      onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                    >
+                      <div>
+                        <div style={{ fontSize: '14px', color: '#999', marginBottom: '6px' }}>This Week</div>
+                        <div style={{ fontSize: '24px', fontWeight: '700', color: '#ff9500', marginBottom: '4px' }}>{travel.location}</div>
+                        <div style={{ fontSize: '12px', color: '#999' }}>
+                          {new Date(travel.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {new Date(travel.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                         </div>
-                        <Plane size={16} color="#ff9500" />
                       </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+                      <Plane size={40} color="#ff9500" />
+                    </div>
+                  );
+                } else {
+                  return (
+                    <div
+                      onClick={() => setActiveTab('travels')}
+                      style={{
+                        background: `linear-gradient(135deg, rgba(255, 149, 0, 0.15) 0%, rgba(0, 0, 0, 0.8) 100%)`,
+                        borderRadius: '16px',
+                        padding: '20px',
+                        cursor: 'pointer',
+                        transition: 'transform 0.2s',
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
+                      onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                    >
+                      <div style={{ fontSize: '14px', color: '#999', marginBottom: '12px' }}>This Week</div>
+                      <div style={{ display: 'grid', gap: '8px' }}>
+                        {thisWeekTravels.map((travel, idx) => (
+                          <div key={travel.id} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#ff9500' }} />
+                            <span style={{ fontSize: '13px', fontWeight: '600' }}>{travel.location}</span>
+                            <span style={{ fontSize: '11px', color: '#999', marginLeft: 'auto' }}>
+                              {new Date(travel.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                }
+              })()}
 
               {/* Days Together Counter */}
               {(() => {
@@ -1229,7 +1281,6 @@ export default function CompleteSharedLifeDashboard() {
                       background: `linear-gradient(135deg, rgba(18, 52, 255, 0.15) 0%, rgba(0, 0, 0, 0.8) 100%)`,
                       borderRadius: '16px',
                       padding: '24px',
-                      border: `1px solid rgba(18, 52, 255, 0.15)`,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
