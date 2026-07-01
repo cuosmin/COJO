@@ -1176,8 +1176,36 @@ export default function CompleteSharedLifeDashboard() {
                       </div>
                     )}
 
-                    {/* Top Right - Shuffle Button */}
-                    <div style={{ position: 'absolute', top: '12px', right: '12px', zIndex: 10 }}>
+                    {/* Top Right - Dietary Labels + Shuffle Button */}
+                    <div style={{ position: 'absolute', top: '12px', right: '12px', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
+                      {/* Dietary Labels */}
+                      {randomMeal.dietaryLabels && randomMeal.dietaryLabels.length > 0 && (
+                        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                          {randomMeal.dietaryLabels.map(label => {
+                            const colors = {
+                              'vegetarian': '#34c759',
+                              'vegan': '#00c7be',
+                              'gluten-free': '#ff9500',
+                              'lactose-free': '#ff3b30',
+                            };
+                            return (
+                              <div key={label} style={{
+                                background: `${colors[label]}40`,
+                                borderRadius: '12px',
+                                padding: '4px 8px',
+                                border: `1px solid ${colors[label]}`,
+                                fontSize: '10px',
+                                fontWeight: '600',
+                                color: colors[label],
+                              }}>
+                                {label}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {/* Shuffle Button */}
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -1203,34 +1231,7 @@ export default function CompleteSharedLifeDashboard() {
                     {/* Bottom Content */}
                     <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '20px', zIndex: 5 }}>
                       <div style={{ fontSize: '14px', color: '#ccc', marginBottom: '6px' }}>Today's Inspiration</div>
-                      <div style={{ fontSize: '22px', fontWeight: '700', color: '#fff', marginBottom: '8px' }}>{randomMeal.name}</div>
-                      
-                      {/* Dietary Labels */}
-                      {randomMeal.dietaryLabels && randomMeal.dietaryLabels.length > 0 && (
-                        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                          {randomMeal.dietaryLabels.map(label => {
-                            const colors = {
-                              'vegetarian': '#34c759',
-                              'vegan': '#00c7be',
-                              'gluten-free': '#ff9500',
-                              'lactose-free': '#ff3b30',
-                            };
-                            return (
-                              <div key={label} style={{
-                                background: `${colors[label]}40`,
-                                borderRadius: '12px',
-                                padding: '4px 8px',
-                                border: `1px solid ${colors[label]}`,
-                                fontSize: '10px',
-                                fontWeight: '600',
-                                color: colors[label],
-                              }}>
-                                {label}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
+                      <div style={{ fontSize: '22px', fontWeight: '700', color: '#fff' }}>{randomMeal.name}</div>
                     </div>
                   </div>
                 );
