@@ -318,10 +318,10 @@ export default function CompleteSharedLifeDashboard() {
         (snapshot) => {
           if (snapshot.exists()) {
             const data = snapshot.val();
-            setPlants(data.plants || []);
-            setMeals(data.meals || []);
-            setExpenses(data.expenses || []);
-            setTravels(data.travels || []);
+            setPlants(toArray(data.plants));
+            setMeals(toArray(data.meals));
+            setExpenses(toArray(data.expenses));
+            setTravels(toArray(data.travels));
             localStorage.setItem('cojoBackup', JSON.stringify(data));
           }
           setLoading(false);
@@ -332,10 +332,10 @@ export default function CompleteSharedLifeDashboard() {
           const backup = localStorage.getItem('cojoBackup');
           if (backup) {
             const data = JSON.parse(backup);
-            setPlants(data.plants || []);
-            setMeals(data.meals || []);
-            setExpenses(data.expenses || []);
-            setTravels(data.travels || []);
+            setPlants(toArray(data.plants));
+            setMeals(toArray(data.meals));
+            setExpenses(toArray(data.expenses));
+            setTravels(toArray(data.travels));
           }
         }
       );
@@ -361,6 +361,13 @@ export default function CompleteSharedLifeDashboard() {
     } catch (error) {
       console.error('❌ Error saving:', error);
     }
+  };
+
+  // Convert Firebase objects to arrays
+  const toArray = (data) => {
+    if (!data) return [];
+    if (Array.isArray(data)) return data;
+    return Object.values(data).filter(item => item && typeof item === 'object');
   };
 
   const searchUnsplash = async (query) => {
@@ -483,6 +490,8 @@ export default function CompleteSharedLifeDashboard() {
   // ==================== EXPENSES ====================
   const addExpense = () => {
     const amount = parseFloat(newExpenseAmount);
+    console.log('Adding expense:', { amount, category: newExpenseCategory, title: newExpenseTitle, date: newExpenseDate });
+    
     if (newExpenseAmount && amount > 0) {
       const expense = {
         id: editingId || Date.now().toString(),
@@ -492,6 +501,8 @@ export default function CompleteSharedLifeDashboard() {
         date: newExpenseDate,
       };
       
+      console.log('Expense object:', expense);
+      
       let updated;
       if (editingId) {
         updated = expenses.map(e => e.id === editingId ? expense : e);
@@ -499,9 +510,14 @@ export default function CompleteSharedLifeDashboard() {
         updated = [...expenses, expense];
       }
       
+      console.log('Updated expenses array:', updated);
+      
       setExpenses(updated);
       saveData(plants, meals, updated, travels);
       resetModal();
+      console.log('✅ Expense added successfully');
+    } else {
+      console.log('❌ Validation failed:', { newExpenseAmount, amount, valid: amount > 0 });
     }
   };
 
@@ -1253,8 +1269,8 @@ export default function CompleteSharedLifeDashboard() {
             ) : (
               <div style={{ display: 'grid', gap: '24px' }}>
                 {/* CIRCULAR CHART */}
-                <div style={{ background: 'transparent', borderRadius: '20px', padding: '24px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                  <ResponsiveContainer width="100%" height={260}>
+                <div style={{ background: 'transparent', borderRadius: '20px', padding: '20px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                  <ResponsiveContainer width="100%" height={240}>
                     <PieChart>
                       <Pie
                         data={BUDGET_CATEGORIES.map(cat => {
@@ -1264,32 +1280,37 @@ export default function CompleteSharedLifeDashboard() {
                         }).filter(item => item.value > 0)}
                         cx="50%"
                         cy="50%"
-                        innerRadius={82}
-                        outerRadius={108}
+                        innerRadius={80}
+                        outerRadius={105}
                         startAngle={90}
                         endAngle={-270}
                         dataKey="value"
                         stroke="none"
                       >
-                        {BUDGET_CATEGORIES.map((cat, index) => (
-                          <Cell key={`cell-${index}`} fill={cat.color} />
-                        ))}
+                        {BUDGET_CATEGORIES.map(cat => {
+                          const catExpenses = getExpensesByCategoryForMonth(currentMonth)[cat.name];
+                          const total = catExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+                          if (total > 0) {
+                            return <Cell key={cat.name} fill={cat.color} />;
+                          }
+                          return null;
+                        })}
                       </Pie>
                     </PieChart>
                   </ResponsiveContainer>
                   
-                  <div style={{ textAlign: 'center', marginTop: '-85px', position: 'relative', zIndex: 10 }}>
-                    <p style={{ fontSize: '22px', fontWeight: '700', margin: 0, color: '#fff', lineHeight: '1.2' }}>
+                  <div style={{ textAlign: 'center', marginTop: '-78px', position: 'relative', zIndex: 10, width: '100%' }}>
+                    <p style={{ fontSize: '20px', fontWeight: '700', margin: 0, color: '#fff', lineHeight: '1' }}>
                       €{getExpensesForMonth(currentMonth).reduce((sum, e) => sum + e.amount, 0).toFixed(2)}
                     </p>
-                    <p style={{ fontSize: '10px', color: '#999', margin: '3px 0 0', letterSpacing: '0.5px' }}>
+                    <p style={{ fontSize: '9px', color: '#999', margin: '4px 0 0', letterSpacing: '0.5px' }}>
                       {currentMonth.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }).toUpperCase()}
                     </p>
                   </div>
                 </div>
 
                 {/* ACCORDION CATEGORIES */}
-                <div style={{ display: 'grid', gap: '8px' }}>
+                <div style={{ display: 'grid', gap: '12px' }}>
                   {BUDGET_CATEGORIES.map(category => {
                     const categoryExpenses = getExpensesByCategoryForMonth(currentMonth)[category.name];
                     const total = categoryExpenses.reduce((sum, exp) => sum + exp.amount, 0);
@@ -1330,17 +1351,29 @@ export default function CompleteSharedLifeDashboard() {
                         </button>
                         
                         {isExpanded && (
-                          <div style={{ background: `rgba(18, 52, 255, 0.05)`, borderRadius: '0 0 12px 12px', borderLeft: `1px solid rgba(18, 52, 255, 0.1)`, borderRight: `1px solid rgba(18, 52, 255, 0.1)`, borderBottom: `1px solid rgba(18, 52, 255, 0.1)`, padding: '12px 16px', display: 'grid', gap: '8px' }}>
-                            {categoryExpenses.map(exp => (
-                              <div key={exp.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '8px', borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                          <div style={{ background: 'transparent', borderRadius: '12px', padding: '12px 0 8px', display: 'grid', gap: '10px' }}>
+                            {categoryExpenses.map((exp, idx) => (
+                              <div key={exp.id} style={{ background: `rgba(255, 255, 255, 0.04)`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', borderRadius: '10px', border: `1px solid rgba(255, 255, 255, 0.06)`, transition: 'all 0.2s' }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
+                                  e.currentTarget.style.borderColor = 'rgba(18, 52, 255, 0.15)';
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)';
+                                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.06)';
+                                }}
+                              >
                                 <div style={{ flex: 1 }}>
-                                  <p style={{ fontSize: '14px', margin: 0, fontWeight: '500', color: '#fff' }}>{exp.title}</p>
-                                  <p style={{ fontSize: '12px', color: '#999', margin: '2px 0 0' }}>{exp.date}</p>
+                                  <p style={{ fontSize: '13px', margin: 0, fontWeight: '500', color: '#fff' }}>{exp.title}</p>
+                                  <p style={{ fontSize: '11px', color: '#999', margin: '3px 0 0' }}>{exp.date}</p>
                                 </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginRight: '8px' }}>
-                                  <p style={{ fontSize: '14px', margin: 0, fontWeight: '600', color: '#fff' }}>€{exp.amount.toFixed(2)}</p>
-                                  <button onClick={() => openEditModal('expense', exp)} style={{ background: '#1234ff', border: 'none', borderRadius: '8px', padding: '6px', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <Edit2 size={14} />
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginRight: '4px' }}>
+                                  <p style={{ fontSize: '13px', margin: 0, fontWeight: '600', color: '#fff', minWidth: '60px', textAlign: 'right' }}>€{exp.amount.toFixed(2)}</p>
+                                  <button onClick={() => openEditModal('expense', exp)} style={{ background: '#1234ff', border: 'none', borderRadius: '6px', padding: '5px', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}
+                                    onMouseEnter={(e) => e.target.style.background = '#0020cc'}
+                                    onMouseLeave={(e) => e.target.style.background = '#1234ff'}
+                                  >
+                                    <Edit2 size={13} />
                                   </button>
                                 </div>
                               </div>
