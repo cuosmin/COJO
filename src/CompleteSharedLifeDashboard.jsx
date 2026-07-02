@@ -419,6 +419,8 @@ export default function CompleteSharedLifeDashboard() {
   const [selectedPlantDetail, setSelectedPlantDetail] = useState(null);
   const [showPlantDetail, setShowPlantDetail] = useState(false);
   const [newPlantPhoto, setNewPlantPhoto] = useState(null);
+  const [editingPlantId, setEditingPlantId] = useState(null);
+  const [unsplashPlantResults, setUnsplashPlantResults] = useState([]);
 
   // Auth
   useEffect(() => {
@@ -523,7 +525,7 @@ export default function CompleteSharedLifeDashboard() {
   // 🌱 PERENUAL API - fetch plants from database
   const searchPerenualPlants = async (query = '') => {
     try {
-      const searchQuery = query || 'popular indoor plants';
+      const searchQuery = query || 'indoor';
       const response = await axios.get('https://perenual.com/api/species-list', {
         params: {
           q: searchQuery,
@@ -531,11 +533,29 @@ export default function CompleteSharedLifeDashboard() {
         },
       });
       if (response.data.data) {
-        setPerenualPlants(response.data.data.slice(0, 12)); // Limit to 12 results
-        console.log('✅ Plants fetched from Perenual:', response.data.data.length);
+        setPerenualPlants(response.data.data.slice(0, 10));
+        console.log('✅ Plants fetched from Perenual');
       }
     } catch (error) {
       console.error('Perenual API error:', error);
+      setPerenualPlants([]);
+    }
+  };
+
+  // 🌱 UNSPLASH - search for plant photos
+  const searchUnsplashPlants = async (query) => {
+    try {
+      if (query.length < 2) return;
+      const response = await axios.get('https://api.unsplash.com/search/photos', {
+        params: {
+          query: query,
+          per_page: 9,
+          client_id: 'NxL6pf3u0YFLp2JWZVSX4p8OxwJFQKg_4a8Y4c_1Dqg',
+        },
+      });
+      setUnsplashPlantResults(response.data.results);
+    } catch (error) {
+      console.error('Unsplash error:', error);
     }
   };
 
@@ -602,36 +622,45 @@ export default function CompleteSharedLifeDashboard() {
     }
   };
 
-  // 🌱 ADD PLANT FROM PERENUAL
+  // 🌱 ADD OR UPDATE PLANT
   const addPlantFromLibrary = async () => {
     if (!newPlantName) return;
 
     try {
+      const plantId = editingPlantId || Date.now().toString();
       const newPlant = {
-        id: Date.now().toString(),
+        id: plantId,
         name: newPlantName,
         type: newPlantType,
         location: newPlantLocation || 'Home',
-        dateAdded: new Date().toISOString(),
-        lastWatered: new Date().toISOString(),
+        dateAdded: editingPlantId ? plants.find(p => p.id === editingPlantId)?.dateAdded : new Date().toISOString(),
+        lastWatered: editingPlantId ? plants.find(p => p.id === editingPlantId)?.lastWatered : new Date().toISOString(),
         photo: newPlantPhoto || 'https://images.unsplash.com/photo-1517457373614-b7152f800fd1?w=400&h=300&fit=crop',
         addedBy: user?.uid,
       };
 
-      const plantRef = ref(database, `shared-data/default/plants/${newPlant.id}`);
+      const plantRef = ref(database, `shared-data/default/plants/${plantId}`);
       await set(plantRef, newPlant);
 
-      setPlants([...plants, newPlant]);
+      if (editingPlantId) {
+        const updated = plants.map(p => p.id === editingPlantId ? newPlant : p);
+        setPlants(updated);
+        setEditingPlantId(null);
+      } else {
+        setPlants([...plants, newPlant]);
+      }
+
       setNewPlantName('');
       setNewPlantType('');
       setNewPlantLocation('Living Room');
       setNewPlantPhoto(null);
       setShowPlantLibrary(false);
-      setPerenualPlants([]); // Reset search
+      setPerenualPlants([]);
+      setUnsplashPlantResults([]);
       
-      console.log('✅ Plant added from Perenual');
+      console.log('✅ Plant ' + (editingPlantId ? 'updated' : 'added'));
     } catch (error) {
-      console.error('Error adding plant:', error);
+      console.error('Error saving plant:', error);
     }
   };
 
@@ -1777,15 +1806,15 @@ export default function CompleteSharedLifeDashboard() {
                         top: '12px',
                         left: '12px',
                         zIndex: 2,
-                        background: wateringStatus.color + '40',
-                        border: `1px solid ${wateringStatus.color}`,
+                        background: wateringStatus.color,
+                        border: 'none',
                         borderRadius: '20px',
-                        padding: '6px 12px',
+                        padding: '8px 14px',
                         display: 'flex',
                         alignItems: 'center',
                         gap: '6px',
                       }}>
-                        <span style={{ fontSize: '12px', fontWeight: '600', color: wateringStatus.color }}>
+                        <span style={{ fontSize: '12px', fontWeight: '600', color: '#fff' }}>
                           {wateringStatus.status}
                         </span>
                       </div>
@@ -1804,15 +1833,15 @@ export default function CompleteSharedLifeDashboard() {
                         }}>
                           {recentCare[0].careType === 'water' && (
                             <div style={{
-                              background: '#34c75940',
-                              borderRadius: '12px',
-                              padding: '4px 8px',
-                              border: `1px solid #34c759`,
-                              fontSize: '10px',
+                              background: '#34c759',
+                              borderRadius: '20px',
+                              padding: '6px 12px',
+                              border: 'none',
+                              fontSize: '11px',
                               fontWeight: '600',
-                              color: '#34c759',
+                              color: '#fff',
                             }}>
-                              💧 Watered
+                              Watered
                             </div>
                           )}
                         </div>
@@ -1984,13 +2013,13 @@ export default function CompleteSharedLifeDashboard() {
                           };
                           return (
                             <div key={label} style={{
-                              background: `${colors[label]}40`,
-                              borderRadius: '12px',
-                              padding: '4px 8px',
-                              border: `1px solid ${colors[label]}`,
-                              fontSize: '10px',
+                              background: colors[label],
+                              borderRadius: '20px',
+                              padding: '6px 12px',
+                              border: 'none',
+                              fontSize: '11px',
                               fontWeight: '600',
-                              color: colors[label],
+                              color: '#fff',
                             }}>
                               {label}
                             </div>
@@ -2855,6 +2884,46 @@ export default function CompleteSharedLifeDashboard() {
                 }}
               />
 
+              {/* Photo Search */}
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ fontSize: '12px', color: '#999', marginBottom: '8px', display: 'block' }}>Plant Photo (optional)</label>
+                <input
+                  type="text"
+                  placeholder="Search photo (e.g., 'monstera', 'fern')..."
+                  onChange={(e) => searchUnsplashPlants(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    background: 'rgba(255,255,255,0.05)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: '12px',
+                    color: '#fff',
+                    marginBottom: '12px',
+                  }}
+                />
+                {unsplashPlantResults.length > 0 && (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '12px' }}>
+                    {unsplashPlantResults.map((photo) => (
+                      <img
+                        key={photo.id}
+                        src={photo.urls.small}
+                        alt=""
+                        onClick={() => setNewPlantPhoto(photo.urls.regular)}
+                        style={{
+                          width: '100%',
+                          height: '80px',
+                          borderRadius: '8px',
+                          cursor: 'pointer',
+                          border: newPlantPhoto === photo.urls.regular ? `2px solid ${ACCENT_COLOR}` : 'none',
+                          objectFit: 'cover',
+                          transition: 'all 0.2s',
+                        }}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+
               <button
                 onClick={addPlantFromLibrary}
                 style={{
@@ -2969,8 +3038,13 @@ export default function CompleteSharedLifeDashboard() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '16px' }}>
               <button
                 onClick={() => {
+                  setNewPlantName(selectedPlantDetail.name);
+                  setNewPlantType(selectedPlantDetail.type);
+                  setNewPlantLocation(selectedPlantDetail.location);
+                  setNewPlantPhoto(selectedPlantDetail.photo);
+                  setEditingPlantId(selectedPlantDetail.id);
                   setShowPlantDetail(false);
-                  // TODO: Implement edit plant
+                  setShowPlantLibrary(true);
                 }}
                 style={{
                   background: ACCENT_COLOR,
@@ -3346,13 +3420,13 @@ export default function CompleteSharedLifeDashboard() {
                         };
                         return (
                           <div key={label} style={{
-                            background: `${colors[label]}15`,
-                            borderRadius: '12px',
-                            padding: '6px 12px',
-                            border: `1px solid ${colors[label]}`,
+                            background: colors[label],
+                            borderRadius: '20px',
+                            padding: '8px 14px',
+                            border: 'none',
                             fontSize: '12px',
                             fontWeight: '600',
-                            color: colors[label],
+                            color: '#fff',
                           }}>
                             {label}
                           </div>
@@ -3540,8 +3614,8 @@ export default function CompleteSharedLifeDashboard() {
             )}
           </div>
 
-          <button onClick={addPlant} style={{ width: '100%', background: ACCENT_COLOR, border: 'none', borderRadius: '12px', padding: '14px', color: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: '600' }}>
-            {editingId ? 'Update Plant' : 'Add Plant'}
+          <button onClick={addPlant} style={{ width: '100%', background: ACCENT_COLOR, border: 'none', borderRadius: '12px', padding: '14px', color: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+            <Leaf size={20} /> {editingId ? 'Update Plant' : 'Add Plant'}
           </button>
           {editingId && (
             <button onClick={() => { 
@@ -3549,8 +3623,8 @@ export default function CompleteSharedLifeDashboard() {
               const updated = plants.filter(p => p.id !== editingId);
               setPlants(updated);
               resetModal(); 
-            }} style={{ width: '100%', background: 'rgba(255, 59, 48, 0.2)', border: '1px solid rgba(255, 59, 48, 0.3)', borderRadius: '12px', padding: '14px', color: '#ff3b30', cursor: 'pointer', fontSize: '16px', fontWeight: '600' }}>
-              Delete Plant
+            }} style={{ width: '100%', background: '#ff3b30', border: 'none', borderRadius: '12px', padding: '14px', color: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+              <X size={20} /> Delete Plant
             </button>
           )}
         </div>
@@ -3640,12 +3714,12 @@ export default function CompleteSharedLifeDashboard() {
             )}
           </div>
 
-          <button onClick={addMeal} style={{ width: '100%', background: ACCENT_COLOR, border: 'none', borderRadius: '12px', padding: '14px', color: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: '600' }}>
-            {editingId ? 'Update Recipe' : 'Add Recipe'}
+          <button onClick={addMeal} style={{ width: '100%', background: ACCENT_COLOR, border: 'none', borderRadius: '12px', padding: '14px', color: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+            <UtensilsCrossed size={20} /> {editingId ? 'Update Recipe' : 'Add Recipe'}
           </button>
           {editingId && (
-            <button onClick={() => { deleteMeal(editingId); resetModal(); }} style={{ width: '100%', background: 'rgba(255, 59, 48, 0.2)', border: '1px solid rgba(255, 59, 48, 0.3)', borderRadius: '12px', padding: '14px', color: '#ff3b30', cursor: 'pointer', fontSize: '16px', fontWeight: '600' }}>
-              Delete Recipe
+            <button onClick={() => { deleteMeal(editingId); resetModal(); }} style={{ width: '100%', background: '#ff3b30', border: 'none', borderRadius: '12px', padding: '14px', color: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+              <X size={20} /> Delete Recipe
             </button>
           )}
         </div>
@@ -3680,12 +3754,12 @@ export default function CompleteSharedLifeDashboard() {
             <input type="number" value={newExpenseAmount} onChange={(e) => setNewExpenseAmount(e.target.value)} placeholder="0.00" step="0.01" style={{ width: '100%', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px' }} />
           </div>
 
-          <button onClick={addExpense} style={{ width: '100%', background: ACCENT_COLOR, border: 'none', borderRadius: '12px', padding: '14px', color: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: '600' }}>
-            {editingId ? 'Update Expense' : 'Add Expense'}
+          <button onClick={addExpense} style={{ width: '100%', background: ACCENT_COLOR, border: 'none', borderRadius: '12px', padding: '14px', color: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+            <Plus size={20} /> {editingId ? 'Update Expense' : 'Add Expense'}
           </button>
           {editingId && (
-            <button onClick={() => { deleteExpense(editingId); resetModal(); }} style={{ width: '100%', background: 'rgba(255, 59, 48, 0.2)', border: '1px solid rgba(255, 59, 48, 0.3)', borderRadius: '12px', padding: '14px', color: '#ff3b30', cursor: 'pointer', fontSize: '16px', fontWeight: '600' }}>
-              Delete Expense
+            <button onClick={() => { deleteExpense(editingId); resetModal(); }} style={{ width: '100%', background: '#ff3b30', border: 'none', borderRadius: '12px', padding: '14px', color: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+              <X size={20} /> Delete Expense
             </button>
           )}
         </div>
@@ -3796,12 +3870,12 @@ export default function CompleteSharedLifeDashboard() {
             <input type="date" value={newTravelEnd} onChange={(e) => setNewTravelEnd(e.target.value)} style={{ width: '100%', minWidth: '100%', maxWidth: '100%', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px', boxSizing: 'border-box', lineHeight: '1.5', WebkitAppearance: 'none', MozAppearance: 'textfield', display: 'block' }} />
           </div>
 
-          <button onClick={addTravel} style={{ width: '100%', background: ACCENT_COLOR, border: 'none', borderRadius: '12px', padding: '14px', color: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: '600' }}>
-            {editingId ? 'Update Travel' : 'Add Travel'}
+          <button onClick={addTravel} style={{ width: '100%', background: ACCENT_COLOR, border: 'none', borderRadius: '12px', padding: '14px', color: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+            <Plane size={20} /> {editingId ? 'Update Travel' : 'Add Travel'}
           </button>
           {editingId && (
-            <button onClick={() => { deleteTravel(editingId); resetModal(); }} style={{ width: '100%', background: 'rgba(255, 59, 48, 0.2)', border: '1px solid rgba(255, 59, 48, 0.3)', borderRadius: '12px', padding: '14px', color: '#ff3b30', cursor: 'pointer', fontSize: '16px', fontWeight: '600' }}>
-              Delete Travel
+            <button onClick={() => { deleteTravel(editingId); resetModal(); }} style={{ width: '100%', background: '#ff3b30', border: 'none', borderRadius: '12px', padding: '14px', color: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+              <X size={20} /> Delete Travel
             </button>
           )}
         </div>
