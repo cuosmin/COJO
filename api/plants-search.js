@@ -62,7 +62,7 @@ export default async function handler(req, res) {
 
           return {
             id: plant.id,
-            name: plant.common_name || plant.scientific_name,
+            name: plant.common_name || plant.scientific_name || 'Unknown',
             scientific_name: details.scientific_name?.[0] || '',
             wateringDays,
             watering_description: watering,

@@ -1213,12 +1213,18 @@ export default function CompleteSharedLifeDashboard() {
         console.log('database:', !!database);
         console.log('plantName:', newPlantName);
         console.log('plantPhoto:', !!newPlantPhoto);
+        console.log('selectedPlantDetails:', selectedPlantDetails);
       
         if (!newPlantName || !newPlantPhoto || !database || !currentUser) {
           console.error('Missing required fields');
           alert('Plant name and photo are required');
           return;
         }
+
+        // Clean undefined values from details
+        const cleanDetails = selectedPlantDetails ? Object.fromEntries(
+          Object.entries(selectedPlantDetails).filter(([_, v]) => v !== undefined)
+        ) : null;
 
         const plantData = {
           id: editingPlantId || `plant_${Date.now()}`,
@@ -1230,7 +1236,7 @@ export default function CompleteSharedLifeDashboard() {
           wateringDays: parseInt(wateringDays) || 7,
           lastWatered,
           addedBy: currentUser.uid,
-          details: selectedPlantDetails,
+          details: cleanDetails,
         };
 
         // Only add dateAdded for new plants
