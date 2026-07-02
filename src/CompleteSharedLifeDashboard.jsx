@@ -1824,13 +1824,6 @@ export default function CompleteSharedLifeDashboard() {
                         </div>
                       )}
                     </div>
-                  )}>
-                            <div style={{ fontSize: '11px', color: '#999', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Pets</div>
-                            <div style={{ fontSize: '13px', color: '#ccc', fontWeight: '500' }}>{selectedPlant.details.toxicity_pets}</div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
                   )}
 
                   {/* Care History */}
