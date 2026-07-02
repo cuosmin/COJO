@@ -163,6 +163,12 @@ const MAJOR_CITIES = [
   { name: 'Bordeaux', country: 'France' },
   { name: 'Lyon', country: 'France' },
   { name: 'Grenoble', country: 'France' },
+  { name: 'Constanta', country: 'Roumanie' },
+  { name: 'Reims', country: 'France' },
+  { name: 'Tours', country: 'France' },
+  { name: 'Nantes', country: 'France' },
+  { name: 'Rennes', country: 'France' },
+  { name: 'Annecy', country: 'France' },
 ];
 
 // Request notification permission
@@ -2446,7 +2452,7 @@ export default function CompleteSharedLifeDashboard() {
                       setActiveTab('recipes');
                     }}
                     style={{
-                      backgroundImage: `url(${randomMeal.photo}?w=600&h=300&fit=crop)`,
+                      backgroundImage: `url(${randomMeal.photo}?w=800&h=600&fit=crop&q=90)`,
                       backgroundSize: 'cover',
                       backgroundPosition: 'center',
                       borderRadius: '16px',
@@ -2456,7 +2462,7 @@ export default function CompleteSharedLifeDashboard() {
                       cursor: 'pointer',
                     }}
                   >
-                    <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.8), rgba(0,0,0,0.2))' }} />
+                    <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0.9) 100%)' }} />
                     
                     {/* Top Left - Time Label */}
                     {randomMeal.cookTime && (
