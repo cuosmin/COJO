@@ -395,7 +395,6 @@ export default function CompleteSharedLifeDashboard() {
   const [newItemInstructions, setNewItemInstructions] = useState('');
   const [newItemRecipeUrl, setNewItemRecipeUrl] = useState('');
   const [newItemDietaryLabels, setNewItemDietaryLabels] = useState([]);
-  const [newItemWateringDays, setNewItemWateringDays] = useState(7);
   const [newTravelStart, setNewTravelStart] = useState('');
   const [newTravelEnd, setNewTravelEnd] = useState('');
   const [newTravelLocation, setNewTravelLocation] = useState('');
@@ -941,7 +940,6 @@ export default function CompleteSharedLifeDashboard() {
     setNewItemInstructions('');
     setNewItemRecipeUrl('');
     setNewItemDietaryLabels([]);
-    setNewItemWateringDays(7);
     setNewTravelStart('');
     setNewTravelEnd('');
     setNewTravelLocation('');
@@ -959,11 +957,7 @@ export default function CompleteSharedLifeDashboard() {
     setEditingId(item.id);
     setShowAddModal(true);
     
-    if (type === 'plant') {
-      setNewItemName(item.name);
-      setNewItemWateringDays(item.wateringFreqDays);
-      setNewItemPhoto(item.photo);
-    } else if (type === 'meal') {
+    if (type === 'meal') {
       setNewItemName(item.name);
       setNewItemRecipe(item.recipe || '');
       setNewItemPhoto(item.photo);
