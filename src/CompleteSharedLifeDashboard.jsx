@@ -2257,18 +2257,7 @@ export default function CompleteSharedLifeDashboard() {
     );
   };
 
-          });
-          setPerenualResults(results);
-        } else {
-          setPerenualResults(PLANT_DB);
-        }
-      } catch (error) {
-        console.error('Perenual error:', error);
-        setPerenualResults(PLANT_DB);
-      }
-    };
-
-    const searchUnsplashPhotos = async (plantName) => {
+    // Search Unsplash photos
       try {
         const response = await fetch(
           `https://api.unsplash.com/search/photos?query=${encodeURIComponent(plantName)}&per_page=9&client_id=NxL6pf3u0YFLp2JWZVSX4p8OxwJFQKg_4a8Y4c_1Dqg`
