@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Home, Leaf, UtensilsCrossed, Wallet, LogOut,
-  X, Bell, Plus, Plane, Edit2, MapPin, Archive, ChevronDown, Briefcase, Palmtree,
+  X, Bell, Plus, Plane, Edit2, MapPin, Droplet, Archive, ChevronDown, Briefcase, Palmtree,
   ShoppingCart as ShoppingBag, Heart, Wind, Smile, Clock, Shuffle, MessageCircle, Send,
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
@@ -2925,17 +2925,21 @@ export default function CompleteSharedLifeDashboard() {
                   setShowPlantDetail(false);
                 }}
                 style={{
-                  background: '#34c75940',
-                  border: '1px solid #34c75966',
+                  background: '#34c759',
+                  border: 'none',
                   borderRadius: '12px',
                   padding: '12px',
-                  color: '#34c759',
+                  color: '#fff',
                   cursor: 'pointer',
                   fontSize: '14px',
                   fontWeight: '600',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
                 }}
               >
-                💧 Water Now
+                <Droplet size={18} /> Water
               </button>
               <button
                 onClick={() => {
@@ -2943,17 +2947,71 @@ export default function CompleteSharedLifeDashboard() {
                   setShowPlantDetail(false);
                 }}
                 style={{
-                  background: '#ff950040',
-                  border: '1px solid #ff950066',
+                  background: '#ff9500',
+                  border: 'none',
                   borderRadius: '12px',
                   padding: '12px',
-                  color: '#ff9500',
+                  color: '#fff',
                   cursor: 'pointer',
                   fontSize: '14px',
                   fontWeight: '600',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
                 }}
               >
-                🌿 Fertilize
+                <Leaf size={18} /> Fertilize
+              </button>
+            </div>
+
+            {/* Edit & Delete Buttons */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '16px' }}>
+              <button
+                onClick={() => {
+                  setShowPlantDetail(false);
+                  // TODO: Implement edit plant
+                }}
+                style={{
+                  background: ACCENT_COLOR,
+                  border: 'none',
+                  borderRadius: '12px',
+                  padding: '12px',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                }}
+              >
+                <Edit2 size={18} /> Edit
+              </button>
+              <button
+                onClick={() => {
+                  const updated = plants.filter(p => p.id !== selectedPlantDetail.id);
+                  setPlants(updated);
+                  ref(database, `shared-data/default/plants/${selectedPlantDetail.id}`).set(null);
+                  setShowPlantDetail(false);
+                }}
+                style={{
+                  background: '#ff3b30',
+                  border: 'none',
+                  borderRadius: '12px',
+                  padding: '12px',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                }}
+              >
+                <X size={18} /> Delete
               </button>
             </div>
 
