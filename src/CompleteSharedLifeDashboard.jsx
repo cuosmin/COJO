@@ -325,17 +325,32 @@ export default function CompleteSharedLifeDashboard() {
 
   const initializeUser = async (currentUser) => {
     try {
+      // Save current user to Firebase
+      const userRef = ref(database, `shared-data/users/${currentUser.uid}`);
+      await set(userRef, {
+        uid: currentUser.uid,
+        email: currentUser.email,
+        displayName: currentUser.displayName || 'User',
+        photoURL: currentUser.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${currentUser.uid}`,
+        lastLogin: new Date().toISOString(),
+      });
+
+      // Load all users
       const usersRef = ref(database, 'shared-data/users');
       onValue(usersRef, (snapshot) => {
         if (snapshot.exists()) {
           const usersData = snapshot.val();
-          setUsers(usersData.filter(u => u && u.uid));
+          // Convert object to array if needed
+          const usersArray = Array.isArray(usersData) 
+            ? usersData.filter(u => u && u.uid)
+            : Object.values(usersData).filter(u => u && u.uid);
+          setUsers(usersArray);
         } else {
           setUsers([]);
         }
       });
     } catch (error) {
-      console.error('Error loading users:', error);
+      console.error('Error initializing user:', error);
     }
   };
 
