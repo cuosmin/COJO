@@ -1131,7 +1131,7 @@ export default function CompleteSharedLifeDashboard() {
 
       // Fetch full plant details from Perenual when detail modal opens
       React.useEffect(() => {
-        if (showPlantDetail && selectedPlant && !selectedPlant.details) {
+        if (showPlantDetail && selectedPlant?.id && !selectedPlant?.details) {
           const fetchPlantDetails = async () => {
             try {
               // Search for the plant on Perenual to get full details
