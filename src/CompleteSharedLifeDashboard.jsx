@@ -163,7 +163,7 @@ const MAJOR_CITIES = [
   { name: 'Bordeaux', country: 'France' },
   { name: 'Lyon', country: 'France' },
   { name: 'Grenoble', country: 'France' },
-  { name: 'Constanta', country: 'Roumanie' },
+  { name: 'Constanta', country: 'Romania' },
   { name: 'Reims', country: 'France' },
   { name: 'Tours', country: 'France' },
   { name: 'Nantes', country: 'France' },
