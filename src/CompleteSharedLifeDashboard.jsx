@@ -1119,6 +1119,7 @@ export default function CompleteSharedLifeDashboard() {
       const [selectedPlantDetails, setSelectedPlantDetails] = useState(null);
 
       const [newPlantName, setNewPlantName] = useState('');
+      const [newPlantDisplayName, setNewPlantDisplayName] = useState('');
       const [newPlantType, setNewPlantType] = useState('');
       const [newPlantLocation, setNewPlantLocation] = useState('');
       const [newPlantPhoto, setNewPlantPhoto] = useState('');
@@ -1198,16 +1199,21 @@ export default function CompleteSharedLifeDashboard() {
 
         const plantData = {
           id: editingPlantId || `plant_${Date.now()}`,
-          name: newPlantName,
+          displayName: newPlantDisplayName || newPlantName, // Custom display name (fallback to type)
+          name: newPlantType, // Scientific name
           type: newPlantType,
           location: newPlantLocation,
           photo: newPlantPhoto,
           wateringDays: parseInt(wateringDays) || 7,
           lastWatered,
-          dateAdded: editingPlantId ? undefined : new Date().toISOString(),
           addedBy: currentUser.uid,
           details: selectedPlantDetails,
         };
+
+        // Only add dateAdded for new plants
+        if (!editingPlantId) {
+          plantData.dateAdded = new Date().toISOString();
+        }
 
         try {
           console.log('Saving plant data:', plantData);
@@ -1280,6 +1286,7 @@ export default function CompleteSharedLifeDashboard() {
 
       const resetForm = () => {
         setNewPlantName('');
+        setNewPlantDisplayName('');
         setNewPlantType('');
         setNewPlantLocation('');
         setNewPlantPhoto('');
@@ -1295,7 +1302,8 @@ export default function CompleteSharedLifeDashboard() {
 
       const openEditModal = (plant) => {
         setEditingPlantId(plant.id);
-        setNewPlantName(plant.name);
+        setNewPlantName(plant.name || plant.type);
+        setNewPlantDisplayName(plant.displayName || plant.name || '');
         setNewPlantType(plant.type);
         setNewPlantLocation(plant.location);
         setNewPlantPhoto(plant.photo);
@@ -1392,7 +1400,7 @@ export default function CompleteSharedLifeDashboard() {
                       right: '20px',
                       zIndex: 5,
                     }}>
-                      <h3 style={{ fontSize: '22px', fontWeight: '700', margin: 0, color: '#fff' }}>{plant.name}</h3>
+                      <h3 style={{ fontSize: '22px', fontWeight: '700', margin: 0, color: '#fff' }}>{plant.displayName || plant.name}</h3>
                       <p style={{ fontSize: '13px', color: '#ccc', margin: '6px 0 0' }}>{plant.location}</p>
                     </div>
                   </div>
@@ -1482,7 +1490,7 @@ export default function CompleteSharedLifeDashboard() {
                     right: '20px',
                     zIndex: 5,
                   }}>
-                    <h2 style={{ fontSize: '28px', fontWeight: '700', margin: 0, color: '#fff' }}>{selectedPlant.name}</h2>
+                    <h2 style={{ fontSize: '28px', fontWeight: '700', margin: 0, color: '#fff' }}>{selectedPlant.displayName || selectedPlant.name}</h2>
                   </div>
                 </div>
 
@@ -1786,14 +1794,14 @@ export default function CompleteSharedLifeDashboard() {
                 )}
               </div>
 
-              {/* Plant Name */}
+              {/* Display Name (Custom name for the plant) */}
               <div style={{ marginBottom: '16px' }}>
-                <label style={{ color: '#999', fontSize: '12px', display: 'block', marginBottom: '8px' }}>Plant Name</label>
+                <label style={{ color: '#999', fontSize: '12px', display: 'block', marginBottom: '8px' }}>Display Name (your custom name)</label>
                 <input
                   type="text"
-                  value={newPlantName}
-                  onChange={(e) => setNewPlantName(e.target.value)}
-                  placeholder="e.g., My Eucalyptus"
+                  value={newPlantDisplayName}
+                  onChange={(e) => setNewPlantDisplayName(e.target.value)}
+                  placeholder="e.g., My Eucalyptus, Bedroom Plant"
                   style={{
                     width: '100%',
                     background: 'rgba(255, 255, 255, 0.05)',
@@ -1803,6 +1811,29 @@ export default function CompleteSharedLifeDashboard() {
                     color: '#fff',
                     fontSize: '14px',
                     boxSizing: 'border-box',
+                  }}
+                />
+              </div>
+
+              {/* Plant Type (Scientific name) */}
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ color: '#999', fontSize: '12px', display: 'block', marginBottom: '8px' }}>Plant Type (scientific)</label>
+                <input
+                  type="text"
+                  value={newPlantName}
+                  onChange={(e) => setNewPlantName(e.target.value)}
+                  placeholder="e.g., Eucalyptus"
+                  readOnly
+                  style={{
+                    width: '100%',
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    border: '1px solid rgba(18, 52, 255, 0.2)',
+                    borderRadius: '12px',
+                    padding: '12px',
+                    color: '#999',
+                    fontSize: '14px',
+                    boxSizing: 'border-box',
+                    cursor: 'not-allowed',
                   }}
                 />
               </div>
