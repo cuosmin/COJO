@@ -1114,6 +1114,7 @@ export default function CompleteSharedLifeDashboard() {
       const [searchQuery, setSearchQuery] = useState('');
       const [perenualResults, setPerenualResults] = useState([]);
       const [showPlantSearch, setShowPlantSearch] = useState(false);
+      const [plantSearchLoading, setPlantSearchLoading] = useState(false);
       const [unsplashSearchResults, setUnsplashSearchResults] = useState([]);
       const [selectedPlantDetails, setSelectedPlantDetails] = useState(null);
 
@@ -1124,24 +1125,41 @@ export default function CompleteSharedLifeDashboard() {
       const [wateringDays, setWateringDays] = useState(7);
       const [lastWatered, setLastWatered] = useState(new Date().toISOString().split('T')[0]);
 
-      // Search Perenual plants
+      const debounceTimer = React.useRef(null);
+
+      // Search Perenual plants (with debounce)
       const searchPlants = async (query) => {
+        if (debounceTimer.current) {
+          clearTimeout(debounceTimer.current);
+        }
+
         if (!query.trim()) {
           setPerenualResults([]);
+          setShowPlantSearch(false);
           return;
         }
-        try {
-          const response = await fetch(
-            `/api/plants-search?query=${encodeURIComponent(query)}`
-          );
-          const data = await response.json();
-          if (data.data && data.data.length > 0) {
-            setPerenualResults(data.data);
-            setShowPlantSearch(true);
+
+        setPlantSearchLoading(true);
+
+        debounceTimer.current = setTimeout(async () => {
+          try {
+            const response = await fetch(
+              `/api/plants-search?query=${encodeURIComponent(query)}`
+            );
+            const data = await response.json();
+            console.log('Plant search results:', data.data?.length);
+            if (data.data && data.data.length > 0) {
+              setPerenualResults(data.data);
+              setShowPlantSearch(true);
+            } else {
+              setPerenualResults([]);
+            }
+          } catch (error) {
+            console.error('Plant search error:', error);
+          } finally {
+            setPlantSearchLoading(false);
           }
-        } catch (error) {
-          console.error('Plant search error:', error);
-        }
+        }, 500); // Wait 500ms after user stops typing
       };
 
       // Search Unsplash photos - EXACTLY LIKE RECIPES
@@ -1152,9 +1170,10 @@ export default function CompleteSharedLifeDashboard() {
         }
         try {
           const response = await fetch(
-            `https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&per_page=12&client_id=NxL6pf3u0YFLp2JWZVSX4p8OxwJFQKg_4a8Y4c_1Dqg`
+            `https://api.unsplash.com/search/photos?query=${query}&per_page=12&client_id=${process.env.REACT_APP_UNSPLASH_ACCESS_KEY}`
           );
           const data = await response.json();
+          console.log('Unsplash results:', data.results?.length);
           setUnsplashSearchResults(data.results || []);
         } catch (error) {
           console.error('Unsplash error:', error);
@@ -1669,6 +1688,13 @@ export default function CompleteSharedLifeDashboard() {
                     marginBottom: '12px',
                   }}
                 />
+
+                {/* Search Loading */}
+                {plantSearchLoading && (
+                  <div style={{ padding: '12px', color: '#999', fontSize: '14px', textAlign: 'center' }}>
+                    Searching plants...
+                  </div>
+                )}
 
                 {/* Search Results */}
                 {showPlantSearch && perenualResults.length > 0 && (
