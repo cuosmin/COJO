@@ -854,35 +854,11 @@ export default function CompleteSharedLifeDashboard() {
     }
   };
 
-  const waterPlant = (id) => {
-    const updated = plants.map(p =>
-      p.id === id ? { ...p, lastWatered: new Date().toISOString(), healthLevel: Math.min(100, p.healthLevel + 10) } : p
-    );
-    setPlants(updated);
-    saveData(updated, meals, expenses, travels);
-    sendNotification('💧 Plant watered!');
-  };
-
-  const deletePlant = (id) => {
-    const updated = plants.filter(p => p.id !== id);
-    setPlants(updated);
-    saveData(updated, meals, expenses, travels);
-  };
-
   const getDaysSinceWatered = (lastWatered) => {
     const last = new Date(lastWatered);
     const now = new Date();
     return Math.floor((now - last) / (1000 * 60 * 60 * 24));
   };
-
-  const getWateringStatus = (plant) => {
-    const daysSince = getDaysSinceWatered(plant.lastWatered);
-    const freq = plant.wateringFreqDays || 7;
-    const daysUntil = Math.max(0, freq - daysSince);
-    return { daysSince, daysUntil, needsWatering: daysUntil === 0 };
-  };
-
-  const plantsNeedingWater = plants.filter(p => getWateringStatus(p).needsWatering).length;
 
   // ==================== MEALS ====================
   const addMeal = () => {
