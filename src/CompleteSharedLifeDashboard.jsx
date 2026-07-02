@@ -416,6 +416,10 @@ export default function CompleteSharedLifeDashboard() {
   const [newPlantType, setNewPlantType] = useState('peace-lily');
   const [newPlantLocation, setNewPlantLocation] = useState('Living Room');
   const [searchPlantQuery, setSearchPlantQuery] = useState('');
+  const [perenualPlants, setPerenualPlants] = useState([]);
+  const [selectedPlantDetail, setSelectedPlantDetail] = useState(null);
+  const [showPlantDetail, setShowPlantDetail] = useState(false);
+  const [newPlantPhoto, setNewPlantPhoto] = useState(null);
 
   // Auth
   useEffect(() => {
@@ -517,6 +521,30 @@ export default function CompleteSharedLifeDashboard() {
     }
   };
 
+  // 🌱 PERENUAL API - fetch plants from database
+  const searchPerenualPlants = async (query = '') => {
+    try {
+      const searchQuery = query || 'popular indoor plants';
+      const response = await axios.get('https://perenual.com/api/species-list', {
+        params: {
+          q: searchQuery,
+          page: 1,
+        },
+      });
+      if (response.data.data) {
+        setPerenualPlants(response.data.data.slice(0, 12)); // Limit to 12 results
+        console.log('✅ Plants fetched from Perenual:', response.data.data.length);
+      }
+    } catch (error) {
+      console.error('Perenual API error:', error);
+    }
+  };
+
+  // Load popular plants on mount
+  useEffect(() => {
+    searchPerenualPlants();
+  }, []);
+
   // 🌱 INTELLIGENT WATERING STATUS
   const getWateringStatus = (plant) => {
     if (!plant.lastWatered) return { status: 'New', color: '#FFD700', urgency: 2 };
@@ -575,18 +603,19 @@ export default function CompleteSharedLifeDashboard() {
     }
   };
 
-  // 🌱 ADD PLANT FROM LIBRARY
+  // 🌱 ADD PLANT FROM PERENUAL
   const addPlantFromLibrary = async () => {
-    if (!newPlantName || !newPlantType) return;
+    if (!newPlantName) return;
 
     try {
       const newPlant = {
         id: Date.now().toString(),
         name: newPlantName,
         type: newPlantType,
-        location: newPlantLocation,
+        location: newPlantLocation || 'Home',
         dateAdded: new Date().toISOString(),
         lastWatered: new Date().toISOString(),
+        photo: newPlantPhoto || 'https://images.unsplash.com/photo-1517457373614-b7152f800fd1?w=400&h=300&fit=crop',
         addedBy: user?.uid,
       };
 
@@ -595,11 +624,13 @@ export default function CompleteSharedLifeDashboard() {
 
       setPlants([...plants, newPlant]);
       setNewPlantName('');
-      setNewPlantType('peace-lily');
+      setNewPlantType('');
       setNewPlantLocation('Living Room');
+      setNewPlantPhoto(null);
       setShowPlantLibrary(false);
+      setPerenualPlants([]); // Reset search
       
-      console.log('✅ Plant added from library');
+      console.log('✅ Plant added from Perenual');
     } catch (error) {
       console.error('Error adding plant:', error);
     }
@@ -1644,14 +1675,17 @@ export default function CompleteSharedLifeDashboard() {
           </div>
         )}
 
-        {/* PLANTS TAB - 🌱 REDESIGNED */}
+        {/* PLANTS TAB - PERENUAL API + RECIPE-STYLED */}
         {activeTab === 'plants' && (
           <div style={{ padding: '20px' }}>
-            {/* Header with Add Button */}
+            {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
               <h2 style={{ fontSize: '28px', fontWeight: '700', margin: 0 }}>Plants</h2>
               <button
-                onClick={() => setShowPlantLibrary(true)}
+                onClick={() => {
+                  setShowPlantLibrary(true);
+                  searchPerenualPlants(); // Load popular plants
+                }}
                 style={{
                   background: ACCENT_COLOR,
                   border: 'none',
@@ -1662,20 +1696,21 @@ export default function CompleteSharedLifeDashboard() {
                   display: 'flex',
                   alignItems: 'center',
                   gap: '6px',
+                  fontSize: '14px',
                   fontWeight: '600',
                 }}
               >
-                <Plus size={20} /> Add Plant
+                <Plus size={18} /> Add
               </button>
             </div>
 
             {/* Weather Card */}
             {weatherData && (
               <div style={{
-                background: `linear-gradient(135deg, rgba(52, 199, 89, 0.15) 0%, rgba(0, 0, 0, 0.8) 100%)`,
+                background: `rgba(52, 199, 89, 0.1)`,
                 borderRadius: '16px',
                 padding: '16px',
-                border: `1px solid rgba(52, 199, 89, 0.12)`,
+                border: `1px solid rgba(52, 199, 89, 0.15)`,
                 marginBottom: '20px',
                 display: 'flex',
                 justifyContent: 'space-between',
@@ -1683,178 +1718,125 @@ export default function CompleteSharedLifeDashboard() {
               }}>
                 <div>
                   <div style={{ fontSize: '12px', color: '#999', marginBottom: '4px' }}>Paris Weather</div>
-                  <div style={{ fontSize: '18px', fontWeight: '700' }}>{weatherData.temp}°C • {weatherData.humidity}% Humidity</div>
-                  <div style={{ fontSize: '12px', color: '#999', marginTop: '4px', textTransform: 'capitalize' }}>{weatherData.description}</div>
+                  <div style={{ fontSize: '16px', fontWeight: '700' }}>{weatherData.temp}°C • {weatherData.humidity}% Humidity</div>
                 </div>
-                <div style={{ fontSize: '32px' }}>
+                <div style={{ fontSize: '28px' }}>
                   {weatherData.temp > 20 ? '☀️' : weatherData.humidity > 70 ? '💧' : '🌤️'}
                 </div>
               </div>
             )}
 
             {/* Plants Grid */}
-            {plants.length > 0 ? (
+            {plants.length === 0 ? (
+              <EmptyState icon={Leaf} title="No plants yet" subtitle="Add your first plant" />
+            ) : (
               <div style={{ display: 'grid', gap: '12px' }}>
                 {plants.map(plant => {
-                  const plantData = PLANT_DATABASE[plant.type] || PLANT_DATABASE['peace-lily'];
                   const wateringStatus = getWateringStatus(plant);
-                  const recentCare = careLogs
-                    .filter(log => log.plantId === plant.id)
-                    .slice(0, 3);
+                  const recentCare = careLogs.filter(log => log.plantId === plant.id).slice(0, 1);
 
                   return (
                     <div
                       key={plant.id}
+                      onClick={() => {
+                        setSelectedPlantDetail(plant);
+                        setShowPlantDetail(true);
+                      }}
                       style={{
-                        background: `linear-gradient(135deg, rgba(100, 200, 100, 0.1) 0%, rgba(0, 0, 0, 0.8) 100%)`,
+                        backgroundImage: `url(${plant.photo || 'https://images.unsplash.com/photo-1517457373614-b7152f800fd1?w=400&h=300&fit=crop'})`,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
                         borderRadius: '16px',
+                        minHeight: '240px',
+                        position: 'relative',
                         overflow: 'hidden',
-                        border: `1px solid rgba(52, 199, 89, 0.12)`,
+                        boxShadow: `0 0 0 1px rgba(52, 199, 89, 0.15)`,
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.boxShadow = '0 0 0 1px rgba(52, 199, 89, 0.3)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.boxShadow = '0 0 0 1px rgba(52, 199, 89, 0.15)';
                       }}
                     >
-                      {/* Plant Image */}
-                      <div
-                        style={{
-                          backgroundImage: `url(${plantData.image})`,
-                          backgroundSize: 'cover',
-                          backgroundPosition: 'center',
-                          height: '180px',
-                          position: 'relative',
-                        }}
-                      >
-                        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.8), rgba(0,0,0,0.2))' }} />
-                        
-                        {/* Health Badge */}
-                        <div style={{ position: 'absolute', top: '12px', right: '12px', zIndex: 10 }}>
-                          <div style={{
-                            background: wateringStatus.color + '40',
-                            border: `1px solid ${wateringStatus.color}`,
-                            borderRadius: '12px',
-                            padding: '6px 12px',
-                            fontSize: '11px',
-                            fontWeight: '600',
-                            color: wateringStatus.color,
-                          }}>
-                            {wateringStatus.status}
-                          </div>
-                        </div>
-
-                        {/* Plant Name */}
-                        <div style={{ position: 'absolute', bottom: '12px', left: '12px', zIndex: 10 }}>
-                          <div style={{ fontSize: '18px', fontWeight: '700', color: '#fff' }}>{plant.name}</div>
-                          <div style={{ fontSize: '12px', color: '#ccc' }}>{plant.location}</div>
-                        </div>
+                      {/* Gradient overlay */}
+                      <div style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: 'linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0.9) 100%)',
+                        pointerEvents: 'none',
+                      }} />
+                      
+                      {/* Watering Status Badge (top left) */}
+                      <div style={{
+                        position: 'absolute',
+                        top: '12px',
+                        left: '12px',
+                        zIndex: 2,
+                        background: wateringStatus.color + '40',
+                        border: `1px solid ${wateringStatus.color}`,
+                        borderRadius: '20px',
+                        padding: '6px 12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                      }}>
+                        <span style={{ fontSize: '12px', fontWeight: '600', color: wateringStatus.color }}>
+                          {wateringStatus.status}
+                        </span>
                       </div>
 
-                      {/* Care Info */}
-                      <div style={{ padding: '16px' }}>
-                        <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
-                          <div style={{
-                            background: 'rgba(255, 193, 7, 0.2)',
-                            border: '1px solid rgba(255, 193, 7, 0.4)',
-                            borderRadius: '8px',
-                            padding: '4px 8px',
-                            fontSize: '10px',
-                            fontWeight: '600',
-                            color: '#ffc107',
-                          }}>
-                            💧 {plantData.wateringDaysMin}-{plantData.wateringDaysMax}d
-                          </div>
-                          <div style={{
-                            background: 'rgba(52, 199, 89, 0.2)',
-                            border: '1px solid rgba(52, 199, 89, 0.4)',
-                            borderRadius: '8px',
-                            padding: '4px 8px',
-                            fontSize: '10px',
-                            fontWeight: '600',
-                            color: '#34c759',
-                          }}>
-                            ☀️ {plantData.light}
-                          </div>
-                          <div style={{
-                            background: 'rgba(18, 52, 255, 0.2)',
-                            border: '1px solid rgba(18, 52, 255, 0.4)',
-                            borderRadius: '8px',
-                            padding: '4px 8px',
-                            fontSize: '10px',
-                            fontWeight: '600',
-                            color: '#1234ff',
-                          }}>
-                            {plantData.difficulty}
-                          </div>
-                        </div>
-
-                        {/* Action Buttons */}
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', marginBottom: '12px' }}>
-                          <button
-                            onClick={() => logPlantCare(plant.id, 'water')}
-                            style={{
+                      {/* Care Tags (top right) */}
+                      {recentCare.length > 0 && (
+                        <div style={{
+                          position: 'absolute',
+                          top: '12px',
+                          right: '12px',
+                          zIndex: 2,
+                          display: 'flex',
+                          gap: '6px',
+                          flexWrap: 'wrap',
+                          justifyContent: 'flex-end',
+                        }}>
+                          {recentCare[0].careType === 'water' && (
+                            <div style={{
                               background: '#34c75940',
-                              border: '1px solid #34c75966',
-                              borderRadius: '8px',
-                              padding: '8px',
+                              borderRadius: '12px',
+                              padding: '4px 8px',
+                              border: `1px solid #34c759`,
+                              fontSize: '10px',
+                              fontWeight: '600',
                               color: '#34c759',
-                              cursor: 'pointer',
-                              fontSize: '12px',
-                              fontWeight: '600',
-                            }}
-                          >
-                            💧 Water
-                          </button>
-                          <button
-                            onClick={() => logPlantCare(plant.id, 'fertilize')}
-                            style={{
-                              background: '#ff950040',
-                              border: '1px solid #ff950066',
-                              borderRadius: '8px',
-                              padding: '8px',
-                              color: '#ff9500',
-                              cursor: 'pointer',
-                              fontSize: '12px',
-                              fontWeight: '600',
-                            }}
-                          >
-                            🌿 Fertilize
-                          </button>
-                          <button
-                            onClick={() => {
-                              const updatedPlants = plants.filter(p => p.id !== plant.id);
-                              setPlants(updatedPlants);
-                              ref(database, `shared-data/default/plants/${plant.id}`).set(null);
-                            }}
-                            style={{
-                              background: '#ff3b3040',
-                              border: '1px solid #ff3b3066',
-                              borderRadius: '8px',
-                              padding: '8px',
-                              color: '#ff3b30',
-                              cursor: 'pointer',
-                              fontSize: '12px',
-                              fontWeight: '600',
-                            }}
-                          >
-                            🗑️ Remove
-                          </button>
+                            }}>
+                              💧 Watered
+                            </div>
+                          )}
                         </div>
-
-                        {/* Recent Care Timeline */}
-                        {recentCare.length > 0 && (
-                          <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '12px' }}>
-                            <div style={{ fontSize: '11px', color: '#999', marginBottom: '8px' }}>Recent Care</div>
-                            {recentCare.map(log => (
-                              <div key={log.id} style={{ fontSize: '11px', color: '#ccc', marginBottom: '4px' }}>
-                                {log.displayName} {log.careType === 'water' ? '💧' : '🌿'} {new Date(log.timestamp).toLocaleDateString()}
-                              </div>
-                            ))}
-                          </div>
-                        )}
+                      )}
+                      
+                      {/* Content (bottom) */}
+                      <div style={{
+                        position: 'relative',
+                        zIndex: 1,
+                        padding: '12px',
+                        minHeight: '240px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'flex-end',
+                        height: '100%',
+                      }}>
+                        <h3 style={{ fontSize: '16px', fontWeight: '600', margin: '0 0 4px', color: '#fff' }}>{plant.name}</h3>
+                        <p style={{ fontSize: '12px', color: '#ccc', margin: 0 }}>{plant.location}</p>
                       </div>
                     </div>
                   );
                 })}
               </div>
-            ) : (
-              <EmptyState icon={Leaf} title="No plants yet" subtitle="Add your first plant to get started" />
             )}
           </div>
         )}
@@ -2743,7 +2725,7 @@ export default function CompleteSharedLifeDashboard() {
         </div>
       )}
 
-      {/* 🌱 Plant Library Modal */}
+      {/* 🌱 Plant Library Modal - Perenual */}
       {showPlantLibrary && (
         <div style={{
           position: 'fixed',
@@ -2768,105 +2750,235 @@ export default function CompleteSharedLifeDashboard() {
             paddingBottom: '40px',
           }} onClick={(e) => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h3 style={{ fontSize: '20px', fontWeight: '700', margin: 0 }}>Choose Plant Type</h3>
+              <h3 style={{ fontSize: '20px', fontWeight: '700', margin: 0 }}>Add Plant</h3>
               <button onClick={() => setShowPlantLibrary(false)} style={{
                 background: 'none', border: 'none', cursor: 'pointer', color: '#999', fontSize: '24px'
               }}>×</button>
             </div>
 
-            {/* Search */}
-            <input
-              type="text"
-              placeholder="Search plants..."
-              value={searchPlantQuery}
-              onChange={(e) => setSearchPlantQuery(e.target.value.toLowerCase())}
-              style={{
-                width: '100%',
-                padding: '12px',
-                background: 'rgba(255,255,255,0.05)',
-                border: '1px solid rgba(255,255,255,0.1)',
-                borderRadius: '12px',
-                color: '#fff',
-                marginBottom: '16px',
-              }}
-            />
+            {/* Search Perenual */}
+            <div style={{ marginBottom: '16px' }}>
+              <input
+                type="text"
+                placeholder="Search plants (e.g., monstera, rose, fern)..."
+                onChange={(e) => {
+                  setSearchPlantQuery(e.target.value);
+                  if (e.target.value.length > 2) {
+                    searchPerenualPlants(e.target.value);
+                  }
+                }}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: '12px',
+                  color: '#fff',
+                  marginBottom: '16px',
+                }}
+              />
 
-            {/* Plant Selection Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
-              {Object.entries(PLANT_DATABASE)
-                .filter(([_, p]) => p.name.toLowerCase().includes(searchPlantQuery))
-                .map(([key, plantData]) => (
-                  <div
-                    key={key}
-                    onClick={() => setNewPlantType(key)}
-                    style={{
-                      background: newPlantType === key ? `${ACCENT_COLOR}40` : 'rgba(255,255,255,0.05)',
-                      border: `1px solid ${newPlantType === key ? ACCENT_COLOR : 'rgba(255,255,255,0.1)'}`,
-                      borderRadius: '12px',
-                      padding: '12px',
-                      cursor: 'pointer',
-                      textAlign: 'center',
-                    }}
-                  >
-                    <div style={{ fontSize: '12px', fontWeight: '600', color: newPlantType === key ? ACCENT_COLOR : '#fff' }}>
-                      {plantData.name}
-                    </div>
-                    <div style={{ fontSize: '10px', color: '#999', marginTop: '4px' }}>{plantData.difficulty}</div>
+              {/* Plant Grid from Perenual */}
+              {perenualPlants.length > 0 && (
+                <div style={{ marginBottom: '20px' }}>
+                  <div style={{ fontSize: '12px', color: '#999', marginBottom: '12px' }}>Popular Plants</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                    {perenualPlants.map((plant) => (
+                      <div
+                        key={plant.id}
+                        onClick={() => {
+                          setNewPlantName(plant.common_name || plant.scientific_name[0]);
+                          setNewPlantType(plant.id.toString());
+                          setNewPlantPhoto(plant.default_image?.medium_url || null);
+                        }}
+                        style={{
+                          background: 'rgba(255,255,255,0.05)',
+                          border: '1px solid rgba(255,255,255,0.1)',
+                          borderRadius: '12px',
+                          padding: '12px',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
+                          e.currentTarget.style.borderColor = 'rgba(18, 52, 255, 0.3)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                          e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)';
+                        }}
+                      >
+                        <div style={{ fontSize: '12px', fontWeight: '600', color: '#fff', marginBottom: '4px' }}>
+                          {plant.common_name || plant.scientific_name[0]}
+                        </div>
+                        <div style={{ fontSize: '10px', color: '#999' }}>
+                          {plant.watering}
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                </div>
+              )}
             </div>
 
-            {/* Plant Name Input */}
-            <input
-              type="text"
-              placeholder="Your plant's nickname (e.g., 'Betty')"
-              value={newPlantName}
-              onChange={(e) => setNewPlantName(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '12px',
-                background: 'rgba(255,255,255,0.05)',
-                border: '1px solid rgba(255,255,255,0.1)',
-                borderRadius: '12px',
-                color: '#fff',
-                marginBottom: '12px',
-              }}
-            />
+            {/* Plant Details Form */}
+            <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '16px' }}>
+              <div style={{ fontSize: '12px', color: '#999', marginBottom: '12px' }}>Plant Details</div>
+              
+              <input
+                type="text"
+                placeholder="Plant name (e.g., 'My Monstera')"
+                value={newPlantName}
+                onChange={(e) => setNewPlantName(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: '12px',
+                  color: '#fff',
+                  marginBottom: '12px',
+                }}
+              />
 
-            {/* Location Input */}
-            <input
-              type="text"
-              placeholder="Location (e.g., 'Living Room Window')"
-              value={newPlantLocation}
-              onChange={(e) => setNewPlantLocation(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '12px',
-                background: 'rgba(255,255,255,0.05)',
-                border: '1px solid rgba(255,255,255,0.1)',
-                borderRadius: '12px',
-                color: '#fff',
-                marginBottom: '16px',
-              }}
-            />
+              <input
+                type="text"
+                placeholder="Location (e.g., 'Living Room Window')"
+                value={newPlantLocation}
+                onChange={(e) => setNewPlantLocation(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: '12px',
+                  color: '#fff',
+                  marginBottom: '16px',
+                }}
+              />
 
-            {/* Add Button */}
-            <button
-              onClick={addPlantFromLibrary}
-              style={{
-                width: '100%',
+              <button
+                onClick={addPlantFromLibrary}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  background: ACCENT_COLOR,
+                  border: 'none',
+                  borderRadius: '12px',
+                  color: '#fff',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                }}
+              >
+                Add Plant
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 🌱 Plant Detail Modal */}
+      {showPlantDetail && selectedPlantDetail && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.7)',
+          backdropFilter: 'blur(10px)',
+          display: 'flex',
+          alignItems: 'flex-end',
+          zIndex: 1000,
+        }} onClick={() => setShowPlantDetail(false)}>
+          <div style={{
+            background: '#000',
+            borderTop: '1px solid rgba(52, 199, 89, 0.15)',
+            borderRadius: '24px 24px 0 0',
+            width: '100%',
+            maxHeight: '90vh',
+            overflowY: 'auto',
+            padding: '24px 20px',
+            paddingBottom: '40px',
+          }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h3 style={{ fontSize: '20px', fontWeight: '700', margin: 0 }}>{selectedPlantDetail.name}</h3>
+              <button onClick={() => setShowPlantDetail(false)} style={{
+                background: 'none', border: 'none', cursor: 'pointer', color: '#999', fontSize: '24px'
+              }}>×</button>
+            </div>
+
+            {/* Plant Info */}
+            <div style={{ marginBottom: '20px', fontSize: '14px', color: '#ccc' }}>
+              <div style={{ marginBottom: '8px' }}>📍 <strong>{selectedPlantDetail.location}</strong></div>
+              {selectedPlantDetail.lastWatered && (
+                <div style={{ marginBottom: '8px' }}>
+                  💧 Last watered: {new Date(selectedPlantDetail.lastWatered).toLocaleDateString()}
+                </div>
+              )}
+            </div>
+
+            {/* Action Buttons */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '16px' }}>
+              <button
+                onClick={() => {
+                  logPlantCare(selectedPlantDetail.id, 'water');
+                  setShowPlantDetail(false);
+                }}
+                style={{
+                  background: '#34c75940',
+                  border: '1px solid #34c75966',
+                  borderRadius: '12px',
+                  padding: '12px',
+                  color: '#34c759',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                }}
+              >
+                💧 Water Now
+              </button>
+              <button
+                onClick={() => {
+                  logPlantCare(selectedPlantDetail.id, 'fertilize');
+                  setShowPlantDetail(false);
+                }}
+                style={{
+                  background: '#ff950040',
+                  border: '1px solid #ff950066',
+                  borderRadius: '12px',
+                  padding: '12px',
+                  color: '#ff9500',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                }}
+              >
+                🌿 Fertilize
+              </button>
+            </div>
+
+            {/* Recent Care */}
+            {careLogs.filter(log => log.plantId === selectedPlantDetail.id).length > 0 && (
+              <div style={{
+                background: 'rgba(255,255,255,0.05)',
+                borderRadius: '12px',
                 padding: '16px',
-                background: ACCENT_COLOR,
-                border: 'none',
-                borderRadius: '12px',
-                color: '#fff',
-                fontWeight: '700',
-                cursor: 'pointer',
-                fontSize: '16px',
-              }}
-            >
-              Add Plant
-            </button>
+                borderTop: '1px solid rgba(255,255,255,0.1)',
+                paddingTop: '16px',
+              }}>
+                <div style={{ fontSize: '12px', color: '#999', marginBottom: '12px' }}>Care History</div>
+                {careLogs
+                  .filter(log => log.plantId === selectedPlantDetail.id)
+                  .slice(0, 5)
+                  .map(log => (
+                    <div key={log.id} style={{ fontSize: '12px', color: '#ccc', marginBottom: '8px' }}>
+                      {log.displayName} {log.careType === 'water' ? '💧' : '🌿'} {new Date(log.timestamp).toLocaleDateString()}
+                    </div>
+                  ))}
+              </div>
+            )}
           </div>
         </div>
       )}
