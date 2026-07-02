@@ -1181,11 +1181,6 @@ export default function CompleteSharedLifeDashboard() {
       };
 
       // Fetch Perenual plant details (guides, watering, etc.)
-      const fetchPlantDetails = async (perenualPlantId) => {
-        console.log('Plant details already fetched via serverless function');
-        return null;
-      };
-
       // Save plant to Firebase
       const savePlant = async (e) => {
         e?.preventDefault();
