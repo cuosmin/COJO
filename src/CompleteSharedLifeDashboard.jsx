@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Home, Leaf, UtensilsCrossed, Wallet, LogOut,
-  X, Bell, Plus, Plane, Edit2, MapPin, Droplet, Archive, ChevronDown, Briefcase, Palmtree,
+  X, Bell, Plus, Plane, Edit2, MapPin, Archive, ChevronDown, Briefcase, Palmtree,
   ShoppingCart as ShoppingBag, Heart, Wind, Smile, Clock, Shuffle, MessageCircle, Send,
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
@@ -852,12 +852,6 @@ export default function CompleteSharedLifeDashboard() {
       saveData(updated, meals, expenses, travels);
       resetModal();
     }
-  };
-
-  const getDaysSinceWatered = (lastWatered) => {
-    const last = new Date(lastWatered);
-    const now = new Date();
-    return Math.floor((now - last) / (1000 * 60 * 60 * 24));
   };
 
   // ==================== MEALS ====================
