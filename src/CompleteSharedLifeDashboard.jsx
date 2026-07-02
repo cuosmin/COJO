@@ -3,7 +3,7 @@ import {
   Home, Leaf, UtensilsCrossed, Wallet, LogOut,
   X, Bell, Plus, Plane, Edit2, MapPin, Droplet, Archive, ChevronDown, Briefcase, Palmtree, Check,
   ShoppingCart as ShoppingBag, Heart, Wind, Smile, Clock, Shuffle, MessageCircle, Send,
-  Sun, Cloud, Moon, Flower, AlertTriangle, Calendar, Repeat, Zap, Sparkles,
+  Sun, Cloud, Moon, Flower, AlertTriangle, Calendar, Repeat, Zap, Sparkles, Thermometer,
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import LinkifyIt from 'linkify-it';
@@ -1167,19 +1167,35 @@ export default function CompleteSharedLifeDashboard() {
 
         debounceTimer.current = setTimeout(async () => {
           try {
+            console.log(`[Plants] Searching for: ${query}`);
             const response = await fetch(
               `/api/plants-search?query=${encodeURIComponent(query)}`
             );
+            
+            if (!response.ok) {
+              console.error(`[Plants] API error: ${response.status} ${response.statusText}`);
+              const errorData = await response.json();
+              console.error('[Plants] Error details:', errorData);
+              setPerenualResults([]);
+              setShowPlantSearch(false);
+              return;
+            }
+            
             const data = await response.json();
-            console.log('Plant search results:', data.data?.length);
+            console.log(`[Plants] Found ${data.data?.length || 0} results`);
+            
             if (data.data && data.data.length > 0) {
               setPerenualResults(data.data);
               setShowPlantSearch(true);
             } else {
+              console.log('[Plants] No results returned');
               setPerenualResults([]);
+              setShowPlantSearch(false);
             }
           } catch (error) {
-            console.error('Plant search error:', error);
+            console.error('[Plants] Search error:', error.message, error);
+            setPerenualResults([]);
+            setShowPlantSearch(false);
           } finally {
             setPlantSearchLoading(false);
           }
@@ -1683,11 +1699,71 @@ export default function CompleteSharedLifeDashboard() {
                     </div>
                   )}
 
-                  {/* Quick Info Summary */}
+                  {/* Quick Info Summary - EXACT PERENUAL DATA */}
                   {selectedPlant.details && (
                     <div style={{ display: 'grid', gap: '12px' }}>
                       <h3 style={{ fontSize: '14px', fontWeight: '600', color: '#999', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '8px 0 0' }}>Quick Info</h3>
                     
+                      {selectedPlant.details.cycle && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '8px' }}>
+                          <Calendar size={14} color={ACCENT_COLOR} />
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: '11px', color: '#999', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Cycle</div>
+                            <div style={{ fontSize: '13px', color: '#ccc', fontWeight: '500' }}>{selectedPlant.details.cycle}</div>
+                          </div>
+                        </div>
+                      )}
+
+                      {selectedPlant.details.hardiness?.min && selectedPlant.details.hardiness?.max && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '8px' }}>
+                          <Thermometer size={14} color={ACCENT_COLOR} />
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: '11px', color: '#999', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Hardiness Zone</div>
+                            <div style={{ fontSize: '13px', color: '#ccc', fontWeight: '500' }}>{selectedPlant.details.hardiness.min} - {selectedPlant.details.hardiness.max}</div>
+                          </div>
+                        </div>
+                      )}
+
+                      {selectedPlant.details.sun && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '8px' }}>
+                          <Sun size={14} color={ACCENT_COLOR} />
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: '11px', color: '#999', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Sun</div>
+                            <div style={{ fontSize: '13px', color: '#ccc', fontWeight: '500' }}>{selectedPlant.details.sun}</div>
+                          </div>
+                        </div>
+                      )}
+
+                      {selectedPlant.details.watering && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '8px' }}>
+                          <Droplet size={14} color={ACCENT_COLOR} />
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: '11px', color: '#999', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Watering</div>
+                            <div style={{ fontSize: '13px', color: '#ccc', fontWeight: '500' }}>{selectedPlant.details.watering}</div>
+                          </div>
+                        </div>
+                      )}
+
+                      {selectedPlant.details.maintenance && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '8px' }}>
+                          <Zap size={14} color={ACCENT_COLOR} />
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: '11px', color: '#999', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Maintenance</div>
+                            <div style={{ fontSize: '13px', color: '#ccc', fontWeight: '500' }}>{selectedPlant.details.maintenance}</div>
+                          </div>
+                        </div>
+                      )}
+
+                      {selectedPlant.details.care_level && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '8px' }}>
+                          <Sparkles size={14} color={ACCENT_COLOR} />
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: '11px', color: '#999', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Care Level</div>
+                            <div style={{ fontSize: '13px', color: '#ccc', fontWeight: '500' }}>{selectedPlant.details.care_level}</div>
+                          </div>
+                        </div>
+                      )}
+
                       {selectedPlant.details.growth_rate && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '8px' }}>
                           <Leaf size={14} color={ACCENT_COLOR} />
@@ -1698,22 +1774,32 @@ export default function CompleteSharedLifeDashboard() {
                         </div>
                       )}
 
-                      {selectedPlant.details.humidity && (
+                      {selectedPlant.details.flowering_season && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '8px' }}>
-                          <Wind size={14} color={ACCENT_COLOR} />
+                          <Flower size={14} color={ACCENT_COLOR} />
                           <div style={{ flex: 1 }}>
-                            <div style={{ fontSize: '11px', color: '#999', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Humidity</div>
-                            <div style={{ fontSize: '13px', color: '#ccc', fontWeight: '500' }}>{selectedPlant.details.humidity}</div>
+                            <div style={{ fontSize: '11px', color: '#999', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Flowering Season</div>
+                            <div style={{ fontSize: '13px', color: '#ccc', fontWeight: '500' }}>{selectedPlant.details.flowering_season}</div>
                           </div>
                         </div>
                       )}
 
-                      {selectedPlant.details.tempMin && selectedPlant.details.tempMax && (
+                      {selectedPlant.details.drought_tolerant && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '8px' }}>
-                          <Smile size={14} color={ACCENT_COLOR} />
+                          <Sun size={14} color={ACCENT_COLOR} />
                           <div style={{ flex: 1 }}>
-                            <div style={{ fontSize: '11px', color: '#999', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Temperature</div>
-                            <div style={{ fontSize: '13px', color: '#ccc', fontWeight: '500' }}>{selectedPlant.details.tempMin}°C - {selectedPlant.details.tempMax}°C</div>
+                            <div style={{ fontSize: '11px', color: '#999', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Drought Tolerant</div>
+                            <div style={{ fontSize: '13px', color: '#ccc', fontWeight: '500' }}>Yes</div>
+                          </div>
+                        </div>
+                      )}
+
+                      {selectedPlant.details.salt_tolerant && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '8px' }}>
+                          <AlertTriangle size={14} color={ACCENT_COLOR} />
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: '11px', color: '#999', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Salt Tolerant</div>
+                            <div style={{ fontSize: '13px', color: '#ccc', fontWeight: '500' }}>Yes</div>
                           </div>
                         </div>
                       )}
@@ -1730,8 +1816,15 @@ export default function CompleteSharedLifeDashboard() {
 
                       {selectedPlant.details.toxicity_pets && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '8px' }}>
-                          <Palmtree size={14} color={ACCENT_COLOR} />
+                          <Heart size={14} color={ACCENT_COLOR} />
                           <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: '11px', color: '#999', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Pets</div>
+                            <div style={{ fontSize: '13px', color: '#ccc', fontWeight: '500' }}>{selectedPlant.details.toxicity_pets}</div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}>
                             <div style={{ fontSize: '11px', color: '#999', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Pets</div>
                             <div style={{ fontSize: '13px', color: '#ccc', fontWeight: '500' }}>{selectedPlant.details.toxicity_pets}</div>
                           </div>

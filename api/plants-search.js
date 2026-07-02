@@ -11,11 +11,20 @@ export default async function handler(req, res) {
   const PERENUAL_KEY = process.env.PERENUAL_API_KEY;
 
   try {
-    // Search species list - use v2 endpoint
+    console.log(`[API] Searching for: ${query}`);
+    
+    // Search species list
     const searchRes = await fetch(
       `https://perenual.com/api/v2/species-list?q=${encodeURIComponent(query)}&key=${PERENUAL_KEY}`
     );
+    
+    if (!searchRes.ok) {
+      console.error(`[API] Search failed: ${searchRes.status}`);
+      return res.status(searchRes.status).json({ error: 'Search failed' });
+    }
+    
     const searchData = await searchRes.json();
+    console.log(`[API] Found ${searchData.data?.length || 0} results`);
 
     if (!searchData.data || searchData.data.length === 0) {
       return res.status(200).json({ data: [] });
@@ -25,52 +34,63 @@ export default async function handler(req, res) {
     const results = await Promise.all(
       searchData.data.slice(0, 20).map(async (plant) => {
         try {
-          // Fetch species details - use v2 endpoint
+          console.log(`[API] Fetching details for ${plant.id}...`);
+          
+          // Fetch species details
           const detailRes = await fetch(
             `https://perenual.com/api/v2/species/details/${plant.id}?key=${PERENUAL_KEY}`
           );
+          
+          if (!detailRes.ok) {
+            console.warn(`[API] Details failed for ${plant.id}: ${detailRes.status}`);
+            return null;
+          }
+          
           const details = await detailRes.json();
+          console.log(`[API] Details for ${plant.id}:`, {
+            cycle: details.cycle,
+            hardiness: details.hardiness,
+            sunlight: details.sunlight,
+            watering: details.watering,
+            maintenance: details.maintenance,
+            growth_rate: details.growth_rate,
+            care_level: details.care_level,
+          });
 
-          // FETCH CARE GUIDES - try the correct endpoint
+          // Fetch care guides
           let guideData = {};
           try {
             const guideRes = await fetch(
               `https://perenual.com/api/species-care-guide-list?species_id=${plant.id}&key=${PERENUAL_KEY}`
             );
-            const guideResponse = await guideRes.json();
             
-            console.log(`Guide response for ${plant.id}:`, guideResponse);
-            
-            // Extract guides by type from the correct structure
-            if (guideResponse.data && Array.isArray(guideResponse.data)) {
-              guideResponse.data.forEach(guide => {
-                if (guide.section && Array.isArray(guide.section)) {
-                  guide.section.forEach(section => {
-                    guideData[section.type?.toLowerCase()] = section.description || '';
-                  });
-                }
-              });
+            if (guideRes.ok) {
+              const guideResponse = await guideRes.json();
+              if (guideResponse.data && Array.isArray(guideResponse.data)) {
+                guideResponse.data.forEach(guide => {
+                  if (guide.section && Array.isArray(guide.section)) {
+                    guide.section.forEach(section => {
+                      guideData[section.type?.toLowerCase()] = section.description || '';
+                    });
+                  }
+                });
+              }
             }
           } catch (err) {
-            console.warn(`Could not fetch guides for ${plant.id}:`, err.message);
+            console.warn(`[API] Guides failed for ${plant.id}`);
           }
 
-          // Extract care info
+          // Calculate watering days from watering description
           const watering = details.watering || 'regularly';
-          const wateringDays = watering.includes('daily')
-            ? 1
-            : watering.includes('week')
-            ? 7
-            : watering.includes('month')
-            ? 30
-            : 7;
+          let wateringDays = 7;
+          if (watering.toLowerCase().includes('daily')) wateringDays = 1;
+          else if (watering.toLowerCase().includes('weekly')) wateringDays = 7;
+          else if (watering.toLowerCase().includes('biweekly')) wateringDays = 14;
+          else if (watering.toLowerCase().includes('monthly')) wateringDays = 30;
 
-          // Extract all relevant home-growing details
-          const careGuides = guideData;
-
-          // Extract care tags (with lucide icon names for display)
+          // Map care tags
           const careTags = [];
-          if (details.care_tags && details.care_tags.length > 0) {
+          if (details.care_tags && Array.isArray(details.care_tags)) {
             details.care_tags.forEach(tag => {
               careTags.push({
                 name: tag.name,
@@ -79,76 +99,73 @@ export default async function handler(req, res) {
             });
           }
 
-          console.log(`Plant ${plant.id} (${plant.common_name}):`, {
-            guides: Object.keys(careGuides),
-            tags: careTags.length,
-            sunlight: details.sunlight,
-            cycle: details.cycle,
-            maintenance: details.maintenance,
-          });
-
-          return {
+          const result = {
+            // Basic info
             id: plant.id,
-            name: plant.common_name || plant.scientific_name?.[0] || 'Unknown',
-            scientific_name: (Array.isArray(details.scientific_name) ? details.scientific_name[0] : details.scientific_name) || '',
-            wateringDays,
-            watering_description: watering,
-            watering_guide: careGuides.watering || '',
-            sunlight: details.sunlight || ['indirect'],
-            sunlight_guide: careGuides.sunlight || '',
-            pruning_guide: careGuides.pruning || '',
+            name: plant.common_name || 'Unknown',
+            scientific_name: Array.isArray(details.scientific_name) 
+              ? details.scientific_name[0] 
+              : details.scientific_name || '',
             
-            // Home-growing relevant details
+            // Watering
+            wateringDays,
+            watering: details.watering || '',
+            watering_guide: guideData.watering || '',
+            
+            // Sunlight
+            sunlight: details.sunlight || 'indirect',
+            sunlight_guide: guideData.sunlight || '',
+            
+            // EXACT data from Perenual - Home growing relevant
             cycle: details.cycle || '',
+            hardiness: details.hardiness || {},
+            sun: details.sun || '',
             maintenance: details.maintenance || '',
             care_level: details.care_level || '',
             growth_rate: details.growth_rate || '',
-            drought_tolerant: details.drought_tolerant === 1,
-            salt_tolerant: details.salt_tolerant === 1,
-            indoor: details.indoor === 1,
             flowers: details.flowers === 1,
             flowering_season: details.flowering_season || '',
+            fruits: details.fruits === 1,
+            leaf: details.leaf === 1,
             
-            // Hardiness
-            hardiness: details.hardiness || {},
-            
-            // Soil info
-            soil: details.soil || [],
+            // Tolerances
+            drought_tolerant: details.drought_tolerant === 1,
+            salt_tolerant: details.salt_tolerant === 1,
             
             // Safety
             toxicity: details.poisonous_to_humans ? '⚠️ Toxic to humans' : '✓ Safe',
             toxicity_pets: details.poisonous_to_pets ? '⚠️ Toxic to pets' : '✓ Safe for pets',
             
-            // Description
+            // Other
+            soil: details.soil || [],
             description: details.description || '',
             image_url: details.default_image?.medium_url || '',
             
-            // All guides
-            care_guides: careGuides,
+            // Guides & tags
+            care_guides: guideData,
             care_tags: careTags,
           };
+
+          console.log(`[API] Returning plant ${plant.id} with data:`, result);
+          return result;
         } catch (err) {
-          console.error(`Error fetching details for ${plant.id}:`, err.message);
-          return {
-            id: plant.id,
-            name: plant.common_name || 'Unknown',
-            wateringDays: 7,
-            sunlight: ['indirect'],
-            care_tags: [],
-            care_guides: {},
-          };
+          console.error(`[API] Error processing ${plant.id}:`, err.message);
+          return null;
         }
       })
     );
 
-    return res.status(200).json({ data: results });
+    // Filter out null results
+    const validResults = results.filter(r => r !== null);
+    console.log(`[API] Returning ${validResults.length} valid plants`);
+    
+    return res.status(200).json({ data: validResults });
   } catch (error) {
-    console.error('Perenual API error:', error);
-    return res.status(500).json({ error: 'Failed to fetch plant data' });
+    console.error('[API] Fatal error:', error.message);
+    return res.status(500).json({ error: error.message });
   }
 }
 
-// Helper function to map care tag names to lucide icon names
 function getLucideIconForTag(tagName) {
   const tagIcons = {
     'water': 'droplet',
@@ -187,5 +204,5 @@ function getLucideIconForTag(tagName) {
       return iconName;
     }
   }
-  return 'sparkles'; // Default icon
+  return 'sparkles';
 }
