@@ -4152,7 +4152,7 @@ export default function CompleteSharedLifeDashboard() {
 
           <div>
             <label style={{ fontSize: '14px', color: '#666', marginBottom: '8px', display: 'block' }}>Date</label>
-            <input type="date" value={newExpenseDate} onChange={(e) => setNewExpenseDate(e.target.value)} style={{ width: '100%', height: '48px', minHeight: '48px', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '0 12px', color: '#fff', fontSize: '16px', boxSizing: 'border-box', display: 'flex', alignItems: 'center', colorScheme: 'dark' }} />
+            <input type="date" value={newExpenseDate} onChange={(e) => setNewExpenseDate(e.target.value)} style={{ width: '100%', minWidth: 0, maxWidth: '100%', height: '48px', minHeight: '48px', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '0 12px', color: '#fff', fontSize: '16px', boxSizing: 'border-box', display: 'block', colorScheme: 'dark' }} />
           </div>
 
           <div>
@@ -4276,12 +4276,12 @@ export default function CompleteSharedLifeDashboard() {
           
           <div>
             <label style={{ fontSize: '12px', color: '#666', marginBottom: '6px', display: 'block' }}>Start date</label>
-            <input type="date" value={newTravelStart} onChange={(e) => setNewTravelStart(e.target.value)} style={{ width: '100%', height: '48px', minHeight: '48px', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '0 12px', color: '#fff', fontSize: '16px', boxSizing: 'border-box', display: 'flex', alignItems: 'center', colorScheme: 'dark' }} />
+            <input type="date" value={newTravelStart} onChange={(e) => setNewTravelStart(e.target.value)} style={{ width: '100%', minWidth: 0, maxWidth: '100%', height: '48px', minHeight: '48px', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '0 12px', color: '#fff', fontSize: '16px', boxSizing: 'border-box', display: 'block', colorScheme: 'dark' }} />
           </div>
 
           <div>
             <label style={{ fontSize: '12px', color: '#666', marginBottom: '6px', display: 'block' }}>End date</label>
-            <input type="date" value={newTravelEnd} onChange={(e) => setNewTravelEnd(e.target.value)} style={{ width: '100%', height: '48px', minHeight: '48px', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '0 12px', color: '#fff', fontSize: '16px', boxSizing: 'border-box', display: 'flex', alignItems: 'center', colorScheme: 'dark' }} />
+            <input type="date" value={newTravelEnd} onChange={(e) => setNewTravelEnd(e.target.value)} style={{ width: '100%', minWidth: 0, maxWidth: '100%', height: '48px', minHeight: '48px', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '0 12px', color: '#fff', fontSize: '16px', boxSizing: 'border-box', display: 'block', colorScheme: 'dark' }} />
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
