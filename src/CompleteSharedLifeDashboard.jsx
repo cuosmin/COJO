@@ -3057,11 +3057,17 @@ export default function CompleteSharedLifeDashboard() {
                 <Edit2 size={18} /> Edit
               </button>
               <button
-                onClick={() => {
-                  const updated = plants.filter(p => p.id !== selectedPlantDetail.id);
-                  setPlants(updated);
-                  ref(database, `shared-data/default/plants/${selectedPlantDetail.id}`).set(null);
-                  setShowPlantDetail(false);
+                onClick={async () => {
+                  try {
+                    // Delete from Firebase first
+                    await ref(database, `shared-data/default/plants/${selectedPlantDetail.id}`).set(null);
+                    // Then update local state
+                    const updated = plants.filter(p => p.id !== selectedPlantDetail.id);
+                    setPlants(updated);
+                    setShowPlantDetail(false);
+                  } catch (error) {
+                    console.error('Error deleting plant:', error);
+                  }
                 }}
                 style={{
                   background: '#ff3b30',
@@ -3510,11 +3516,11 @@ export default function CompleteSharedLifeDashboard() {
                     setShowRecipeDetail(false);
                   }}
                   style={{
-                    background: 'rgba(255, 59, 48, 0.2)',
-                    border: '1px solid rgba(255, 59, 48, 0.3)',
+                    background: '#ff3b30',
+                    border: 'none',
                     borderRadius: '12px',
                     padding: '14px',
-                    color: '#ff3b30',
+                    color: '#fff',
                     cursor: 'pointer',
                     fontSize: '16px',
                     fontWeight: '600',
@@ -3609,21 +3615,25 @@ export default function CompleteSharedLifeDashboard() {
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             <button onClick={addPlant} style={{ background: ACCENT_COLOR, border: 'none', borderRadius: '12px', padding: '14px', color: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-              <Leaf size={20} /> Edit
+              <Leaf size={20} /> {editingPlantId ? 'Update' : 'Add'}
             </button>
-            {editingId && (
-              <button onClick={() => { 
-                ref(database, `shared-data/default/plants/${editingId}`).set(null);
-                const updated = plants.filter(p => p.id !== editingId);
-                setPlants(updated);
-                resetModal(); 
+            {editingPlantId && (
+              <button onClick={async () => { 
+                try {
+                  await ref(database, `shared-data/default/plants/${editingPlantId}`).set(null);
+                  const updated = plants.filter(p => p.id !== editingPlantId);
+                  setPlants(updated);
+                  setEditingPlantId(null);
+                  setNewPlantName('');
+                  setNewPlantType('');
+                  setNewPlantLocation('Living Room');
+                  setNewPlantPhoto(null);
+                  setShowPlantLibrary(false);
+                } catch (error) {
+                  console.error('Error deleting plant:', error);
+                }
               }} style={{ background: '#ff3b30', border: 'none', borderRadius: '12px', padding: '14px', color: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
                 <X size={20} /> Delete
-              </button>
-            )}
-            {!editingId && (
-              <button onClick={addPlant} style={{ background: ACCENT_COLOR, border: 'none', borderRadius: '12px', padding: '14px', color: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', gridColumn: '1 / -1' }}>
-                <Leaf size={20} /> Add Plant
               </button>
             )}
           </div>
