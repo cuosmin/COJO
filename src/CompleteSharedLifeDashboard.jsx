@@ -472,26 +472,43 @@ export default function CompleteSharedLifeDashboard() {
     }
   };
 
-  // 🌱 WEATHER API - fetch Paris weather
+  // 🌱 WEATHER API - fetch Paris weather (Open-Meteo: free, no API key needed)
   const fetchWeather = async () => {
     try {
       const response = await axios.get(
-        'https://api.openweathermap.org/data/2.5/weather',
+        'https://api.open-meteo.com/v1/forecast',
         {
           params: {
-            q: 'Paris,FR',
-            appid: 'c0e0b27da88f67c2f2d9b82f5c80a9e5',
-            units: 'metric',
+            latitude: 48.8566,
+            longitude: 2.3522,
+            current: 'temperature_2m,relative_humidity_2m,precipitation,weather_code',
+            daily: 'temperature_2m_max,temperature_2m_min',
+            timezone: 'Europe/Paris',
+            forecast_days: 1,
           },
         }
       );
+      
+      // WMO weather code → description
+      const weatherDescriptions = {
+        0: 'clear sky', 1: 'mainly clear', 2: 'partly cloudy', 3: 'overcast',
+        45: 'fog', 48: 'fog', 51: 'light drizzle', 53: 'drizzle', 55: 'heavy drizzle',
+        61: 'light rain', 63: 'rain', 65: 'heavy rain', 66: 'freezing rain', 67: 'freezing rain',
+        71: 'light snow', 73: 'snow', 75: 'heavy snow', 77: 'snow grains',
+        80: 'light showers', 81: 'showers', 82: 'heavy showers',
+        85: 'snow showers', 86: 'snow showers', 95: 'thunderstorm', 96: 'thunderstorm', 99: 'thunderstorm',
+      };
+      
+      const current = response.data.current;
       setWeatherData({
-        temp: response.data.main.temp,
-        humidity: response.data.main.humidity,
-        description: response.data.weather[0].description,
-        rain: response.data.rain?.['1h'] || 0,
+        temp: current.temperature_2m,
+        tempMax: response.data.daily?.temperature_2m_max?.[0],
+        tempMin: response.data.daily?.temperature_2m_min?.[0],
+        humidity: current.relative_humidity_2m,
+        description: weatherDescriptions[current.weather_code] || 'unknown',
+        rain: current.precipitation || 0,
       });
-      console.log('✅ Weather fetched:', response.data.main);
+      console.log('✅ Weather fetched:', current);
     } catch (error) {
       console.error('Weather API error:', error);
     }
@@ -1418,6 +1435,71 @@ export default function CompleteSharedLifeDashboard() {
               <Plus size={18} /> Add
             </button>
           </div>
+
+          {/* WEATHER CARD - Paris conditions for your plants */}
+          {weatherData && (
+            <div style={{ padding: '0 20px', marginBottom: '20px' }}>
+              <div style={{
+                background: 'linear-gradient(135deg, rgba(18, 52, 255, 0.12) 0%, rgba(0, 0, 0, 0.6) 100%)',
+                border: '1px solid rgba(18, 52, 255, 0.15)',
+                borderRadius: '16px',
+                padding: '16px 20px',
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  {/* Left: temp + description */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                    {weatherData.rain > 0 ? <Cloud size={32} color={ACCENT_COLOR} /> : weatherData.temp >= 25 ? <Sun size={32} color="#ff9500" /> : <Sun size={32} color={ACCENT_COLOR} />}
+                    <div>
+                      <div style={{ fontSize: '24px', fontWeight: '700', color: '#fff' }}>{Math.round(weatherData.temp)}°C</div>
+                      <div style={{ fontSize: '12px', color: '#999', textTransform: 'capitalize' }}>Paris · {weatherData.description}</div>
+                    </div>
+                  </div>
+                  {/* Right: humidity + min/max */}
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: '13px', color: '#ccc', display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'flex-end' }}>
+                      <Wind size={13} color={ACCENT_COLOR} /> {weatherData.humidity}% humidity
+                    </div>
+                    {weatherData.tempMax !== undefined && (
+                      <div style={{ fontSize: '12px', color: '#999', marginTop: '4px' }}>
+                        H: {Math.round(weatherData.tempMax)}° L: {Math.round(weatherData.tempMin)}°
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Plant care hint based on conditions */}
+                {(() => {
+                  let hint = null;
+                  if (weatherData.tempMax >= 30) {
+                    hint = { icon: '🌡️', text: 'Very hot today — move balcony plants to shade and check soil moisture.', color: '#ff9500' };
+                  } else if (weatherData.rain > 0) {
+                    hint = { icon: '🌧️', text: 'Rain today — outdoor plants may not need watering.', color: '#5AC8FA' };
+                  } else if (weatherData.humidity < 40) {
+                    hint = { icon: '💨', text: 'Dry air — indoor plants may appreciate misting or extra water.', color: '#ff9500' };
+                  } else if (weatherData.temp <= 5) {
+                    hint = { icon: '❄️', text: 'Cold outside — protect or bring in sensitive balcony plants.', color: '#5AC8FA' };
+                  }
+                  
+                  if (!hint) return null;
+                  return (
+                    <div style={{
+                      marginTop: '12px',
+                      paddingTop: '12px',
+                      borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+                      fontSize: '13px',
+                      color: hint.color,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                    }}>
+                      <span>{hint.icon}</span>
+                      <span>{hint.text}</span>
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+          )}
 
           {/* PLANTS GRID */}
           <div style={{ flex: 1, overflowY: 'auto', padding: '0 20px 20px' }}>
