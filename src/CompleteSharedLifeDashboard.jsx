@@ -10,6 +10,7 @@ import { auth } from './firebaseConfig';
 import { signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
 import { ref, onValue, set } from 'firebase/database';
 import { getDatabase } from 'firebase/database';
+import axios from 'axios';
 
 const provider = new GoogleAuthProvider();
 const database = getDatabase();
@@ -30,6 +31,106 @@ const TRAVEL_CATEGORIES = [
   { name: 'Business', color: '#1234ff', icon: Briefcase },
   { name: 'Holiday', color: '#34c759', icon: Palmtree },
 ];
+
+// 🌱 COMPREHENSIVE PLANT DATABASE
+const PLANT_DATABASE = {
+  'peace-lily': {
+    name: 'Peace Lily',
+    image: 'https://images.unsplash.com/photo-1614730321146-b6fa6a46bcb4?w=400',
+    wateringDaysMin: 5,
+    wateringDaysMax: 7,
+    light: 'Low to Medium',
+    humidity: 'High',
+    difficulty: 'Easy',
+    description: 'Graceful plant with white flowers, perfect for low-light spaces.',
+    fertilizeFrequency: 30,
+    bloomSeason: 'Spring',
+  },
+  'snake-plant': {
+    name: 'Snake Plant',
+    image: 'https://images.unsplash.com/photo-1608767221051-8ce9baddc3a9?w=400',
+    wateringDaysMin: 14,
+    wateringDaysMax: 21,
+    light: 'Low to High',
+    humidity: 'Low',
+    difficulty: 'Very Easy',
+    description: 'Nearly indestructible plant, great for beginners.',
+    fertilizeFrequency: 60,
+    bloomSeason: 'Summer',
+  },
+  'monstera': {
+    name: 'Monstera Deliciosa',
+    image: 'https://images.unsplash.com/photo-1523694159952-900d2e6f3cpg?w=400',
+    wateringDaysMin: 7,
+    wateringDaysMax: 10,
+    light: 'Bright Indirect',
+    humidity: 'Medium',
+    difficulty: 'Easy',
+    description: 'Trendy plant with iconic split leaves.',
+    fertilizeFrequency: 30,
+    bloomSeason: 'Spring',
+  },
+  'pothos': {
+    name: 'Pothos',
+    image: 'https://images.unsplash.com/photo-1599599810694-e5a0b594f7ab?w=400',
+    wateringDaysMin: 7,
+    wateringDaysMax: 10,
+    light: 'Low to Medium',
+    humidity: 'Medium',
+    difficulty: 'Very Easy',
+    description: 'Cascading vine, perfect for hanging baskets.',
+    fertilizeFrequency: 30,
+    bloomSeason: 'Summer',
+  },
+  'fiddle-leaf': {
+    name: 'Fiddle Leaf Fig',
+    image: 'https://images.unsplash.com/photo-1545241047-d71222147293?w=400',
+    wateringDaysMin: 7,
+    wateringDaysMax: 10,
+    light: 'Bright Indirect',
+    humidity: 'Medium',
+    difficulty: 'Medium',
+    description: 'Statement plant with large, violin-shaped leaves.',
+    fertilizeFrequency: 30,
+    bloomSeason: 'Spring',
+  },
+  'rubber-plant': {
+    name: 'Rubber Plant',
+    image: 'https://images.unsplash.com/photo-1585470881645-b727a5d674f5?w=400',
+    wateringDaysMin: 7,
+    wateringDaysMax: 10,
+    light: 'Bright Indirect',
+    humidity: 'Medium',
+    difficulty: 'Easy',
+    description: 'Bold plant with glossy leaves, great air purifier.',
+    fertilizeFrequency: 30,
+    bloomSeason: 'Summer',
+  },
+  'pothosquin': {
+    name: 'Pilea Peperomioides',
+    image: 'https://images.unsplash.com/photo-1638449386894-92d77bc17b73?w=400',
+    wateringDaysMin: 5,
+    wateringDaysMax: 7,
+    light: 'Bright Indirect',
+    humidity: 'Medium',
+    difficulty: 'Easy',
+    description: 'Cute coin-shaped leaves, Instagram favorite.',
+    fertilizeFrequency: 30,
+    bloomSeason: 'Spring',
+  },
+  'zz-plant': {
+    name: 'ZZ Plant',
+    image: 'https://images.unsplash.com/photo-1590826834476-e2b7eb1d8f9c?w=400',
+    wateringDaysMin: 10,
+    wateringDaysMax: 14,
+    light: 'Low to Medium',
+    humidity: 'Low',
+    difficulty: 'Very Easy',
+    description: 'Shiny leaflets, extremely tolerant.',
+    fertilizeFrequency: 45,
+    bloomSeason: 'Spring',
+  },
+};
 
 // Major cities for autocomplete
 const MAJOR_CITIES = [
