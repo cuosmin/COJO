@@ -3,9 +3,8 @@ import {
   Home, Leaf, UtensilsCrossed, Wallet, LogOut,
   X, Bell, Plus, Plane, Edit2, MapPin, Droplet, Archive, ChevronDown, Briefcase, Palmtree, Check,
   ShoppingCart as ShoppingBag, Heart, Wind, Smile, Clock, Shuffle, MessageCircle, Send,
-  Sun, Cloud, Moon, Flower, AlertTriangle, Calendar, Repeat, Zap, Sparkles,
+  Sun, Cloud, Moon, Flower, AlertTriangle, Calendar, Repeat, Zap, Sparkles, PawPrint,
 } from 'lucide-react';
-import { PawPrint as PawPrintIcon } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import LinkifyIt from 'linkify-it';
 import { auth } from './firebaseConfig';
@@ -1148,7 +1147,7 @@ export default function CompleteSharedLifeDashboard() {
           'zap': <Zap size={size} color={ACCENT_COLOR} />,
           'smile': <Smile size={size} color={ACCENT_COLOR} />,
           'sparkles': <Sparkles size={size} color={ACCENT_COLOR} />,
-          'paw-print': <PawPrintIcon size={size} color={ACCENT_COLOR} />,
+          'paw-print': <PawPrint size={size} color={ACCENT_COLOR} />,
         };
         return iconMap[iconName] || iconMap['sparkles'];
       };
