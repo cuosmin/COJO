@@ -3,6 +3,7 @@ import {
   Home, Leaf, UtensilsCrossed, Wallet, LogOut,
   X, Bell, Plus, Plane, Edit2, MapPin, Droplet, Archive, ChevronDown, Briefcase, Palmtree, Check,
   ShoppingCart as ShoppingBag, Heart, Wind, Smile, Clock, Shuffle, MessageCircle, Send,
+  Sun, Cloud, Moon, Flower, PawPrint, AlertTriangle, TrendingUp, Trees, Cactus, Calendar, Repeat, Zap, Sparkles,
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import LinkifyIt from 'linkify-it';
@@ -1128,6 +1129,31 @@ export default function CompleteSharedLifeDashboard() {
 
       const debounceTimer = React.useRef(null);
 
+      // Helper function to render lucide icons dynamically
+      const renderLucideIcon = (iconName, size = 20) => {
+        const iconMap = {
+          'Droplet': <Droplet size={size} color={ACCENT_COLOR} />,
+          'Sun': <Sun size={size} color={ACCENT_COLOR} />,
+          'Cloud': <Cloud size={size} color={ACCENT_COLOR} />,
+          'Moon': <Moon size={size} color={ACCENT_COLOR} />,
+          'Flower': <Flower size={size} color={ACCENT_COLOR} />,
+          'Wind': <Wind size={size} color={ACCENT_COLOR} />,
+          'PawPrint': <PawPrint size={size} color={ACCENT_COLOR} />,
+          'AlertTriangle': <AlertTriangle size={size} color={ACCENT_COLOR} />,
+          'Home': <Home size={size} color={ACCENT_COLOR} />,
+          'Leaf': <Leaf size={size} color={ACCENT_COLOR} />,
+          'TrendingUp': <TrendingUp size={size} color={ACCENT_COLOR} />,
+          'Trees': <Trees size={size} color={ACCENT_COLOR} />,
+          'Cactus': <Cactus size={size} color={ACCENT_COLOR} />,
+          'Calendar': <Calendar size={size} color={ACCENT_COLOR} />,
+          'Repeat': <Repeat size={size} color={ACCENT_COLOR} />,
+          'Zap': <Zap size={size} color={ACCENT_COLOR} />,
+          'Smile': <Smile size={size} color={ACCENT_COLOR} />,
+          'Sparkles': <Sparkles size={size} color={ACCENT_COLOR} />,
+        };
+        return iconMap[iconName] || iconMap['Sparkles'];
+      };
+
       // Search Perenual plants (with debounce)
       const searchPlants = async (query) => {
         if (debounceTimer.current) {
@@ -1400,6 +1426,29 @@ export default function CompleteSharedLifeDashboard() {
                       right: '20px',
                       zIndex: 5,
                     }}>
+                      {/* Care tags icons */}
+                      {plant.details?.care_tags && plant.details.care_tags.length > 0 && (
+                        <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
+                          {plant.details.care_tags.slice(0, 5).map((tag, idx) => (
+                            <div
+                              key={idx}
+                              title={tag.name}
+                              style={{
+                                background: 'rgba(255, 255, 255, 0.15)',
+                                borderRadius: '8px',
+                                width: '36px',
+                                height: '36px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                backdropFilter: 'blur(10px)',
+                              }}
+                            >
+                              {renderLucideIcon(tag.iconName, 20)}
+                            </div>
+                          ))}
+                        </div>
+                      )}
                       <h3 style={{ fontSize: '22px', fontWeight: '700', margin: 0, color: '#fff' }}>{plant.displayName || plant.name}</h3>
                       <p style={{ fontSize: '13px', color: '#ccc', margin: '6px 0 0' }}>{plant.location}</p>
                     </div>
@@ -1557,28 +1606,28 @@ export default function CompleteSharedLifeDashboard() {
                   {/* Detailed Care Guides */}
                   {selectedPlant.details && (
                     <div style={{ display: 'grid', gap: '20px' }}>
-                      {/* Sunlight Guide */}
-                      {selectedPlant.details.sunlight && (
+                      {/* Sunlight Guide - Prioritize detailed guide */}
+                      {(selectedPlant.details.sunlight_guide || selectedPlant.details.sunlight) && (
                         <div style={{ padding: '16px', background: 'rgba(255, 255, 255, 0.03)', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
                             <Wind size={18} color={ACCENT_COLOR} />
                             <h4 style={{ fontSize: '16px', fontWeight: '600', color: '#fff', margin: 0 }}>Sunlight</h4>
                           </div>
-                          <p style={{ fontSize: '14px', color: '#ccc', lineHeight: '1.6', margin: 0 }}>
-                            {Array.isArray(selectedPlant.details.sunlight) ? selectedPlant.details.sunlight.join(', ') : selectedPlant.details.sunlight}
+                          <p style={{ fontSize: '14px', color: '#ccc', lineHeight: '1.6', margin: 0, whiteSpace: 'pre-wrap' }}>
+                            {selectedPlant.details.sunlight_guide || (Array.isArray(selectedPlant.details.sunlight) ? selectedPlant.details.sunlight.join(', ') : selectedPlant.details.sunlight)}
                           </p>
                         </div>
                       )}
 
-                      {/* Watering Guide */}
-                      {selectedPlant.details.watering && (
+                      {/* Watering Guide - Prioritize detailed guide */}
+                      {(selectedPlant.details.watering_guide || selectedPlant.details.watering) && (
                         <div style={{ padding: '16px', background: 'rgba(255, 255, 255, 0.03)', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
                             <Droplet size={18} color={ACCENT_COLOR} />
                             <h4 style={{ fontSize: '16px', fontWeight: '600', color: '#fff', margin: 0 }}>Watering</h4>
                           </div>
-                          <p style={{ fontSize: '14px', color: '#ccc', lineHeight: '1.6', margin: 0 }}>
-                            {selectedPlant.details.watering}
+                          <p style={{ fontSize: '14px', color: '#ccc', lineHeight: '1.6', margin: 0, whiteSpace: 'pre-wrap' }}>
+                            {selectedPlant.details.watering_guide || selectedPlant.details.watering}
                           </p>
                         </div>
                       )}
@@ -1587,7 +1636,7 @@ export default function CompleteSharedLifeDashboard() {
                       {selectedPlant.details.description && (
                         <div style={{ padding: '16px', background: 'rgba(255, 255, 255, 0.03)', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
                           <h4 style={{ fontSize: '16px', fontWeight: '600', color: '#fff', margin: '0 0 12px 0' }}>Care Guide</h4>
-                          <p style={{ fontSize: '14px', color: '#ccc', lineHeight: '1.6', margin: 0 }}>
+                          <p style={{ fontSize: '14px', color: '#ccc', lineHeight: '1.6', margin: 0, whiteSpace: 'pre-wrap' }}>
                             {selectedPlant.details.description}
                           </p>
                         </div>
