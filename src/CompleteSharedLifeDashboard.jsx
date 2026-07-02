@@ -1421,6 +1421,32 @@ export default function CompleteSharedLifeDashboard() {
                       pointerEvents: 'none',
                     }} />
 
+                    {/* Watering Status Badge - Top Left */}
+                    {(() => {
+                      const lastWateredDate = new Date(plant.lastWatered);
+                      const daysSinceWatered = Math.floor((new Date() - lastWateredDate) / (1000 * 60 * 60 * 24));
+                      const needsWatering = daysSinceWatered > plant.wateringDays;
+                      
+                      return (
+                        <div style={{
+                          position: 'absolute',
+                          top: '12px',
+                          left: '12px',
+                          zIndex: 10,
+                          background: needsWatering ? 'rgba(255, 87, 34, 0.9)' : 'rgba(76, 175, 80, 0.9)',
+                          backdropFilter: 'blur(10px)',
+                          padding: '6px 12px',
+                          borderRadius: '20px',
+                          fontSize: '12px',
+                          fontWeight: '600',
+                          color: '#fff',
+                          border: needsWatering ? '1px solid rgba(255, 87, 34, 0.5)' : '1px solid rgba(76, 175, 80, 0.5)',
+                        }}>
+                          {needsWatering ? '💧 Needs watering' : '✓ Healthy'}
+                        </div>
+                      );
+                    })()}
+
                     {/* Plant info (bottom) */}
                     <div style={{
                       position: 'absolute',
