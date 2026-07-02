@@ -2732,7 +2732,7 @@ export default function CompleteSharedLifeDashboard() {
                       setShowRecipeDetail(true);
                     }}
                     style={{
-                      backgroundImage: `url(${meal.photo}?w=400&h=300&fit=crop)`,
+                      backgroundImage: `url(${meal.photo}?w=800&h=600&fit=crop&q=90)`,
                       backgroundSize: 'cover',
                       backgroundPosition: 'center',
                       borderRadius: '16px',
@@ -2818,16 +2818,14 @@ export default function CompleteSharedLifeDashboard() {
                     
                     {/* Content (bottom) */}
                     <div style={{
-                      position: 'relative',
+                      position: 'absolute',
+                      bottom: '20px',
+                      left: '20px',
+                      right: '20px',
                       zIndex: 1,
-                      padding: '12px',
-                      minHeight: '240px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'flex-end',
-                      height: '100%',
                     }}>
-                      <h3 style={{ fontSize: '16px', fontWeight: '600', margin: 0, color: '#fff' }}>{meal.name}</h3>
+                      <h3 style={{ fontSize: '22px', fontWeight: '700', margin: 0, color: '#fff' }}>{meal.name}</h3>
+                      {meal.cuisine && <p style={{ fontSize: '13px', color: '#ccc', margin: '6px 0 0' }}>{meal.cuisine}</p>}
                     </div>
                   </div>
                 ))}
