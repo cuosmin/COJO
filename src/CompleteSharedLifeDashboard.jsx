@@ -1432,24 +1432,38 @@ export default function CompleteSharedLifeDashboard() {
                       {/* Care tags icons */}
                       {plant.details?.care_tags && plant.details.care_tags.length > 0 && (
                         <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
-                          {plant.details.care_tags.slice(0, 5).map((tag, idx) => (
-                            <div
-                              key={idx}
-                              title={tag.name}
-                              style={{
-                                background: 'rgba(255, 255, 255, 0.15)',
-                                borderRadius: '8px',
-                                width: '36px',
-                                height: '36px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                backdropFilter: 'blur(10px)',
-                              }}
-                            >
-                              {renderLucideIcon(tag.iconName, 20)}
-                            </div>
-                          ))}
+                          {plant.details.care_tags.slice(0, 5).map((tag, idx) => {
+                            // Color mapping for tags
+                            const tagColorMap = {
+                              'droplet': { bg: 'rgba(15, 200, 190, 0.2)', border: 'rgba(15, 200, 190, 0.5)' },
+                              'sun': { bg: 'rgba(255, 152, 0, 0.2)', border: 'rgba(255, 152, 0, 0.5)' },
+                              'flower': { bg: 'rgba(233, 30, 99, 0.2)', border: 'rgba(233, 30, 99, 0.5)' },
+                              'heart': { bg: 'rgba(76, 175, 80, 0.2)', border: 'rgba(76, 175, 80, 0.5)' },
+                              'alert-triangle': { bg: 'rgba(156, 39, 176, 0.2)', border: 'rgba(156, 39, 176, 0.5)' },
+                              'home': { bg: 'rgba(158, 158, 158, 0.2)', border: 'rgba(158, 158, 158, 0.5)' },
+                            };
+                            const colors = tagColorMap[tag.iconName] || { bg: 'rgba(255, 255, 255, 0.1)', border: 'rgba(255, 255, 255, 0.3)' };
+                            
+                            return (
+                              <div
+                                key={idx}
+                                title={tag.name}
+                                style={{
+                                  background: colors.bg,
+                                  border: `1px solid ${colors.border}`,
+                                  borderRadius: '8px',
+                                  width: '36px',
+                                  height: '36px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  backdropFilter: 'blur(10px)',
+                                }}
+                              >
+                                {renderLucideIcon(tag.iconName, 18)}
+                              </div>
+                            );
+                          })}
                         </div>
                       )}
                       <h3 style={{ fontSize: '22px', fontWeight: '700', margin: 0, color: '#fff' }}>{plant.displayName || plant.name}</h3>
@@ -1609,31 +1623,27 @@ export default function CompleteSharedLifeDashboard() {
                   {/* Detailed Care Guides */}
                   {selectedPlant.details && (
                     <div style={{ display: 'grid', gap: '20px' }}>
-                      {/* Sunlight Guide - Check care_guides object */}
-                      {(selectedPlant.details.care_guides?.sunlight || selectedPlant.details.sunlight_guide || selectedPlant.details.sunlight) && (
-                        <div style={{ padding: '16px', background: 'rgba(255, 255, 255, 0.03)', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                            <Sun size={18} color={ACCENT_COLOR} />
-                            <h4 style={{ fontSize: '16px', fontWeight: '600', color: '#fff', margin: 0 }}>Sunlight</h4>
-                          </div>
-                          <p style={{ fontSize: '14px', color: '#ccc', lineHeight: '1.6', margin: 0, whiteSpace: 'pre-wrap' }}>
-                            {selectedPlant.details.care_guides?.sunlight || selectedPlant.details.sunlight_guide || (Array.isArray(selectedPlant.details.sunlight) ? selectedPlant.details.sunlight.join(', ') : selectedPlant.details.sunlight)}
-                          </p>
+                      {/* Sunlight Guide */}
+                      <div style={{ padding: '16px', background: 'rgba(255, 255, 255, 0.03)', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                          <Sun size={18} color={ACCENT_COLOR} />
+                          <h4 style={{ fontSize: '16px', fontWeight: '600', color: '#fff', margin: 0 }}>Sunlight</h4>
                         </div>
-                      )}
+                        <p style={{ fontSize: '14px', color: '#ccc', lineHeight: '1.6', margin: 0, whiteSpace: 'pre-wrap' }}>
+                          {selectedPlant.details.care_guides?.sunlight || selectedPlant.details.sunlight_guide || (Array.isArray(selectedPlant.details.sunlight) ? selectedPlant.details.sunlight.join(', ') : selectedPlant.details.sunlight) || 'indirect'}
+                        </p>
+                      </div>
 
-                      {/* Watering Guide - Check care_guides object */}
-                      {(selectedPlant.details.care_guides?.watering || selectedPlant.details.watering_guide || selectedPlant.details.watering) && (
-                        <div style={{ padding: '16px', background: 'rgba(255, 255, 255, 0.03)', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                            <Droplet size={18} color={ACCENT_COLOR} />
-                            <h4 style={{ fontSize: '16px', fontWeight: '600', color: '#fff', margin: 0 }}>Watering</h4>
-                          </div>
-                          <p style={{ fontSize: '14px', color: '#ccc', lineHeight: '1.6', margin: 0, whiteSpace: 'pre-wrap' }}>
-                            {selectedPlant.details.care_guides?.watering || selectedPlant.details.watering_guide || selectedPlant.details.watering}
-                          </p>
+                      {/* Watering Guide */}
+                      <div style={{ padding: '16px', background: 'rgba(255, 255, 255, 0.03)', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                          <Droplet size={18} color={ACCENT_COLOR} />
+                          <h4 style={{ fontSize: '16px', fontWeight: '600', color: '#fff', margin: 0 }}>Watering</h4>
                         </div>
-                      )}
+                        <p style={{ fontSize: '14px', color: '#ccc', lineHeight: '1.6', margin: 0, whiteSpace: 'pre-wrap' }}>
+                          {selectedPlant.details.care_guides?.watering || selectedPlant.details.watering_guide || selectedPlant.details.watering || 'regularly'}
+                        </p>
+                      </div>
 
                       {/* General Description/Guide */}
                       {selectedPlant.details.description && (
