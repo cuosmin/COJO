@@ -11,9 +11,9 @@ export default async function handler(req, res) {
   const PERENUAL_KEY = process.env.PERENUAL_API_KEY;
 
   try {
-    // Search species list
+    // Search species list - use v2 endpoint
     const searchRes = await fetch(
-      `https://perenual.com/api/species-list?q=${encodeURIComponent(query)}&key=${PERENUAL_KEY}`
+      `https://perenual.com/api/v2/species-list?q=${encodeURIComponent(query)}&key=${PERENUAL_KEY}`
     );
     const searchData = await searchRes.json();
 
@@ -25,9 +25,9 @@ export default async function handler(req, res) {
     const results = await Promise.all(
       searchData.data.slice(0, 20).map(async (plant) => {
         try {
-          // Fetch species details
+          // Fetch species details - use v2 endpoint
           const detailRes = await fetch(
-            `https://perenual.com/api/species/details/${plant.id}?key=${PERENUAL_KEY}`
+            `https://perenual.com/api/v2/species/details/${plant.id}?key=${PERENUAL_KEY}`
           );
           const details = await detailRes.json();
 
