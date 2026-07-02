@@ -1199,8 +1199,14 @@ export default function CompleteSharedLifeDashboard() {
       // Save plant to Firebase
       const savePlant = async (e) => {
         e?.preventDefault();
+        console.log('=== SAVE PLANT START ===');
+        console.log('currentUser:', currentUser?.uid);
+        console.log('database:', !!database);
+        console.log('plantName:', newPlantName);
+        console.log('plantPhoto:', !!newPlantPhoto);
       
         if (!newPlantName || !newPlantPhoto || !database || !currentUser) {
+          console.error('Missing required fields');
           alert('Plant name and photo are required');
           return;
         }
@@ -1219,21 +1225,28 @@ export default function CompleteSharedLifeDashboard() {
         };
 
         try {
-          console.log('Saving plant:', plantData);
-          await set(ref(database, `shared-data/default/plants/${plantData.id}`), plantData);
+          console.log('Saving plant data:', plantData);
+          const dbPath = `shared-data/default/plants/${plantData.id}`;
+          console.log('Firebase path:', dbPath);
+          
+          await set(ref(database, dbPath), plantData);
+          console.log('Firebase write successful');
         
           if (editingPlantId) {
+            console.log('Updating existing plant in state');
             setPlants(plants.map(p => p.id === editingPlantId ? plantData : p));
           } else {
+            console.log('Adding new plant to state');
             setPlants([...plants, plantData]);
           }
         
-          console.log('Plant saved successfully');
+          console.log('Plant saved successfully ✅');
           resetForm();
           setShowAddModal(false);
           setShowPlantDetail(false);
         } catch (error) {
-          console.error('Error saving plant:', error);
+          console.error('❌ Error saving plant:', error);
+          console.error('Error details:', error.message, error.code);
           alert('Error saving plant: ' + error.message);
         }
       };
@@ -1306,6 +1319,13 @@ export default function CompleteSharedLifeDashboard() {
         setSelectedPlantDetails(plant.details || null);
         setShowPlantDetail(false);
         setShowAddModal(true);
+
+        // Auto-fetch details if missing
+        if (!plant.details && (plant.name || plant.type)) {
+          const searchTerm = plant.name || plant.type;
+          console.log('Auto-fetching details for:', searchTerm);
+          searchPlants(searchTerm);
+        }
       };
 
       return (
@@ -1869,43 +1889,63 @@ export default function CompleteSharedLifeDashboard() {
                 )}
               </div>
 
-              {/* Save Button */}
-              <button
-                onClick={savePlant}
-                style={{
-                  width: '100%',
-                  background: ACCENT_COLOR,
-                  border: 'none',
-                  borderRadius: '12px',
-                  padding: '12px',
-                  color: '#fff',
-                  cursor: 'pointer',
-                  fontSize: '16px',
-                  fontWeight: '600',
-                  height: '48px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  marginBottom: editingPlantId ? '12px' : '0',
-                }}
-              >
-                <Check size={20} /> Save
-              </button>
+              {/* Save & Delete Buttons */}
+              {editingPlantId ? (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <button
+                    onClick={savePlant}
+                    style={{
+                      background: ACCENT_COLOR,
+                      border: 'none',
+                      borderRadius: '12px',
+                      padding: '12px',
+                      color: '#fff',
+                      cursor: 'pointer',
+                      fontSize: '16px',
+                      fontWeight: '600',
+                      height: '48px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                    }}
+                  >
+                    <Check size={20} /> Save
+                  </button>
 
-              {/* Delete Button (if editing) */}
-              {editingPlantId && (
+                  <button
+                    onClick={() => {
+                      if (window.confirm('Delete this plant?')) {
+                        deletePlant(editingPlantId);
+                        resetForm();
+                        setShowAddModal(false);
+                      }
+                    }}
+                    style={{
+                      background: '#ff3b30',
+                      border: 'none',
+                      borderRadius: '12px',
+                      padding: '12px',
+                      color: '#fff',
+                      cursor: 'pointer',
+                      fontSize: '16px',
+                      fontWeight: '600',
+                      height: '48px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                    }}
+                  >
+                    <X size={20} /> Delete
+                  </button>
+                </div>
+              ) : (
                 <button
-                  onClick={() => {
-                    if (window.confirm('Delete this plant?')) {
-                      deletePlant(editingPlantId);
-                      resetForm();
-                      setShowAddModal(false);
-                    }
-                  }}
+                  onClick={savePlant}
                   style={{
                     width: '100%',
-                    background: '#ff3b30',
+                    background: ACCENT_COLOR,
                     border: 'none',
                     borderRadius: '12px',
                     padding: '12px',
@@ -1920,7 +1960,7 @@ export default function CompleteSharedLifeDashboard() {
                     gap: '8px',
                   }}
                 >
-                  <X size={20} /> Delete
+                  <Check size={20} /> Save
                 </button>
               )}
             </AddModal>
