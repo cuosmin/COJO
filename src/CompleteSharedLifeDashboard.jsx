@@ -1119,19 +1119,26 @@ export default function CompleteSharedLifeDashboard() {
     const [newPlantPhoto, setNewPlantPhoto] = useState(null);
     const [wateringDays, setWateringDays] = useState(7);
     const [lastWatered, setLastWatered] = useState(new Date().toISOString().split('T')[0]);
-    const [newPlantSunlight, setNewPlantSunlight] = useState('indirect');
-    const [newPlantTempMin, setNewPlantTempMin] = useState(15);
-    const [newPlantTempMax, setNewPlantTempMax] = useState(27);
-    const [newPlantToxicity, setNewPlantToxicity] = useState('Safe');
     
     const [searchQuery, setSearchQuery] = useState('');
     const [perenualResults, setPerenualResults] = useState([]);
     const [showPlantSearch, setShowPlantSearch] = useState(false);
+    
     const [unsplashResults, setUnsplashResults] = useState([]);
 
-    // Search plants via serverless API (secure, no API key in frontend)
+    const PLANT_DB = [
+      { id: 'peace-lily', name: 'Peace Lily', wateringDays: 7, humidity: 'high', sun: 'indirect', tempMin: 16, tempMax: 29 },
+      { id: 'snake-plant', name: 'Snake Plant', wateringDays: 14, humidity: 'low', sun: 'any', tempMin: 16, tempMax: 24 },
+      { id: 'monstera', name: 'Monstera Deliciosa', wateringDays: 7, humidity: 'medium', sun: 'indirect', tempMin: 15, tempMax: 27 },
+      { id: 'pothos', name: 'Pothos', wateringDays: 7, humidity: 'medium', sun: 'indirect', tempMin: 15, tempMax: 30 },
+      { id: 'zz-plant', name: 'ZZ Plant', wateringDays: 14, humidity: 'low', sun: 'any', tempMin: 15, tempMax: 29 },
+    ];
+
     const searchPlants = async (query) => {
-      if (!query.trim()) return;
+      if (!query.trim()) {
+        setPerenualResults(PLANT_DB);
+        return;
+      }
       try {
         const response = await fetch(
           `/api/plants-search?query=${encodeURIComponent(query)}`
@@ -1139,13 +1146,15 @@ export default function CompleteSharedLifeDashboard() {
         const data = await response.json();
         if (data.data && data.data.length > 0) {
           setPerenualResults(data.data);
+        } else {
+          setPerenualResults(PLANT_DB);
         }
       } catch (error) {
-        console.error('Plant search error:', error);
+        console.error('Perenual error:', error);
+        setPerenualResults(PLANT_DB);
       }
     };
 
-    // Search Unsplash photos
     const searchUnsplashPhotos = async (plantName) => {
       try {
         const response = await fetch(
@@ -1158,16 +1167,6 @@ export default function CompleteSharedLifeDashboard() {
       }
     };
 
-    // Upload photo file - PHOTO UPLOAD FUNCTION
-    const handlePhotoUpload = (file) => {
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = () => setNewPlantPhoto(reader.result);
-        reader.readAsDataURL(file);
-      }
-    };
-
-    // Save plant to Firebase
     const savePlant = async (e) => {
       e?.preventDefault();
       if (!newPlantName || !database || !currentUser) return;
@@ -1180,10 +1179,6 @@ export default function CompleteSharedLifeDashboard() {
         photo: newPlantPhoto,
         wateringDays,
         lastWatered,
-        sunlight: newPlantSunlight,
-        tempMin: newPlantTempMin,
-        tempMax: newPlantTempMax,
-        toxicity: newPlantToxicity,
         dateAdded: editingPlantId ? undefined : new Date().toISOString(),
         addedBy: currentUser.uid,
       };
@@ -1198,7 +1193,6 @@ export default function CompleteSharedLifeDashboard() {
       }
     };
 
-    // Delete plant - FIXES PERSISTENCE ISSUE
     const deletePlant = async (plantId) => {
       if (!database) return;
       try {
@@ -1206,13 +1200,11 @@ export default function CompleteSharedLifeDashboard() {
         setPlants(plants.filter(p => p.id !== plantId));
         setShowEditModal(false);
         setShowPlantDetail(false);
-        console.log('Plant deleted');
       } catch (error) {
         console.error('Delete error:', error);
       }
     };
 
-    // Log care (water/fertilize)
     const logCare = async (plantId, careType) => {
       if (!database || !currentUser) return;
       const logId = `log_${Date.now()}`;
@@ -1231,12 +1223,12 @@ export default function CompleteSharedLifeDashboard() {
           const today = new Date().toISOString().split('T')[0];
           await update(ref(database, `shared-data/default/plants/${plantId}`), { lastWatered: today });
         }
+        setShowPlantDetail(false);
       } catch (error) {
         console.error('Care log error:', error);
       }
     };
 
-    // Calculate next watering
     const getNextWateringDate = (plant) => {
       if (!plant.lastWatered || !plant.wateringDays) return null;
       const lastDate = new Date(plant.lastWatered);
@@ -1246,16 +1238,16 @@ export default function CompleteSharedLifeDashboard() {
       return { date: nextDate, daysUntil };
     };
 
-    // Weather alert
     const getWeatherAlert = (plant) => {
       if (!weatherData) return null;
       const currentTemp = weatherData.main?.temp;
       if (!currentTemp) return null;
+
       if (currentTemp > plant.tempMax) {
-        return { type: 'hot', message: `Too hot! ${Math.round(currentTemp)}°C`, color: '#ff3b30' };
+        return { type: 'hot', message: `Too hot! ${Math.round(currentTemp)}°C (max: ${plant.tempMax}°C)`, color: '#ff3b30' };
       }
       if (currentTemp < plant.tempMin) {
-        return { type: 'cold', message: `Too cold! ${Math.round(currentTemp)}°C`, color: '#00c7be' };
+        return { type: 'cold', message: `Too cold! ${Math.round(currentTemp)}°C (min: ${plant.tempMin}°C)`, color: '#00c7be' };
       }
       return null;
     };
@@ -1267,10 +1259,6 @@ export default function CompleteSharedLifeDashboard() {
       setNewPlantPhoto(null);
       setWateringDays(7);
       setLastWatered(new Date().toISOString().split('T')[0]);
-      setNewPlantSunlight('indirect');
-      setNewPlantTempMin(15);
-      setNewPlantTempMax(27);
-      setNewPlantToxicity('Safe');
       setEditingPlantId(null);
       setSearchQuery('');
       setPerenualResults([]);
@@ -1286,976 +1274,9 @@ export default function CompleteSharedLifeDashboard() {
       setNewPlantPhoto(plant.photo);
       setWateringDays(plant.wateringDays || 7);
       setLastWatered(plant.lastWatered || new Date().toISOString().split('T')[0]);
-      setNewPlantSunlight(plant.sunlight || 'indirect');
-      setNewPlantTempMin(plant.tempMin || 15);
-      setNewPlantTempMax(plant.tempMax || 27);
-      setNewPlantToxicity(plant.toxicity || 'Safe');
       setShowPlantDetail(false);
       setShowEditModal(true);
     };
-
-    return (
-      <div style={{ padding: '16px', maxWidth: '800px', margin: '0 auto' }}>
-        {/* Header */}
-        <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h2 style={{ margin: 0, color: '#fff', fontSize: '24px', fontWeight: '700' }}>My Plants</h2>
-          <button
-            onClick={() => {
-              resetForm();
-              setShowAddModal(true);
-            }}
-            style={{
-              background: ACCENT_COLOR,
-              border: 'none',
-              borderRadius: '12px',
-              padding: '0 16px',
-              color: '#fff',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: '600',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              height: '48px',
-            }}
-          >
-            <Plus size={18} /> Add Plant
-          </button>
-        </div>
-
-        {/* PLANTS CARD LIST (vertical, not grid) */}
-        {plants.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '40px 20px', color: '#666' }}>
-            <Leaf size={48} style={{ margin: '0 auto 16px', opacity: 0.5 }} />
-            <p>No plants yet. Add one to get started!</p>
-          </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {plants.map(plant => {
-              const nextWatering = getNextWateringDate(plant);
-              const weatherAlert = getWeatherAlert(plant);
-
-              return (
-                <div
-                  key={plant.id}
-                  onClick={() => {
-                    setSelectedPlantCard(plant);
-                    setShowPlantDetail(true);
-                  }}
-                  style={{
-                    background: `linear-gradient(135deg, rgba(18, 52, 255, 0.1), rgba(18, 52, 255, 0.05))`,
-                    border: '1px solid rgba(18, 52, 255, 0.2)',
-                    borderRadius: '16px',
-                    padding: '16px',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    display: 'flex',
-                    gap: '16px',
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.borderColor = 'rgba(18, 52, 255, 0.6)'}
-                  onMouseLeave={(e) => e.currentTarget.style.borderColor = 'rgba(18, 52, 255, 0.2)'}
-                >
-                  {/* Photo */}
-                  {plant.photo && (
-                    <div
-                      style={{
-                        backgroundImage: `url(${plant.photo})`,
-                        backgroundSize: 'cover',
-                        backgroundPosition: 'center',
-                        width: '100px',
-                        height: '100px',
-                        borderRadius: '12px',
-                        flexShrink: 0,
-                      }}
-                    />
-                  )}
-
-                  {/* Info - NO LOGS HERE */}
-                  <div style={{ flex: 1 }}>
-                    <h3 style={{ margin: '0 0 4px', color: '#fff', fontSize: '16px', fontWeight: '600' }}>
-                      {plant.name}
-                    </h3>
-                    <p style={{ margin: '0 0 12px', color: '#999', fontSize: '13px' }}>
-                      <MapPin size={12} style={{ display: 'inline', marginRight: '4px' }} />
-                      {plant.location}
-                    </p>
-
-                    {/* Weather Alert */}
-                    {weatherAlert && (
-                      <div
-                        style={{
-                          background: `${weatherAlert.color}20`,
-                          border: `1px solid ${weatherAlert.color}`,
-                          borderRadius: '8px',
-                          padding: '6px 8px',
-                          marginBottom: '8px',
-                          fontSize: '11px',
-                          color: weatherAlert.color,
-                          fontWeight: '600',
-                        }}
-                      >
-                        ⚠️ {weatherAlert.message}
-                      </div>
-                    )}
-
-                    {/* Next Watering Badge */}
-                    {nextWatering && (
-                      <div
-                        style={{
-                          background: nextWatering.daysUntil <= 1 ? 'rgba(255, 59, 48, 0.2)' : 'rgba(52, 199, 89, 0.2)',
-                          borderRadius: '8px',
-                          padding: '6px 8px',
-                          fontSize: '11px',
-                          color: nextWatering.daysUntil <= 1 ? '#ff3b30' : '#34c759',
-                          fontWeight: '600',
-                        }}
-                      >
-                        <Droplet size={11} style={{ display: 'inline', marginRight: '4px' }} />
-                        Water in {Math.max(0, nextWatering.daysUntil)} days
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        {/* PLANT DETAIL MODAL - WITH CARE LOGS */}
-        {showPlantDetail && selectedPlantCard && (
-          <div
-            style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              background: 'rgba(0, 0, 0, 0.6)',
-              backdropFilter: 'blur(10px)',
-              zIndex: 400,
-              display: 'flex',
-              alignItems: 'flex-end',
-            }}
-            onClick={() => setShowPlantDetail(false)}
-          >
-            <div
-              style={{
-                width: '100%',
-                background: BG_COLOR,
-                borderTop: `1px solid rgba(18, 52, 255, 0.2)`,
-                borderRadius: '24px 24px 0 0',
-                padding: '24px',
-                maxHeight: '90vh',
-                overflowY: 'auto',
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Close button X only - NO CANCEL BUTTON */}
-              <button
-                onClick={() => setShowPlantDetail(false)}
-                style={{
-                  position: 'absolute',
-                  top: '20px',
-                  right: '20px',
-                  background: 'none',
-                  border: 'none',
-                  color: '#999',
-                  fontSize: '28px',
-                  cursor: 'pointer',
-                }}
-              >
-                ×
-              </button>
-
-              <h2 style={{ margin: '0 0 8px', color: '#fff', fontSize: '24px', fontWeight: '700' }}>
-                {selectedPlantCard.name}
-              </h2>
-              <p style={{ margin: '0 0 24px', color: '#999', fontSize: '14px' }}>
-                <MapPin size={14} style={{ display: 'inline', marginRight: '4px' }} />
-                {selectedPlantCard.location}
-              </p>
-
-              {/* Plant Info */}
-              <div style={{ display: 'grid', gap: '12px', marginBottom: '24px' }}>
-                <div style={{ background: 'rgba(255, 255, 255, 0.05)', borderRadius: '12px', padding: '12px' }}>
-                  <div style={{ color: '#999', fontSize: '12px', marginBottom: '4px' }}>Watering Schedule</div>
-                  <div style={{ color: '#fff', fontSize: '16px', fontWeight: '600' }}>
-                    Every {selectedPlantCard.wateringDays || 7} days
-                  </div>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '24px' }}>
-                <button
-                  onClick={() => logCare(selectedPlantCard.id, 'water')}
-                  style={{
-                    background: '#00c7be',
-                    border: 'none',
-                    borderRadius: '12px',
-                    padding: '0 16px',
-                    color: '#fff',
-                    cursor: 'pointer',
-                    fontSize: '16px',
-                    fontWeight: '600',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px',
-                    height: '48px',
-                  }}
-                >
-                  <Droplet size={20} /> Water
-                </button>
-                <button
-                  onClick={() => logCare(selectedPlantCard.id, 'fertilize')}
-                  style={{
-                    background: '#ff9500',
-                    border: 'none',
-                    borderRadius: '12px',
-                    padding: '0 16px',
-                    color: '#fff',
-                    cursor: 'pointer',
-                    fontSize: '16px',
-                    fontWeight: '600',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px',
-                    height: '48px',
-                  }}
-                >
-                  <Leaf size={20} /> Fertilize
-                </button>
-              </div>
-
-              {/* CARE LOGS - ONLY IN MODAL */}
-              {careLogs.filter(log => log.plantId === selectedPlantCard.id).length > 0 && (
-                <div style={{ marginBottom: '24px' }}>
-                  <h3 style={{ color: '#fff', fontSize: '14px', fontWeight: '600', marginBottom: '12px' }}>
-                    Care History
-                  </h3>
-                  <div style={{ display: 'grid', gap: '8px' }}>
-                    {careLogs
-                      .filter(log => log.plantId === selectedPlantCard.id)
-                      .reverse()
-                      .slice(0, 10)
-                      .map(log => (
-                        <div
-                          key={log.id}
-                          style={{
-                            background: 'rgba(255, 255, 255, 0.05)',
-                            borderRadius: '8px',
-                            padding: '8px 12px',
-                            fontSize: '12px',
-                            color: '#ccc',
-                          }}
-                        >
-                          {log.careType === 'water' ? '💧' : '🌱'} {log.userName} • {new Date(log.timestamp).toLocaleDateString()}
-                        </div>
-                      ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Edit Button */}
-              <button
-                onClick={() => openEditModal(selectedPlantCard)}
-                style={{
-                  width: '100%',
-                  background: ACCENT_COLOR,
-                  border: 'none',
-                  borderRadius: '12px',
-                  padding: '0 16px',
-                  color: '#fff',
-                  cursor: 'pointer',
-                  fontSize: '16px',
-                  fontWeight: '600',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  height: '48px',
-                }}
-              >
-                <Edit2 size={20} /> Edit
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* ADD PLANT MODAL */}
-        {showAddModal && !showEditModal && (
-          <div
-            style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              background: 'rgba(0, 0, 0, 0.6)',
-              backdropFilter: 'blur(10px)',
-              zIndex: 500,
-              display: 'flex',
-              alignItems: 'flex-end',
-            }}
-            onClick={() => {
-              resetForm();
-              setShowAddModal(false);
-            }}
-          >
-            <div
-              style={{
-                width: '100%',
-                background: BG_COLOR,
-                borderTop: `1px solid rgba(18, 52, 255, 0.2)`,
-                borderRadius: '24px 24px 0 0',
-                padding: '24px',
-                maxHeight: '90vh',
-                overflowY: 'auto',
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h2 style={{ margin: '0 0 24px', color: '#fff', fontSize: '24px', fontWeight: '700' }}>Add Plant</h2>
-
-              {/* Search Plant Database - FULL PERENUAL API */}
-              <div style={{ marginBottom: '20px' }}>
-                <label style={{ color: '#999', fontSize: '12px', display: 'block', marginBottom: '8px' }}>
-                  Search Plant Database (Full Perenual API)
-                </label>
-                <input
-                  type="text"
-                  placeholder="Search for a plant..."
-                  value={searchQuery}
-                  onChange={(e) => {
-                    setSearchQuery(e.target.value);
-                    if (e.target.value.trim()) {
-                      searchPlants(e.target.value);
-                      setShowPlantSearch(true);
-                    }
-                  }}
-                  style={{
-                    width: '100%',
-                    background: 'rgba(255, 255, 255, 0.05)',
-                    border: '1px solid rgba(18, 52, 255, 0.2)',
-                    borderRadius: '12px',
-                    padding: '12px',
-                    color: '#fff',
-                    fontSize: '14px',
-                    boxSizing: 'border-box',
-                  }}
-                />
-
-                {/* Search Results */}
-                {showPlantSearch && perenualResults.length > 0 && (
-                  <div style={{ marginTop: '12px', maxHeight: '200px', overflowY: 'auto' }}>
-                    {perenualResults.map((result, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => {
-                          setNewPlantName(result.name);
-                          setNewPlantType(result.id);
-                          setWateringDays(result.wateringDays);
-                          setShowPlantSearch(false);
-                        }}
-                        style={{
-                          width: '100%',
-                          background: 'rgba(18, 52, 255, 0.1)',
-                          border: '1px solid rgba(18, 52, 255, 0.2)',
-                          borderRadius: '8px',
-                          padding: '12px',
-                          color: '#fff',
-                          cursor: 'pointer',
-                          marginBottom: '8px',
-                          textAlign: 'left',
-                          fontSize: '14px',
-                        }}
-                      >
-                        <div style={{ fontWeight: '600', marginBottom: '6px' }}>{result.name}</div>
-                        {result.scientific_name && (
-                          <div style={{ fontSize: '11px', color: '#666', marginBottom: '6px', fontStyle: 'italic' }}>
-                            {result.scientific_name}
-                          </div>
-                        )}
-                        <div style={{ fontSize: '11px', color: '#999', display: 'grid', gap: '3px' }}>
-                          <div>💧 Water: every {result.wateringDays} days</div>
-                          {result.sunlight && (
-                            <div>☀️ Light: {Array.isArray(result.sunlight) ? result.sunlight.join(', ') : result.sunlight}</div>
-                          )}
-                          <div>🌡️ Temp: {result.tempMin}–{result.tempMax}°C</div>
-                          {result.growth_rate && (
-                            <div>📈 Growth: {result.growth_rate}</div>
-                          )}
-                          <div>{result.toxicity_pets || '✓ Safe'}</div>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Plant Name */}
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ color: '#999', fontSize: '12px', display: 'block', marginBottom: '8px' }}>Plant Name</label>
-                <input
-                  type="text"
-                  value={newPlantName}
-                  onChange={(e) => setNewPlantName(e.target.value)}
-                  placeholder="e.g., My Peace Lily"
-                  style={{
-                    width: '100%',
-                    background: 'rgba(255, 255, 255, 0.05)',
-                    border: '1px solid rgba(18, 52, 255, 0.2)',
-                    borderRadius: '12px',
-                    padding: '12px',
-                    color: '#fff',
-                    fontSize: '14px',
-                    boxSizing: 'border-box',
-                  }}
-                />
-              </div>
-
-              {/* Location */}
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ color: '#999', fontSize: '12px', display: 'block', marginBottom: '8px' }}>Location</label>
-                <input
-                  type="text"
-                  value={newPlantLocation}
-                  onChange={(e) => setNewPlantLocation(e.target.value)}
-                  placeholder="e.g., Living Room"
-                  style={{
-                    width: '100%',
-                    background: 'rgba(255, 255, 255, 0.05)',
-                    border: '1px solid rgba(18, 52, 255, 0.2)',
-                    borderRadius: '12px',
-                    padding: '12px',
-                    color: '#fff',
-                    fontSize: '14px',
-                    boxSizing: 'border-box',
-                  }}
-                />
-              </div>
-
-              {/* Watering Days */}
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ color: '#999', fontSize: '12px', display: 'block', marginBottom: '8px' }}>
-                  Watering Frequency (days)
-                </label>
-                <input
-                  type="number"
-                  value={wateringDays}
-                  onChange={(e) => setWateringDays(parseInt(e.target.value) || 7)}
-                  min="1"
-                  max="60"
-                  style={{
-                    width: '100%',
-                    background: 'rgba(255, 255, 255, 0.05)',
-                    border: '1px solid rgba(18, 52, 255, 0.2)',
-                    borderRadius: '12px',
-                    padding: '12px',
-                    color: '#fff',
-                    fontSize: '14px',
-                    boxSizing: 'border-box',
-                  }}
-                />
-              </div>
-
-              {/* Last Watered */}
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ color: '#999', fontSize: '12px', display: 'block', marginBottom: '8px' }}>Last Watered</label>
-                <input
-                  type="date"
-                  value={lastWatered}
-                  onChange={(e) => setLastWatered(e.target.value)}
-                  style={{
-                    width: '100%',
-                    background: 'rgba(255, 255, 255, 0.05)',
-                    border: '1px solid rgba(18, 52, 255, 0.2)',
-                    borderRadius: '12px',
-                    padding: '12px',
-                    color: '#fff',
-                    fontSize: '14px',
-                    boxSizing: 'border-box',
-                  }}
-                />
-              </div>
-
-              {/* Temperature Range */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
-                <div>
-                  <label style={{ color: '#999', fontSize: '12px', display: 'block', marginBottom: '8px' }}>Min Temp (°C)</label>
-                  <input
-                    type="number"
-                    value={newPlantTempMin}
-                    onChange={(e) => setNewPlantTempMin(parseInt(e.target.value) || 15)}
-                    style={{
-                      width: '100%',
-                      background: 'rgba(255, 255, 255, 0.05)',
-                      border: '1px solid rgba(18, 52, 255, 0.2)',
-                      borderRadius: '12px',
-                      padding: '12px',
-                      color: '#fff',
-                      fontSize: '14px',
-                      boxSizing: 'border-box',
-                    }}
-                  />
-                </div>
-                <div>
-                  <label style={{ color: '#999', fontSize: '12px', display: 'block', marginBottom: '8px' }}>Max Temp (°C)</label>
-                  <input
-                    type="number"
-                    value={newPlantTempMax}
-                    onChange={(e) => setNewPlantTempMax(parseInt(e.target.value) || 27)}
-                    style={{
-                      width: '100%',
-                      background: 'rgba(255, 255, 255, 0.05)',
-                      border: '1px solid rgba(18, 52, 255, 0.2)',
-                      borderRadius: '12px',
-                      padding: '12px',
-                      color: '#fff',
-                      fontSize: '14px',
-                      boxSizing: 'border-box',
-                    }}
-                  />
-                </div>
-              </div>
-
-              {/* Sunlight */}
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ color: '#999', fontSize: '12px', display: 'block', marginBottom: '8px' }}>Sunlight Needs</label>
-                <select
-                  value={newPlantSunlight}
-                  onChange={(e) => setNewPlantSunlight(e.target.value)}
-                  style={{
-                    width: '100%',
-                    background: 'rgba(255, 255, 255, 0.05)',
-                    border: '1px solid rgba(18, 52, 255, 0.2)',
-                    borderRadius: '12px',
-                    padding: '12px',
-                    color: '#fff',
-                    fontSize: '14px',
-                    boxSizing: 'border-box',
-                  }}
-                >
-                  <option value="full-shade">Full Shade</option>
-                  <option value="part-shade">Part Shade</option>
-                  <option value="indirect">Indirect Light</option>
-                  <option value="part-sun">Part Sun</option>
-                  <option value="full-sun">Full Sun</option>
-                </select>
-              </div>
-
-              {/* Toxicity */}
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ color: '#999', fontSize: '12px', display: 'block', marginBottom: '8px' }}>Toxicity</label>
-                <select
-                  value={newPlantToxicity}
-                  onChange={(e) => setNewPlantToxicity(e.target.value)}
-                  style={{
-                    width: '100%',
-                    background: 'rgba(255, 255, 255, 0.05)',
-                    border: '1px solid rgba(18, 52, 255, 0.2)',
-                    borderRadius: '12px',
-                    padding: '12px',
-                    color: '#fff',
-                    fontSize: '14px',
-                    boxSizing: 'border-box',
-                  }}
-                >
-                  <option value="Safe">Safe</option>
-                  <option value="Toxic to Pets">Toxic to Pets</option>
-                  <option value="Toxic to Humans">Toxic to Humans</option>
-                  <option value="Toxic to Both">Toxic to Both</option>
-                </select>
-              </div>
-
-              {/* PHOTO UPLOAD & SEARCH */}
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ color: '#999', fontSize: '12px', display: 'block', marginBottom: '8px' }}>Plant Photo</label>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '12px' }}>
-                  <button
-                    onClick={() => searchUnsplashPhotos(newPlantName || newPlantType)}
-                    style={{
-                      background: ACCENT_COLOR,
-                      border: 'none',
-                      borderRadius: '12px',
-                      padding: '0 16px',
-                      color: '#fff',
-                      cursor: 'pointer',
-                      fontSize: '14px',
-                      fontWeight: '600',
-                      height: '48px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '6px',
-                    }}
-                  >
-                    <Search size={18} /> Search Photos
-                  </button>
-                  <label
-                    style={{
-                      background: 'rgba(18, 52, 255, 0.2)',
-                      border: '1px solid rgba(18, 52, 255, 0.2)',
-                      borderRadius: '12px',
-                      padding: '0 16px',
-                      color: '#fff',
-                      cursor: 'pointer',
-                      fontSize: '14px',
-                      fontWeight: '600',
-                      height: '48px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '6px',
-                    }}
-                  >
-                    <Upload size={18} /> Upload Photo
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handlePhotoUpload(e.target.files[0])}
-                      style={{ display: 'none' }}
-                    />
-                  </label>
-                </div>
-
-                {/* Unsplash Results */}
-                {unsplashResults.length > 0 && (
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '12px' }}>
-                    {unsplashResults.map((photo, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => {
-                          setNewPlantPhoto(photo.urls.small);
-                          setUnsplashResults([]);
-                        }}
-                        style={{
-                          backgroundImage: `url(${photo.urls.thumb})`,
-                          backgroundSize: 'cover',
-                          backgroundPosition: 'center',
-                          height: '100px',
-                          borderRadius: '8px',
-                          border: '2px solid rgba(18, 52, 255, 0.2)',
-                          cursor: 'pointer',
-                          padding: 0,
-                        }}
-                      />
-                    ))}
-                  </div>
-                )}
-
-                {/* Current Photo Preview */}
-                {newPlantPhoto && (
-                  <div
-                    style={{
-                      backgroundImage: `url(${newPlantPhoto})`,
-                      backgroundSize: 'cover',
-                      backgroundPosition: 'center',
-                      height: '150px',
-                      borderRadius: '8px',
-                      marginBottom: '12px',
-                    }}
-                  />
-                )}
-              </div>
-
-              {/* Save Button */}
-              <button
-                onClick={savePlant}
-                style={{
-                  width: '100%',
-                  background: ACCENT_COLOR,
-                  border: 'none',
-                  borderRadius: '12px',
-                  padding: '0 16px',
-                  color: '#fff',
-                  cursor: 'pointer',
-                  fontSize: '16px',
-                  fontWeight: '600',
-                  height: '48px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                }}
-              >
-                <Check size={20} /> Save
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* EDIT PLANT MODAL */}
-        {showEditModal && (
-          <div
-            style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              background: 'rgba(0, 0, 0, 0.6)',
-              backdropFilter: 'blur(10px)',
-              zIndex: 500,
-              display: 'flex',
-              alignItems: 'flex-end',
-            }}
-            onClick={() => {
-              resetForm();
-              setShowEditModal(false);
-            }}
-          >
-            <div
-              style={{
-                width: '100%',
-                background: BG_COLOR,
-                borderTop: `1px solid rgba(18, 52, 255, 0.2)`,
-                borderRadius: '24px 24px 0 0',
-                padding: '24px',
-                maxHeight: '90vh',
-                overflowY: 'auto',
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h2 style={{ margin: '0 0 24px', color: '#fff', fontSize: '24px', fontWeight: '700' }}>Edit Plant</h2>
-
-              {/* Plant Name */}
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ color: '#999', fontSize: '12px', display: 'block', marginBottom: '8px' }}>Plant Name</label>
-                <input
-                  type="text"
-                  value={newPlantName}
-                  onChange={(e) => setNewPlantName(e.target.value)}
-                  style={{
-                    width: '100%',
-                    background: 'rgba(255, 255, 255, 0.05)',
-                    border: '1px solid rgba(18, 52, 255, 0.2)',
-                    borderRadius: '12px',
-                    padding: '12px',
-                    color: '#fff',
-                    fontSize: '14px',
-                    boxSizing: 'border-box',
-                  }}
-                />
-              </div>
-
-              {/* Location */}
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ color: '#999', fontSize: '12px', display: 'block', marginBottom: '8px' }}>Location</label>
-                <input
-                  type="text"
-                  value={newPlantLocation}
-                  onChange={(e) => setNewPlantLocation(e.target.value)}
-                  style={{
-                    width: '100%',
-                    background: 'rgba(255, 255, 255, 0.05)',
-                    border: '1px solid rgba(18, 52, 255, 0.2)',
-                    borderRadius: '12px',
-                    padding: '12px',
-                    color: '#fff',
-                    fontSize: '14px',
-                    boxSizing: 'border-box',
-                  }}
-                />
-              </div>
-
-              {/* Watering Days */}
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ color: '#999', fontSize: '12px', display: 'block', marginBottom: '8px' }}>
-                  Watering Frequency (days)
-                </label>
-                <input
-                  type="number"
-                  value={wateringDays}
-                  onChange={(e) => setWateringDays(parseInt(e.target.value) || 7)}
-                  min="1"
-                  max="60"
-                  style={{
-                    width: '100%',
-                    background: 'rgba(255, 255, 255, 0.05)',
-                    border: '1px solid rgba(18, 52, 255, 0.2)',
-                    borderRadius: '12px',
-                    padding: '12px',
-                    color: '#fff',
-                    fontSize: '14px',
-                    boxSizing: 'border-box',
-                  }}
-                />
-              </div>
-
-              {/* Last Watered */}
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ color: '#999', fontSize: '12px', display: 'block', marginBottom: '8px' }}>Last Watered</label>
-                <input
-                  type="date"
-                  value={lastWatered}
-                  onChange={(e) => setLastWatered(e.target.value)}
-                  style={{
-                    width: '100%',
-                    background: 'rgba(255, 255, 255, 0.05)',
-                    border: '1px solid rgba(18, 52, 255, 0.2)',
-                    borderRadius: '12px',
-                    padding: '12px',
-                    color: '#fff',
-                    fontSize: '14px',
-                    boxSizing: 'border-box',
-                  }}
-                />
-              </div>
-
-              {/* Temperature Range */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
-                <div>
-                  <label style={{ color: '#999', fontSize: '12px', display: 'block', marginBottom: '8px' }}>Min Temp (°C)</label>
-                  <input
-                    type="number"
-                    value={newPlantTempMin}
-                    onChange={(e) => setNewPlantTempMin(parseInt(e.target.value) || 15)}
-                    style={{
-                      width: '100%',
-                      background: 'rgba(255, 255, 255, 0.05)',
-                      border: '1px solid rgba(18, 52, 255, 0.2)',
-                      borderRadius: '12px',
-                      padding: '12px',
-                      color: '#fff',
-                      fontSize: '14px',
-                      boxSizing: 'border-box',
-                    }}
-                  />
-                </div>
-                <div>
-                  <label style={{ color: '#999', fontSize: '12px', display: 'block', marginBottom: '8px' }}>Max Temp (°C)</label>
-                  <input
-                    type="number"
-                    value={newPlantTempMax}
-                    onChange={(e) => setNewPlantTempMax(parseInt(e.target.value) || 27)}
-                    style={{
-                      width: '100%',
-                      background: 'rgba(255, 255, 255, 0.05)',
-                      border: '1px solid rgba(18, 52, 255, 0.2)',
-                      borderRadius: '12px',
-                      padding: '12px',
-                      color: '#fff',
-                      fontSize: '14px',
-                      boxSizing: 'border-box',
-                    }}
-                  />
-                </div>
-              </div>
-
-              {/* Sunlight */}
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ color: '#999', fontSize: '12px', display: 'block', marginBottom: '8px' }}>Sunlight Needs</label>
-                <select
-                  value={newPlantSunlight}
-                  onChange={(e) => setNewPlantSunlight(e.target.value)}
-                  style={{
-                    width: '100%',
-                    background: 'rgba(255, 255, 255, 0.05)',
-                    border: '1px solid rgba(18, 52, 255, 0.2)',
-                    borderRadius: '12px',
-                    padding: '12px',
-                    color: '#fff',
-                    fontSize: '14px',
-                    boxSizing: 'border-box',
-                  }}
-                >
-                  <option value="full-shade">Full Shade</option>
-                  <option value="part-shade">Part Shade</option>
-                  <option value="indirect">Indirect Light</option>
-                  <option value="part-sun">Part Sun</option>
-                  <option value="full-sun">Full Sun</option>
-                </select>
-              </div>
-
-              {/* Toxicity */}
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ color: '#999', fontSize: '12px', display: 'block', marginBottom: '8px' }}>Toxicity</label>
-                <select
-                  value={newPlantToxicity}
-                  onChange={(e) => setNewPlantToxicity(e.target.value)}
-                  style={{
-                    width: '100%',
-                    background: 'rgba(255, 255, 255, 0.05)',
-                    border: '1px solid rgba(18, 52, 255, 0.2)',
-                    borderRadius: '12px',
-                    padding: '12px',
-                    color: '#fff',
-                    fontSize: '14px',
-                    boxSizing: 'border-box',
-                  }}
-                >
-                  <option value="Safe">Safe</option>
-                  <option value="Toxic to Pets">Toxic to Pets</option>
-                  <option value="Toxic to Humans">Toxic to Humans</option>
-                  <option value="Toxic to Both">Toxic to Both</option>
-                </select>
-              </div>
-
-              {/* Current Photo */}
-              {newPlantPhoto && (
-                <div
-                  style={{
-                    backgroundImage: `url(${newPlantPhoto})`,
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                    height: '150px',
-                    borderRadius: '8px',
-                    marginBottom: '16px',
-                  }}
-                />
-              )}
-
-              {/* Save & Delete */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <button
-                  onClick={savePlant}
-                  style={{
-                    background: ACCENT_COLOR,
-                    border: 'none',
-                    borderRadius: '12px',
-                    padding: '0 16px',
-                    color: '#fff',
-                    cursor: 'pointer',
-                    fontSize: '16px',
-                    fontWeight: '600',
-                    height: '48px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px',
-                  }}
-                >
-                  <Check size={20} /> Save
-                </button>
-                <button
-                  onClick={() => deletePlant(editingPlantId)}
-                  style={{
-                    background: '#ff3b30',
-                    border: 'none',
-                    borderRadius: '12px',
-                    padding: '0 16px',
-                    color: '#fff',
-                    cursor: 'pointer',
-                    fontSize: '16px',
-                    fontWeight: '600',
-                    height: '48px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px',
-                  }}
-                >
-                  <X size={20} /> Delete
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  };
 
     return (
       <div style={{ padding: '16px', maxWidth: '1200px', margin: '0 auto' }}>
@@ -3066,6 +2087,7 @@ export default function CompleteSharedLifeDashboard() {
         )}
       </div>
     );
+  };
 
   const currentTraveler = getCurrentTraveler();
 
