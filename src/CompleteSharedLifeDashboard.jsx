@@ -1603,28 +1603,28 @@ export default function CompleteSharedLifeDashboard() {
                   {/* Detailed Care Guides */}
                   {selectedPlant.details && (
                     <div style={{ display: 'grid', gap: '20px' }}>
-                      {/* Sunlight Guide - Prioritize detailed guide */}
-                      {(selectedPlant.details.sunlight_guide || selectedPlant.details.sunlight) && (
+                      {/* Sunlight Guide - Check care_guides object */}
+                      {(selectedPlant.details.care_guides?.sunlight || selectedPlant.details.sunlight_guide || selectedPlant.details.sunlight) && (
                         <div style={{ padding: '16px', background: 'rgba(255, 255, 255, 0.03)', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                            <Wind size={18} color={ACCENT_COLOR} />
+                            <Sun size={18} color={ACCENT_COLOR} />
                             <h4 style={{ fontSize: '16px', fontWeight: '600', color: '#fff', margin: 0 }}>Sunlight</h4>
                           </div>
                           <p style={{ fontSize: '14px', color: '#ccc', lineHeight: '1.6', margin: 0, whiteSpace: 'pre-wrap' }}>
-                            {selectedPlant.details.sunlight_guide || (Array.isArray(selectedPlant.details.sunlight) ? selectedPlant.details.sunlight.join(', ') : selectedPlant.details.sunlight)}
+                            {selectedPlant.details.care_guides?.sunlight || selectedPlant.details.sunlight_guide || (Array.isArray(selectedPlant.details.sunlight) ? selectedPlant.details.sunlight.join(', ') : selectedPlant.details.sunlight)}
                           </p>
                         </div>
                       )}
 
-                      {/* Watering Guide - Prioritize detailed guide */}
-                      {(selectedPlant.details.watering_guide || selectedPlant.details.watering) && (
+                      {/* Watering Guide - Check care_guides object */}
+                      {(selectedPlant.details.care_guides?.watering || selectedPlant.details.watering_guide || selectedPlant.details.watering) && (
                         <div style={{ padding: '16px', background: 'rgba(255, 255, 255, 0.03)', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
                             <Droplet size={18} color={ACCENT_COLOR} />
                             <h4 style={{ fontSize: '16px', fontWeight: '600', color: '#fff', margin: 0 }}>Watering</h4>
                           </div>
                           <p style={{ fontSize: '14px', color: '#ccc', lineHeight: '1.6', margin: 0, whiteSpace: 'pre-wrap' }}>
-                            {selectedPlant.details.watering_guide || selectedPlant.details.watering}
+                            {selectedPlant.details.care_guides?.watering || selectedPlant.details.watering_guide || selectedPlant.details.watering}
                           </p>
                         </div>
                       )}
