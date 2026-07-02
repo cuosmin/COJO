@@ -335,20 +335,26 @@ export default function CompleteSharedLifeDashboard() {
         lastLogin: new Date().toISOString(),
       });
 
-      // Load all users
-      const usersRef = ref(database, 'shared-data/users');
-      onValue(usersRef, (snapshot) => {
-        if (snapshot.exists()) {
-          const usersData = snapshot.val();
-          // Convert object to array if needed
-          const usersArray = Array.isArray(usersData) 
-            ? usersData.filter(u => u && u.uid)
-            : Object.values(usersData).filter(u => u && u.uid);
-          setUsers(usersArray);
-        } else {
-          setUsers([]);
-        }
-      });
+      // Load all users with a slight delay to ensure Firebase update
+      setTimeout(() => {
+        const usersRef = ref(database, 'shared-data/users');
+        onValue(usersRef, (snapshot) => {
+          if (snapshot.exists()) {
+            const usersData = snapshot.val();
+            console.log('Users from Firebase:', usersData);
+            
+            // Convert object to array if needed
+            const usersArray = Array.isArray(usersData) 
+              ? usersData.filter(u => u && u.uid)
+              : Object.values(usersData).filter(u => u && u.uid);
+            
+            console.log('Processed users array:', usersArray);
+            setUsers(usersArray);
+          } else {
+            setUsers([]);
+          }
+        });
+      }, 500);
     } catch (error) {
       console.error('Error initializing user:', error);
     }
