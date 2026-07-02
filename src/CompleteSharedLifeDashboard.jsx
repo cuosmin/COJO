@@ -1323,16 +1323,27 @@ export default function CompleteSharedLifeDashboard() {
                   onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
                   onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
                 >
-                  <svg width="70" height="70" style={{ marginBottom: '10px' }}>
-                    <circle cx="35" cy="35" r="30" fill="none" stroke="#333" strokeWidth="2.5" />
-                    <circle
-                      cx="35" cy="35" r="30" fill="none" stroke={plantsNeedingWater === 0 ? '#34c759' : '#ff3b30'} strokeWidth="2.5"
-                      strokeDasharray={`${(plants.length - plantsNeedingWater) / Math.max(plants.length, 1) * 188.4} 188.4`}
-                      style={{ transform: 'rotate(-90deg)', transformOrigin: '35px 35px', transition: 'stroke-dasharray 0.5s' }}
-                    />
-                  </svg>
-                  <div style={{ fontSize: '16px', fontWeight: '600' }}>{plants.length - plantsNeedingWater}/{plants.length}</div>
-                  <div style={{ fontSize: '12px', color: '#999', marginTop: '4px' }}>Plants Happy</div>
+                  {(() => {
+                    const healthyPlants = plants.filter(p => {
+                      const status = getWateringStatus(p);
+                      return status.status === 'Healthy';
+                    }).length;
+                    
+                    return (
+                      <>
+                        <svg width="70" height="70" style={{ marginBottom: '10px' }}>
+                          <circle cx="35" cy="35" r="30" fill="none" stroke="#333" strokeWidth="2.5" />
+                          <circle
+                            cx="35" cy="35" r="30" fill="none" stroke={healthyPlants === plants.length ? '#34c759' : '#ff9500'} strokeWidth="2.5"
+                            strokeDasharray={`${plants.length > 0 ? (healthyPlants / plants.length) * 188.4 : 0} 188.4`}
+                            style={{ transform: 'rotate(-90deg)', transformOrigin: '35px 35px', transition: 'stroke-dasharray 0.5s' }}
+                          />
+                        </svg>
+                        <div style={{ fontSize: '16px', fontWeight: '600' }}>{healthyPlants}/{plants.length}</div>
+                        <div style={{ fontSize: '12px', color: '#999', marginTop: '4px' }}>Plants Happy</div>
+                      </>
+                    );
+                  })()}
                 </div>
 
                 {/* Budget Ring with Pie Chart - CLICKABLE */}
@@ -3371,7 +3382,12 @@ export default function CompleteSharedLifeDashboard() {
             {editingId ? 'Update Plant' : 'Add Plant'}
           </button>
           {editingId && (
-            <button onClick={() => { deletePlant(editingId); resetModal(); }} style={{ width: '100%', background: 'rgba(255, 59, 48, 0.2)', border: '1px solid rgba(255, 59, 48, 0.3)', borderRadius: '12px', padding: '14px', color: '#ff3b30', cursor: 'pointer', fontSize: '16px', fontWeight: '600' }}>
+            <button onClick={() => { 
+              ref(database, `shared-data/default/plants/${editingId}`).set(null);
+              const updated = plants.filter(p => p.id !== editingId);
+              setPlants(updated);
+              resetModal(); 
+            }} style={{ width: '100%', background: 'rgba(255, 59, 48, 0.2)', border: '1px solid rgba(255, 59, 48, 0.3)', borderRadius: '12px', padding: '14px', color: '#ff3b30', cursor: 'pointer', fontSize: '16px', fontWeight: '600' }}>
               Delete Plant
             </button>
           )}
