@@ -1442,7 +1442,7 @@ export default function CompleteSharedLifeDashboard() {
                           color: '#fff',
                           border: needsWatering ? '1px solid rgba(255, 87, 34, 0.5)' : '1px solid rgba(76, 175, 80, 0.5)',
                         }}>
-                          {needsWatering ? '💧 Needs watering' : '✓ Healthy'}
+                          {needsWatering ? '💧 Needs watering' : 'Healthy'}
                         </div>
                       );
                     })()}

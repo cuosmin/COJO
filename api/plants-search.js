@@ -31,13 +31,15 @@ export default async function handler(req, res) {
           );
           const details = await detailRes.json();
 
-          // FETCH CARE GUIDES from correct endpoint
+          // FETCH CARE GUIDES - try the correct endpoint
           let guideData = {};
           try {
             const guideRes = await fetch(
               `https://perenual.com/api/species-care-guide-list?species_id=${plant.id}&key=${PERENUAL_KEY}`
             );
             const guideResponse = await guideRes.json();
+            
+            console.log(`Guide response for ${plant.id}:`, guideResponse);
             
             // Extract guides by type from the correct structure
             if (guideResponse.data && Array.isArray(guideResponse.data)) {
@@ -63,31 +65,8 @@ export default async function handler(req, res) {
             ? 30
             : 7;
 
-          // Extract temperature from xTemperatureTolence or other fields
-          let tempMin = 15;
-          let tempMax = 27;
-          if (details.xTemperatureTolence && Array.isArray(details.xTemperatureTolence)) {
-            // Try to parse temperature ranges from array
-            const tempStr = details.xTemperatureTolence.join(' ');
-            const matches = tempStr.match(/(\d+)\s*[-–]\s*(\d+)/);
-            if (matches) {
-              tempMin = parseInt(matches[1]);
-              tempMax = parseInt(matches[2]);
-            }
-          }
-
-          // Extract care guides from details.care_guides if it's a string
-          const careGuides = {};
-          if (details.care_guides && typeof details.care_guides === 'string') {
-            // If it's a string, use it as general care guide
-            careGuides.general = details.care_guides;
-          }
-          
-          // Merge with fetched guides (API guides take priority)
-          const finalGuides = {
-            ...careGuides,
-            ...guideData,
-          };
+          // Extract all relevant home-growing details
+          const careGuides = guideData;
 
           // Extract care tags (with lucide icon names for display)
           const careTags = [];
@@ -99,43 +78,62 @@ export default async function handler(req, res) {
               });
             });
           }
-          
-          console.log(`Plant ${plant.id} (${plant.common_name}): ${careTags.length} tags, ${Object.keys(finalGuides).length} guides`);
+
+          console.log(`Plant ${plant.id} (${plant.common_name}):`, {
+            guides: Object.keys(careGuides),
+            tags: careTags.length,
+            sunlight: details.sunlight,
+            cycle: details.cycle,
+            maintenance: details.maintenance,
+          });
 
           return {
             id: plant.id,
             name: plant.common_name || plant.scientific_name?.[0] || 'Unknown',
-            scientific_name: details.scientific_name?.[0] || '',
+            scientific_name: (Array.isArray(details.scientific_name) ? details.scientific_name[0] : details.scientific_name) || '',
             wateringDays,
             watering_description: watering,
-            watering_guide: finalGuides.watering || '', 
+            watering_guide: careGuides.watering || '',
             sunlight: details.sunlight || ['indirect'],
-            sunlight_guide: finalGuides.sunlight || '',
-            humidity: details.watering_general_benchmark?.value || 'medium',
-            tempMin,
-            tempMax,
+            sunlight_guide: careGuides.sunlight || '',
+            pruning_guide: careGuides.pruning || '',
+            
+            // Home-growing relevant details
+            cycle: details.cycle || '',
+            maintenance: details.maintenance || '',
+            care_level: details.care_level || '',
+            growth_rate: details.growth_rate || '',
+            drought_tolerant: details.drought_tolerant === 1,
+            salt_tolerant: details.salt_tolerant === 1,
+            indoor: details.indoor === 1,
+            flowers: details.flowers === 1,
+            flowering_season: details.flowering_season || '',
+            
+            // Hardiness
+            hardiness: details.hardiness || {},
+            
+            // Soil info
             soil: details.soil || [],
+            
+            // Safety
             toxicity: details.poisonous_to_humans ? '⚠️ Toxic to humans' : '✓ Safe',
             toxicity_pets: details.poisonous_to_pets ? '⚠️ Toxic to pets' : '✓ Safe for pets',
+            
+            // Description
             description: details.description || '',
             image_url: details.default_image?.medium_url || '',
-            growth_rate: details.growth_rate || 'medium',
-            hardiness: details.hardiness || {},
-            care_guides: finalGuides,
+            
+            // All guides
+            care_guides: careGuides,
             care_tags: careTags,
-            maintenance: details.maintenance || '',
-            pruning_month: details.pruning_month || [],
           };
         } catch (err) {
-          console.warn(`Could not fetch details for ${plant.id}:`, err.message);
+          console.error(`Error fetching details for ${plant.id}:`, err.message);
           return {
             id: plant.id,
-            name: plant.common_name || plant.scientific_name?.[0] || 'Unknown',
+            name: plant.common_name || 'Unknown',
             wateringDays: 7,
-            humidity: 'medium',
             sunlight: ['indirect'],
-            tempMin: 15,
-            tempMax: 27,
             care_tags: [],
             care_guides: {},
           };
@@ -145,7 +143,7 @@ export default async function handler(req, res) {
 
     return res.status(200).json({ data: results });
   } catch (error) {
-    console.error('Perenual error:', error);
+    console.error('Perenual API error:', error);
     return res.status(500).json({ error: 'Failed to fetch plant data' });
   }
 }
