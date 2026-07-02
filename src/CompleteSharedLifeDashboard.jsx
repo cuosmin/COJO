@@ -1130,6 +1130,7 @@ export default function CompleteSharedLifeDashboard() {
       const debounceTimer = React.useRef(null);
 
       // Fetch full plant details from Perenual when detail modal opens
+      // eslint-disable-next-line react-hooks/exhaustive-deps
       React.useEffect(() => {
         if (showPlantDetail && selectedPlant?.id && !selectedPlant?.details) {
           const fetchPlantDetails = async () => {
