@@ -3,7 +3,7 @@ import {
   Home, Leaf, UtensilsCrossed, Wallet, LogOut,
   X, Bell, Plus, Plane, Edit2, MapPin, Droplet, Archive, ChevronDown, Briefcase, Palmtree, Check,
   ShoppingCart as ShoppingBag, Heart, Wind, Smile, Clock, Shuffle, MessageCircle, Send,
-  Sun, Cloud, Moon, Flower, Paw, AlertTriangle, TrendingUp, Trees, Cactus, Calendar, Repeat, Zap, Sparkles,
+  Sun, Cloud, Moon, Flower, AlertTriangle, TrendingUp, Trees, Cactus, Calendar, Repeat, Zap, Sparkles,
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import LinkifyIt from 'linkify-it';
@@ -1138,7 +1138,7 @@ export default function CompleteSharedLifeDashboard() {
           'Moon': <Moon size={size} color={ACCENT_COLOR} />,
           'Flower': <Flower size={size} color={ACCENT_COLOR} />,
           'Wind': <Wind size={size} color={ACCENT_COLOR} />,
-          'Paw': <Paw size={size} color={ACCENT_COLOR} />,
+          'Heart': <Heart size={size} color={ACCENT_COLOR} />,
           'AlertTriangle': <AlertTriangle size={size} color={ACCENT_COLOR} />,
           'Home': <Home size={size} color={ACCENT_COLOR} />,
           'Leaf': <Leaf size={size} color={ACCENT_COLOR} />,
