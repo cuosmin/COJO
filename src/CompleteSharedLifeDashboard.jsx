@@ -1849,39 +1849,53 @@ export default function CompleteSharedLifeDashboard() {
                     {perenualResults.slice(0, 5).map((result, idx) => (
                       <button
                         key={idx}
-                        onClick={() => {
+                        onClick={async () => {
                           console.log('Plant selected from search:', result);
                           
-                          // Use ALL data from serverless function
+                          // Instantly fill what we have from search
                           setNewPlantType(result.name);
                           setNewPlantName(result.name);
-                          setWateringDays(result.wateringDays || 7);
-                          
-                          // Store all Perenual details
-                          const plantDetails = {
-                            id: result.id,
-                            scientific_name: result.scientific_name,
-                            watering: result.watering_description,
-                            watering_guide: result.watering_guide,
-                            sunlight: result.sunlight,
-                            sunlight_guide: result.sunlight_guide,
-                            humidity: result.humidity,
-                            tempMin: result.tempMin,
-                            tempMax: result.tempMax,
-                            soil: result.soil,
-                            toxicity: result.toxicity,
-                            toxicity_pets: result.toxicity_pets,
-                            description: result.description,
-                            image_url: result.image_url,
-                            growth_rate: result.growth_rate,
-                            hardiness: result.hardiness,
-                            care_guides: result.care_guides || {},
-                            care_tags: result.care_tags || [],
-                          };
-                          
-                          setSelectedPlantDetails(plantDetails);
-                          console.log('Details set:', plantDetails);
                           setShowPlantSearch(false);
+                          setPlantSearchLoading(true);
+                          
+                          // Fetch FULL details for this one plant (2 API calls)
+                          try {
+                            const response = await fetch(`/api/plants-search?id=${result.id}`);
+                            if (!response.ok) {
+                              const errData = await response.json();
+                              console.error('[Plants] Details fetch failed:', errData);
+                              alert(errData.error || 'Could not load plant details. Try again.');
+                              return;
+                            }
+                            const { data } = await response.json();
+                            console.log('[Plants] Details loaded:', data);
+                            
+                            setWateringDays(data.wateringDays || 7);
+                            setSelectedPlantDetails({
+                              id: data.id,
+                              scientific_name: data.scientific_name,
+                              sunlight: data.sunlight,
+                              watering: data.watering,
+                              maintenance: data.maintenance,
+                              growth_rate: data.growth_rate,
+                              care_level: data.care_level,
+                              cycle: data.cycle,
+                              watering_guide: data.watering_guide,
+                              sunlight_guide: data.sunlight_guide,
+                              pruning_guide: data.pruning_guide,
+                              care_guides: data.care_guides || {},
+                              care_tags: data.care_tags || [],
+                              description: data.description,
+                              image_url: data.image_url,
+                              toxicity: data.toxicity,
+                              toxicity_pets: data.toxicity_pets,
+                            });
+                          } catch (error) {
+                            console.error('[Plants] Details error:', error);
+                            alert('Could not load plant details. Check your connection.');
+                          } finally {
+                            setPlantSearchLoading(false);
+                          }
                         }}
                         style={{
                           width: '100%',
@@ -1896,7 +1910,10 @@ export default function CompleteSharedLifeDashboard() {
                           fontSize: '14px',
                         }}
                       >
-                        {result.name}
+                        <div>{result.name}</div>
+                        {result.scientific_name && (
+                          <div style={{ fontSize: '12px', color: '#999', fontStyle: 'italic', marginTop: '2px' }}>{result.scientific_name}</div>
+                        )}
                       </button>
                     ))}
                   </div>
