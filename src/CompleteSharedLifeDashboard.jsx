@@ -416,7 +416,6 @@ export default function CompleteSharedLifeDashboard() {
   const [newPlantType, setNewPlantType] = useState('peace-lily');
   const [newPlantLocation, setNewPlantLocation] = useState('Living Room');
   const [perenualPlants, setPerenualPlants] = useState([]);
-  const [selectedPlantDetail, setSelectedPlantDetail] = useState(null);
   const [showPlantDetail, setShowPlantDetail] = useState(false);
   const [newPlantPhoto, setNewPlantPhoto] = useState(null);
   const [editingPlantId, setEditingPlantId] = useState(null);
@@ -1289,7 +1288,6 @@ export default function CompleteSharedLifeDashboard() {
     const [showPlantSearch, setShowPlantSearch] = useState(false);
     
     const [unsplashResults, setUnsplashResults] = useState([]);
-    const [showPhotoSearch, setShowPhotoSearch] = useState(false);
 
     const PLANT_DB = [
       { id: 'peace-lily', name: 'Peace Lily', wateringDays: 7, humidity: 'high', sun: 'indirect', tempMin: 16, tempMax: 29 },
@@ -1441,7 +1439,6 @@ export default function CompleteSharedLifeDashboard() {
       setPerenualResults([]);
       setShowPlantSearch(false);
       setUnsplashResults([]);
-      setShowPhotoSearch(false);
     };
 
     const openEditModal = (plant) => {
