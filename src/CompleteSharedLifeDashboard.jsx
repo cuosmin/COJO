@@ -1116,6 +1116,7 @@ export default function CompleteSharedLifeDashboard() {
       const [perenualResults, setPerenualResults] = useState([]);
       const [unsplashResults, setUnsplashResults] = useState([]);
       const [showUnsplashSearch, setShowUnsplashSearch] = useState(false);
+      const [plantDetails, setPlantDetails] = useState(null);
 
       const [newPlantName, setNewPlantName] = useState('');
       const [newPlantType, setNewPlantType] = useState('');
@@ -1124,7 +1125,7 @@ export default function CompleteSharedLifeDashboard() {
       const [wateringDays, setWateringDays] = useState(7);
       const [lastWatered, setLastWatered] = useState(new Date().toISOString().split('T')[0]);
 
-      // Search plants via serverless API
+      // Search plants via serverless API and fetch details
       const searchPlants = async (query) => {
         if (!query.trim()) return;
         try {
@@ -1140,15 +1141,32 @@ export default function CompleteSharedLifeDashboard() {
         }
       };
 
-      // Search Unsplash photos
-      const searchUnsplashPhotos = async (plantName) => {
+      // Fetch detailed plant info from Perenual (sunlight, watering, guides, etc.)
+      const fetchPlantDetails = async (plantId) => {
         try {
           const response = await fetch(
-            `https://api.unsplash.com/search/photos?query=${encodeURIComponent(plantName)}&per_page=20&client_id=NxL6pf3u0YFLp2JWZVSX4p8OxwJFQKg_4a8Y4c_1Dqg`
+            `https://perenual.com/api/species/details/${plantId}`
           );
           const data = await response.json();
-          setUnsplashResults(data.results || []);
-          setShowUnsplashSearch(true);
+          setPlantDetails(data);
+          return data;
+        } catch (error) {
+          console.error('Error fetching plant details:', error);
+        }
+      };
+
+      // Search Unsplash photos - FIXED for proper display
+      const searchUnsplashPhotos = async (plantName) => {
+        if (!plantName.trim()) return;
+        try {
+          const response = await fetch(
+            `https://api.unsplash.com/search/photos?query=${encodeURIComponent(plantName)}&per_page=12&client_id=NxL6pf3u0YFLp2JWZVSX4p8OxwJFQKg_4a8Y4c_1Dqg`
+          );
+          const data = await response.json();
+          if (data.results && data.results.length > 0) {
+            setUnsplashResults(data.results);
+            setShowUnsplashSearch(true);
+          }
         } catch (error) {
           console.error('Unsplash error:', error);
         }
@@ -1168,6 +1186,7 @@ export default function CompleteSharedLifeDashboard() {
           lastWatered,
           dateAdded: editingPlantId ? undefined : new Date().toISOString(),
           addedBy: currentUser.uid,
+          details: plantDetails,
         };
 
         try {
@@ -1187,7 +1206,7 @@ export default function CompleteSharedLifeDashboard() {
         }
       };
 
-      // Delete plant - with persistence fix
+      // Delete plant
       const deletePlant = async (plantId) => {
         if (!database) return;
         try {
@@ -1238,7 +1257,7 @@ export default function CompleteSharedLifeDashboard() {
         if (!weatherData) return null;
         const currentTemp = weatherData.main?.temp;
         if (!currentTemp) return null;
-        if (currentTemp > plant.tempMax || currentTemp < plant.tempMin) {
+        if (currentTemp > (plant.details?.hardiness?.min || 0) || currentTemp < (plant.details?.hardiness?.max || 50)) {
           return true;
         }
         return null;
@@ -1257,6 +1276,7 @@ export default function CompleteSharedLifeDashboard() {
         setShowPlantSearch(false);
         setUnsplashResults([]);
         setShowUnsplashSearch(false);
+        setPlantDetails(null);
       };
 
       const openEditModal = (plant) => {
@@ -1267,6 +1287,7 @@ export default function CompleteSharedLifeDashboard() {
         setNewPlantPhoto(plant.photo);
         setWateringDays(plant.wateringDays || 7);
         setLastWatered(plant.lastWatered || new Date().toISOString().split('T')[0]);
+        setPlantDetails(plant.details || null);
         setShowPlantDetail(false);
         setShowAddModal(true);
       };
@@ -1299,7 +1320,7 @@ export default function CompleteSharedLifeDashboard() {
             </button>
           </div>
 
-          {/* PLANTS GRID - SAME DESIGN AS RECIPES */}
+          {/* PLANTS GRID */}
           <div style={{ flex: 1, overflowY: 'auto', padding: '0 20px 20px' }}>
             {plants.length === 0 ? (
               <EmptyState icon={Leaf} title="No plants yet" subtitle="Add your first plant" />
@@ -1401,7 +1422,7 @@ export default function CompleteSharedLifeDashboard() {
             )}
           </div>
 
-          {/* PLANT DETAIL MODAL - SAME DESIGN AS RECIPE */}
+          {/* PLANT DETAIL MODAL */}
           {showPlantDetail && selectedPlant && (
             <div
               style={{
@@ -1488,7 +1509,7 @@ export default function CompleteSharedLifeDashboard() {
 
                 {/* Content Section */}
                 <div style={{ padding: '24px', display: 'grid', gap: '24px' }}>
-                  {/* Plant Info */}
+                  {/* Plant Basic Info */}
                   <div style={{ display: 'grid', gap: '16px' }}>
                     {selectedPlant.location && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -1507,6 +1528,83 @@ export default function CompleteSharedLifeDashboard() {
                       </div>
                     )}
                   </div>
+
+                  {/* Plant Details from Perenual (if available) */}
+                  {selectedPlant.details && (
+                    <div style={{ display: 'grid', gap: '16px' }}>
+                      <h3 style={{ fontSize: '18px', fontWeight: '600', margin: '12px 0 0', color: '#fff' }}>Plant Details</h3>
+                    
+                      <div style={{ display: 'grid', gap: '12px' }}>
+                        {selectedPlant.details.sunlight && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '8px' }}>
+                            <Wind size={18} color={ACCENT_COLOR} style={{ flexShrink: 0 }} />
+                            <div>
+                              <div style={{ fontSize: '12px', color: '#999' }}>Sunlight</div>
+                              <div style={{ fontSize: '14px', color: '#ccc', fontWeight: '500' }}>
+                                {Array.isArray(selectedPlant.details.sunlight) 
+                                  ? selectedPlant.details.sunlight.join(', ') 
+                                  : selectedPlant.details.sunlight}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {selectedPlant.details.watering && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '8px' }}>
+                            <Droplet size={18} color={ACCENT_COLOR} style={{ flexShrink: 0 }} />
+                            <div>
+                              <div style={{ fontSize: '12px', color: '#999' }}>Watering</div>
+                              <div style={{ fontSize: '14px', color: '#ccc', fontWeight: '500' }}>{selectedPlant.details.watering}</div>
+                            </div>
+                          </div>
+                        )}
+
+                        {selectedPlant.details.maintenance && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '8px' }}>
+                            <Briefcase size={18} color={ACCENT_COLOR} style={{ flexShrink: 0 }} />
+                            <div>
+                              <div style={{ fontSize: '12px', color: '#999' }}>Maintenance</div>
+                              <div style={{ fontSize: '14px', color: '#ccc', fontWeight: '500' }}>{selectedPlant.details.maintenance}</div>
+                            </div>
+                          </div>
+                        )}
+
+                        {selectedPlant.details.growth_rate && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '8px' }}>
+                            <Leaf size={18} color={ACCENT_COLOR} style={{ flexShrink: 0 }} />
+                            <div>
+                              <div style={{ fontSize: '12px', color: '#999' }}>Growth Rate</div>
+                              <div style={{ fontSize: '14px', color: '#ccc', fontWeight: '500' }}>{selectedPlant.details.growth_rate}</div>
+                            </div>
+                          </div>
+                        )}
+
+                        {selectedPlant.details.care_level && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '8px' }}>
+                            <Heart size={18} color={ACCENT_COLOR} style={{ flexShrink: 0 }} />
+                            <div>
+                              <div style={{ fontSize: '12px', color: '#999' }}>Care Level</div>
+                              <div style={{ fontSize: '14px', color: '#ccc', fontWeight: '500' }}>{selectedPlant.details.care_level}</div>
+                            </div>
+                          </div>
+                        )}
+
+                        {selectedPlant.details.propagation && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '8px' }}>
+                            <Palmtree size={18} color={ACCENT_COLOR} style={{ flexShrink: 0 }} />
+                            <div>
+                              <div style={{ fontSize: '12px', color: '#999' }}>Propagation</div>
+                              <div style={{ fontSize: '14px', color: '#ccc', fontWeight: '500' }}>
+                                {Array.isArray(selectedPlant.details.propagation)
+                                  ? selectedPlant.details.propagation.join(', ')
+                                  : selectedPlant.details.propagation}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Care History */}
                   {careLogs.filter(log => log.plantId === selectedPlant.id).length > 0 && (
@@ -1643,8 +1741,10 @@ export default function CompleteSharedLifeDashboard() {
                     {perenualResults.slice(0, 5).map((result, idx) => (
                       <button
                         key={idx}
-                        onClick={() => {
-                          setNewPlantType(result.name);
+                        onClick={async () => {
+                          setNewPlantType(result.common_name || result.scientific_name);
+                          setNewPlantName(result.common_name || result.scientific_name);
+                          await fetchPlantDetails(result.id);
                           setShowPlantSearch(false);
                         }}
                         style={{
@@ -1661,7 +1761,7 @@ export default function CompleteSharedLifeDashboard() {
                           fontWeight: '500',
                         }}
                       >
-                        {result.name}
+                        {result.common_name || result.scientific_name}
                       </button>
                     ))}
                   </div>
@@ -1752,7 +1852,7 @@ export default function CompleteSharedLifeDashboard() {
                 />
               </div>
 
-              {/* Photo Search */}
+              {/* Photo Search - FIXED STYLING */}
               <div style={{ marginBottom: '16px' }}>
                 <label style={{ color: '#999', fontSize: '12px', display: 'block', marginBottom: '8px' }}>Plant Photo</label>
                 <button
@@ -1778,26 +1878,47 @@ export default function CompleteSharedLifeDashboard() {
                   <Search size={18} /> Search Photos
                 </button>
 
-                {/* Unsplash Results Grid */}
+                {/* Unsplash Results Grid - STYLED LIKE SCREENSHOT */}
                 {showUnsplashSearch && unsplashResults.length > 0 && (
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '12px' }}>
-                    {unsplashResults.map((photo, idx) => (
+                  <div style={{ 
+                    display: 'grid', 
+                    gridTemplateColumns: 'repeat(3, 1fr)', 
+                    gap: '10px', 
+                    marginBottom: '12px',
+                    padding: '12px',
+                    background: 'rgba(255, 255, 255, 0.01)',
+                    borderRadius: '12px',
+                    border: '1px solid rgba(18, 52, 255, 0.1)',
+                  }}>
+                    {unsplashResults.slice(0, 9).map((photo, idx) => (
                       <button
                         key={idx}
                         onClick={() => {
-                          setNewPlantPhoto(photo.urls.small);
+                          setNewPlantPhoto(photo.urls.regular);
                           setShowUnsplashSearch(false);
                         }}
                         style={{
-                          backgroundImage: `url(${photo.urls.thumb})`,
+                          backgroundImage: `url(${photo.urls.small})`,
                           backgroundSize: 'cover',
                           backgroundPosition: 'center',
-                          height: '100px',
-                          borderRadius: '8px',
-                          border: newPlantPhoto === photo.urls.small ? '3px solid ' + ACCENT_COLOR : '2px solid rgba(18, 52, 255, 0.2)',
+                          height: '120px',
+                          borderRadius: '10px',
+                          border: newPlantPhoto === photo.urls.regular 
+                            ? `3px solid ${ACCENT_COLOR}` 
+                            : '2px solid rgba(18, 52, 255, 0.3)',
                           cursor: 'pointer',
                           padding: 0,
                           transition: 'all 0.2s',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.borderColor = ACCENT_COLOR;
+                          e.currentTarget.style.opacity = '0.8';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.borderColor = newPlantPhoto === photo.urls.regular 
+                            ? ACCENT_COLOR 
+                            : 'rgba(18, 52, 255, 0.3)';
+                          e.currentTarget.style.opacity = '1';
                         }}
                       />
                     ))}
@@ -1814,6 +1935,7 @@ export default function CompleteSharedLifeDashboard() {
                       height: '150px',
                       borderRadius: '8px',
                       marginBottom: '12px',
+                      border: `2px solid ${ACCENT_COLOR}`,
                     }}
                   />
                 )}
@@ -1876,6 +1998,8 @@ export default function CompleteSharedLifeDashboard() {
         </div>
       );
     };
+
+
 
 
 
