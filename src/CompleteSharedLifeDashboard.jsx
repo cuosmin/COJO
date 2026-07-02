@@ -1129,52 +1129,6 @@ export default function CompleteSharedLifeDashboard() {
 
       const debounceTimer = React.useRef(null);
 
-      // Fetch full plant details from Perenual when detail modal opens
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-      React.useEffect(() => {
-        if (showPlantDetail && selectedPlant?.id && !selectedPlant?.details) {
-          const fetchPlantDetails = async () => {
-            try {
-              // Search for the plant on Perenual to get full details
-              const response = await axios.get('/api/plants-search', {
-                params: { query: selectedPlant.name || selectedPlant.displayName }
-              });
-              
-              if (response.data.data && response.data.data.length > 0) {
-                const fullDetails = response.data.data[0];
-                // Update selectedPlant with full details
-                setSelectedPlant(prev => ({
-                  ...prev,
-                  details: {
-                    scientific_name: fullDetails.scientific_name,
-                    watering: fullDetails.watering_description,
-                    watering_guide: fullDetails.watering_guide,
-                    sunlight: fullDetails.sunlight,
-                    sunlight_guide: fullDetails.sunlight_guide,
-                    humidity: fullDetails.humidity,
-                    tempMin: fullDetails.tempMin,
-                    tempMax: fullDetails.tempMax,
-                    soil: fullDetails.soil,
-                    toxicity: fullDetails.toxicity,
-                    toxicity_pets: fullDetails.toxicity_pets,
-                    description: fullDetails.description,
-                    image_url: fullDetails.image_url,
-                    growth_rate: fullDetails.growth_rate,
-                    hardiness: fullDetails.hardiness,
-                    care_guides: fullDetails.care_guides || {},
-                    care_tags: fullDetails.care_tags || [],
-                  }
-                }));
-              }
-            } catch (error) {
-              console.warn('Failed to fetch plant details:', error);
-            }
-          };
-          
-          fetchPlantDetails();
-        }
-      }, [showPlantDetail, selectedPlant?.id]);
-
       // Helper function to render lucide icons dynamically
       const renderLucideIcon = (iconName, size = 20) => {
         const iconMap = {
