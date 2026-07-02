@@ -110,34 +110,34 @@ export default async function handler(req, res) {
 // Helper function to map care tag names to lucide icon names
 function getLucideIconForTag(tagName) {
   const tagIcons = {
-    'water': 'Droplet',
-    'watering': 'Droplet',
-    'sun': 'Sun',
-    'sunlight': 'Sun',
-    'bright': 'Sun',
-    'indirect': 'Cloud',
-    'shade': 'Moon',
-    'flower': 'Flower',
-    'blooms': 'Flower',
-    'fragrant': 'Wind',
-    'smell': 'Wind',
-    'pet': 'Heart',
-    'pets': 'Heart',
-    'toxic': 'AlertTriangle',
-    'poisonous': 'AlertTriangle',
-    'indoor': 'Home',
-    'outdoor': 'Leaf',
-    'climbing': 'TrendingUp',
-    'vine': 'TrendingUp',
-    'bush': 'Trees',
-    'tree': 'Trees',
-    'succulent': 'Cactus',
-    'cactus': 'Cactus',
-    'annual': 'Calendar',
-    'perennial': 'Repeat',
-    'air purifying': 'Wind',
-    'low maintenance': 'Zap',
-    'beginner': 'Smile',
+    'water': 'droplet',
+    'watering': 'droplet',
+    'sun': 'sun',
+    'sunlight': 'sun',
+    'bright': 'sun',
+    'indirect': 'cloud',
+    'shade': 'moon',
+    'flower': 'flower',
+    'blooms': 'flower',
+    'fragrant': 'wind',
+    'smell': 'wind',
+    'pet': 'paw-print',
+    'pets': 'paw-print',
+    'toxic': 'alert-triangle',
+    'poisonous': 'alert-triangle',
+    'indoor': 'home',
+    'outdoor': 'leaf',
+    'climbing': 'leaf',
+    'vine': 'leaf',
+    'bush': 'leaf',
+    'tree': 'leaf',
+    'succulent': 'leaf',
+    'cactus': 'leaf',
+    'annual': 'calendar',
+    'perennial': 'repeat',
+    'air purifying': 'wind',
+    'low maintenance': 'zap',
+    'beginner': 'smile',
   };
 
   const normalizedTag = tagName.toLowerCase();
@@ -146,5 +146,5 @@ function getLucideIconForTag(tagName) {
       return iconName;
     }
   }
-  return 'Sparkles'; // Default icon
+  return 'sparkles'; // Default icon
 }

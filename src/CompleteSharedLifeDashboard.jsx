@@ -3,8 +3,9 @@ import {
   Home, Leaf, UtensilsCrossed, Wallet, LogOut,
   X, Bell, Plus, Plane, Edit2, MapPin, Droplet, Archive, ChevronDown, Briefcase, Palmtree, Check,
   ShoppingCart as ShoppingBag, Heart, Wind, Smile, Clock, Shuffle, MessageCircle, Send,
-  Sun, Cloud, Moon, Flower, AlertTriangle, TrendingUp, Trees, Cactus, Calendar, Repeat, Zap, Sparkles,
+  Sun, Cloud, Moon, Flower, AlertTriangle, Calendar, Repeat, Zap, Sparkles,
 } from 'lucide-react';
+import { PawPrint as PawPrintIcon } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import LinkifyIt from 'linkify-it';
 import { auth } from './firebaseConfig';
@@ -1132,26 +1133,24 @@ export default function CompleteSharedLifeDashboard() {
       // Helper function to render lucide icons dynamically
       const renderLucideIcon = (iconName, size = 20) => {
         const iconMap = {
-          'Droplet': <Droplet size={size} color={ACCENT_COLOR} />,
-          'Sun': <Sun size={size} color={ACCENT_COLOR} />,
-          'Cloud': <Cloud size={size} color={ACCENT_COLOR} />,
-          'Moon': <Moon size={size} color={ACCENT_COLOR} />,
-          'Flower': <Flower size={size} color={ACCENT_COLOR} />,
-          'Wind': <Wind size={size} color={ACCENT_COLOR} />,
-          'Heart': <Heart size={size} color={ACCENT_COLOR} />,
-          'AlertTriangle': <AlertTriangle size={size} color={ACCENT_COLOR} />,
-          'Home': <Home size={size} color={ACCENT_COLOR} />,
-          'Leaf': <Leaf size={size} color={ACCENT_COLOR} />,
-          'TrendingUp': <TrendingUp size={size} color={ACCENT_COLOR} />,
-          'Trees': <Trees size={size} color={ACCENT_COLOR} />,
-          'Cactus': <Cactus size={size} color={ACCENT_COLOR} />,
-          'Calendar': <Calendar size={size} color={ACCENT_COLOR} />,
-          'Repeat': <Repeat size={size} color={ACCENT_COLOR} />,
-          'Zap': <Zap size={size} color={ACCENT_COLOR} />,
-          'Smile': <Smile size={size} color={ACCENT_COLOR} />,
-          'Sparkles': <Sparkles size={size} color={ACCENT_COLOR} />,
+          'droplet': <Droplet size={size} color={ACCENT_COLOR} />,
+          'sun': <Sun size={size} color={ACCENT_COLOR} />,
+          'cloud': <Cloud size={size} color={ACCENT_COLOR} />,
+          'moon': <Moon size={size} color={ACCENT_COLOR} />,
+          'flower': <Flower size={size} color={ACCENT_COLOR} />,
+          'wind': <Wind size={size} color={ACCENT_COLOR} />,
+          'heart': <Heart size={size} color={ACCENT_COLOR} />,
+          'alert-triangle': <AlertTriangle size={size} color={ACCENT_COLOR} />,
+          'home': <Home size={size} color={ACCENT_COLOR} />,
+          'leaf': <Leaf size={size} color={ACCENT_COLOR} />,
+          'calendar': <Calendar size={size} color={ACCENT_COLOR} />,
+          'repeat': <Repeat size={size} color={ACCENT_COLOR} />,
+          'zap': <Zap size={size} color={ACCENT_COLOR} />,
+          'smile': <Smile size={size} color={ACCENT_COLOR} />,
+          'sparkles': <Sparkles size={size} color={ACCENT_COLOR} />,
+          'paw-print': <PawPrintIcon size={size} color={ACCENT_COLOR} />,
         };
-        return iconMap[iconName] || iconMap['Sparkles'];
+        return iconMap[iconName] || iconMap['sparkles'];
       };
 
       // Search Perenual plants (with debounce)
