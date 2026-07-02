@@ -3,7 +3,7 @@ import {
   Home, Leaf, UtensilsCrossed, Wallet, LogOut,
   X, Bell, Plus, Plane, Edit2, MapPin, Droplet, Archive, ChevronDown, Briefcase, Palmtree, Check,
   ShoppingCart as ShoppingBag, Heart, Wind, Smile, Clock, Shuffle, MessageCircle, Send,
-  Sun, Cloud, Moon, Flower, AlertTriangle, Calendar, Repeat, Zap, Sparkles, Thermometer,
+  Sun, Cloud, Moon, Flower, AlertTriangle, Calendar, Repeat, Zap, Sparkles,
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import LinkifyIt from 'linkify-it';
