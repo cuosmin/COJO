@@ -512,42 +512,6 @@ export default function CompleteSharedLifeDashboard() {
     }
   };
 
-  // 🌱 PERENUAL API - fetch plants from database
-  const searchPerenualPlants = async (query = '') => {
-    try {
-      const searchQuery = query || 'indoor';
-      const response = await axios.get('https://perenual.com/api/species-list', {
-        params: {
-          q: searchQuery,
-          page: 1,
-        },
-      });
-      if (response.data.data) {
-        setPerenualPlants(response.data.data.slice(0, 10));
-        console.log('✅ Plants fetched from Perenual API');
-      }
-    } catch (error) {
-      console.log('Perenual API failed, using local database');
-      // Fallback: search local PLANT_DATABASE
-      const results = Object.entries(PLANT_DATABASE)
-        .filter(([key, plant]) => 
-          plant.name.toLowerCase().includes(query.toLowerCase()) ||
-          plant.description.toLowerCase().includes(query.toLowerCase())
-        )
-        .map(([key, plant]) => ({
-          id: key,
-          common_name: plant.name,
-          scientific_name: [plant.name],
-          default_image: { medium_url: plant.image },
-          watering: `Every ${plant.wateringDaysMin}-${plant.wateringDaysMax} days`
-        }));
-      
-      setPerenualPlants(results.slice(0, 10));
-      if (results.length > 0) {
-        console.log('✅ Plants found in local database');
-      }
-    }
-  };
 
   // 🌱 UNSPLASH - search for plant photos
 
@@ -3943,59 +3907,6 @@ export default function CompleteSharedLifeDashboard() {
       )}
 
       {/* MODALS */}
-      {/* Add Plant Modal */}
-      <AddModal isOpen={showAddModal && modalType === 'plant'} title={editingId ? "Edit Plant" : "Add Plant"} onClose={resetModal}>
-        <div style={{ display: 'grid', gap: '16px' }}>
-          <input type="text" value={newItemName} onChange={(e) => setNewItemName(e.target.value)} placeholder="Plant name..." style={{ background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px' }} />
-          
-          <div>
-            <label style={{ fontSize: '14px', color: '#666', marginBottom: '8px', display: 'block' }}>Watering frequency (days)</label>
-            <input type="number" min="1" max="60" value={newItemWateringDays} onChange={(e) => setNewItemWateringDays(e.target.value)} style={{ width: '100%', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px' }} />
-          </div>
-
-          <div>
-            <label style={{ fontSize: '14px', color: '#666', marginBottom: '8px', display: 'block' }}>Search photo</label>
-            <input type="text" placeholder="e.g. monstera, cactus..." onChange={(e) => searchUnsplash(e.target.value)} style={{ width: '100%', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px', marginBottom: '12px' }} />
-            {unsplashSearchResults.length > 0 && (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
-                {unsplashSearchResults.map((photo) => (
-                  <img key={photo.id} src={`${photo.urls.thumb}?w=120&h=120&fit=crop`} alt="" onClick={() => setNewItemPhoto(photo.urls.regular)} style={{ width: '100%', height: '100px', borderRadius: '8px', cursor: 'pointer', border: newItemPhoto === photo.urls.regular ? `2px solid ${ACCENT_COLOR}` : 'none' }} />
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-            {editingPlantId ? (
-              <>
-                <button onClick={addPlant} style={{ background: ACCENT_COLOR, border: 'none', borderRadius: '12px', padding: '14px', color: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                  <Check size={20} /> Save
-                </button>
-                <button onClick={async () => { 
-                  try {
-                    await ref(database, `shared-data/default/plants/${editingPlantId}`).set(null);
-                    const updated = plants.filter(p => p.id !== editingPlantId);
-                    setPlants(updated);
-                    setEditingPlantId(null);
-                    setNewPlantName('');
-                    setNewPlantType('');
-                    setNewPlantLocation('Living Room');
-                    setNewPlantPhoto(null);
-                  } catch (error) {
-                    console.error('Error deleting plant:', error);
-                  }
-                }} style={{ background: '#ff3b30', border: 'none', borderRadius: '12px', padding: '14px', color: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                  <X size={20} /> Delete
-                </button>
-              </>
-            ) : (
-              <button onClick={addPlant} style={{ background: ACCENT_COLOR, border: 'none', borderRadius: '12px', padding: '14px', color: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', gridColumn: '1 / -1' }}>
-                <Check size={20} /> Save
-              </button>
-            )}
-          </div>
-        </div>
-      </AddModal>
 
       {/* Add Meal Modal */}
       <AddModal isOpen={showAddModal && modalType === 'meal'} title={editingId ? "Edit Recipe" : "Add Recipe"} onClose={resetModal}>
