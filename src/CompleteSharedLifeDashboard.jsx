@@ -1182,35 +1182,8 @@ export default function CompleteSharedLifeDashboard() {
 
       // Fetch Perenual plant details (guides, watering, etc.)
       const fetchPlantDetails = async (perenualPlantId) => {
-        console.log('=== FETCHING PLANT DETAILS ===');
-        console.log('Perenual ID:', perenualPlantId);
-        try {
-          const url = `https://perenual.com/api/species/details/${perenualPlantId}`;
-          console.log('Fetching from:', url);
-          const response = await fetch(url);
-          
-          if (!response.ok) {
-            console.error('API error:', response.status, response.statusText);
-            return null;
-          }
-          
-          const data = await response.json();
-          console.log('Raw plant details response:', data);
-          console.log('Watering field:', data.watering);
-          console.log('Sunlight field:', data.sunlight);
-          console.log('Maintenance field:', data.maintenance);
-          console.log('Care level:', data.care_level);
-          console.log('Growth rate:', data.growth_rate);
-          console.log('Pruning month:', data.pruning_month);
-          
-          setSelectedPlantDetails(data);
-          return data;
-        } catch (error) {
-          console.error('❌ Error fetching plant details:', error);
-          console.error('Error message:', error.message);
-          setSelectedPlantDetails(null);
-          return null;
-        }
+        console.log('Plant details already fetched via serverless function');
+        return null;
       };
 
       // Save plant to Firebase
@@ -1739,31 +1712,34 @@ export default function CompleteSharedLifeDashboard() {
                     {perenualResults.slice(0, 5).map((result, idx) => (
                       <button
                         key={idx}
-                        onClick={async () => {
-                          console.log('Plant selected:', result);
-                          setNewPlantType(result.common_name || result.scientific_name);
-                          setNewPlantName(result.common_name || result.scientific_name);
+                        onClick={() => {
+                          console.log('Plant selected from search:', result);
                           
-                          // Extract watering frequency if available
-                          if (result.watering && result.watering.toLowerCase().includes('week')) {
-                            const days = parseInt(result.watering.match(/\d+/)?.[0]) * 7 || 7;
-                            console.log('Setting watering days from search result:', days);
-                            setWateringDays(days);
-                          }
+                          // Use ALL data from serverless function
+                          setNewPlantType(result.name);
+                          setNewPlantName(result.name);
+                          setWateringDays(result.wateringDays || 7);
                           
-                          // Fetch full details
-                          const details = await fetchPlantDetails(result.id);
-                          console.log('Details fetched:', details);
+                          // Store all Perenual details
+                          const plantDetails = {
+                            id: result.id,
+                            scientific_name: result.scientific_name,
+                            watering: result.watering_description,
+                            sunlight: result.sunlight,
+                            humidity: result.humidity,
+                            tempMin: result.tempMin,
+                            tempMax: result.tempMax,
+                            soil: result.soil,
+                            toxicity: result.toxicity,
+                            toxicity_pets: result.toxicity_pets,
+                            description: result.description,
+                            image_url: result.image_url,
+                            growth_rate: result.growth_rate,
+                            hardiness: result.hardiness,
+                          };
                           
-                          if (details && details.watering) {
-                            console.log('Using watering from details:', details.watering);
-                            // Try to extract days from watering string
-                            const match = details.watering.match(/\d+/);
-                            if (match) {
-                              setWateringDays(parseInt(match[0]));
-                            }
-                          }
-                          
+                          setSelectedPlantDetails(plantDetails);
+                          console.log('Details set:', plantDetails);
                           setShowPlantSearch(false);
                         }}
                         style={{
@@ -1779,7 +1755,7 @@ export default function CompleteSharedLifeDashboard() {
                           fontSize: '14px',
                         }}
                       >
-                        {result.common_name || result.scientific_name}
+                        {result.name}
                       </button>
                     ))}
                   </div>
