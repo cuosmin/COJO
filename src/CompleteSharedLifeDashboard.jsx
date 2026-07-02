@@ -771,30 +771,6 @@ export default function CompleteSharedLifeDashboard() {
   };
 
   // ==================== PLANTS ====================
-  const addPlant = () => {
-    if (newItemName.trim()) {
-      const plant = {
-        id: editingId || Date.now().toString(),
-        name: newItemName,
-        addedDate: new Date().toISOString(),
-        lastWatered: new Date().toISOString(),
-        wateringFreqDays: parseInt(newItemWateringDays) || 7,
-        healthLevel: 100,
-        photo: newItemPhoto || `https://images.unsplash.com/photo-1599599810694-b5ac4dd84e02?w=400&h=400&fit=crop&v=${Date.now()}`,
-      };
-      
-      let updated;
-      if (editingId) {
-        updated = plants.map(p => p.id === editingId ? plant : p);
-      } else {
-        updated = [...plants, plant];
-      }
-      
-      setPlants(updated);
-      saveData(updated, meals, expenses, travels);
-      resetModal();
-    }
-  };
 
   // ==================== MEALS ====================
   const addMeal = () => {
