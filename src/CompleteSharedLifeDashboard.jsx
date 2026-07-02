@@ -325,38 +325,59 @@ export default function CompleteSharedLifeDashboard() {
 
   const initializeUser = async (currentUser) => {
     try {
-      // Save current user to Firebase
-      const userRef = ref(database, `shared-data/users/${currentUser.uid}`);
-      await set(userRef, {
+      if (!database) {
+        console.error('Database not initialized');
+        return;
+      }
+
+      // Create user object
+      const userData = {
         uid: currentUser.uid,
         email: currentUser.email,
         displayName: currentUser.displayName || 'User',
         photoURL: currentUser.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${currentUser.uid}`,
         lastLogin: new Date().toISOString(),
-      });
+      };
 
-      // Load all users with a slight delay to ensure Firebase update
-      setTimeout(() => {
-        const usersRef = ref(database, 'shared-data/users');
-        onValue(usersRef, (snapshot) => {
-          if (snapshot.exists()) {
-            const usersData = snapshot.val();
-            console.log('Users from Firebase:', usersData);
-            
-            // Convert object to array if needed
-            const usersArray = Array.isArray(usersData) 
-              ? usersData.filter(u => u && u.uid)
-              : Object.values(usersData).filter(u => u && u.uid);
-            
-            console.log('Processed users array:', usersArray);
-            setUsers(usersArray);
-          } else {
-            setUsers([]);
+      console.log('Saving user to Firebase:', userData);
+
+      // Save to shared-data/users/{uid}
+      const userRef = ref(database, `shared-data/users/${currentUser.uid}`);
+      await set(userRef, userData);
+      console.log('✅ User saved successfully');
+
+      // Now load all users
+      const usersRef = ref(database, 'shared-data/users');
+      
+      onValue(usersRef, (snapshot) => {
+        console.log('📍 Users snapshot received');
+        if (snapshot.exists()) {
+          const usersData = snapshot.val();
+          console.log('Raw Firebase data:', usersData);
+          
+          // Convert object to array
+          let usersArray = [];
+          if (Array.isArray(usersData)) {
+            usersArray = usersData.filter(u => u && u.uid);
+          } else if (typeof usersData === 'object') {
+            // This should be the case - Firebase stores as object with UIDs as keys
+            usersArray = Object.entries(usersData).map(([key, value]) => {
+              console.log(`Loading user ${key}:`, value);
+              return value;
+            }).filter(u => u && u.uid);
           }
-        });
-      }, 500);
+          
+          console.log('✅ Loaded users:', usersArray);
+          console.log('Total users:', usersArray.length);
+          setUsers(usersArray);
+        } else {
+          console.log('❌ No users node exists yet');
+          setUsers([]);
+        }
+      });
     } catch (error) {
-      console.error('Error initializing user:', error);
+      console.error('❌ Error initializing user:', error);
+      console.error('Error details:', error.message);
     }
   };
 
