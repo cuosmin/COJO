@@ -25,27 +25,32 @@ export default async function handler(req, res) {
     const results = await Promise.all(
       searchData.data.slice(0, 20).map(async (plant) => {
         try {
+          // Fetch species details
           const detailRes = await fetch(
             `https://perenual.com/api/species/details/${plant.id}?key=${PERENUAL_KEY}`
           );
           const details = await detailRes.json();
 
-          // ALSO fetch care guides from separate endpoint
+          // FETCH CARE GUIDES from correct endpoint
           let guideData = {};
           try {
             const guideRes = await fetch(
-              `https://perenual.com/api/species/details/${plant.id}/guide?key=${PERENUAL_KEY}`
+              `https://perenual.com/api/species-care-guide-list?species_id=${plant.id}&key=${PERENUAL_KEY}`
             );
-            const guides = await guideRes.json();
+            const guideResponse = await guideRes.json();
             
-            // Extract guides by type
-            if (guides.guide && Array.isArray(guides.guide)) {
-              guides.guide.forEach(g => {
-                guideData[g.type?.toLowerCase()] = g.description || '';
+            // Extract guides by type from the correct structure
+            if (guideResponse.data && Array.isArray(guideResponse.data)) {
+              guideResponse.data.forEach(guide => {
+                if (guide.section && Array.isArray(guide.section)) {
+                  guide.section.forEach(section => {
+                    guideData[section.type?.toLowerCase()] = section.description || '';
+                  });
+                }
               });
             }
           } catch (err) {
-            console.warn(`Could not fetch guide for ${plant.id}:`, err);
+            console.warn(`Could not fetch guides for ${plant.id}:`, err.message);
           }
 
           // Extract care info
@@ -58,15 +63,27 @@ export default async function handler(req, res) {
             ? 30
             : 7;
 
-          // Extract care guides (detailed instructions)
+          // Extract temperature from xTemperatureTolence or other fields
+          let tempMin = 15;
+          let tempMax = 27;
+          if (details.xTemperatureTolence && Array.isArray(details.xTemperatureTolence)) {
+            // Try to parse temperature ranges from array
+            const tempStr = details.xTemperatureTolence.join(' ');
+            const matches = tempStr.match(/(\d+)\s*[-–]\s*(\d+)/);
+            if (matches) {
+              tempMin = parseInt(matches[1]);
+              tempMax = parseInt(matches[2]);
+            }
+          }
+
+          // Extract care guides from details.care_guides if it's a string
           const careGuides = {};
-          if (details.care_guides && details.care_guides.length > 0) {
-            details.care_guides.forEach(guide => {
-              careGuides[guide.type] = guide.description || guide.tips?.join('\n') || '';
-            });
+          if (details.care_guides && typeof details.care_guides === 'string') {
+            // If it's a string, use it as general care guide
+            careGuides.general = details.care_guides;
           }
           
-          // Merge guides from both sources (prefer guide endpoint)
+          // Merge with fetched guides (API guides take priority)
           const finalGuides = {
             ...careGuides,
             ...guideData,
@@ -78,49 +95,49 @@ export default async function handler(req, res) {
             details.care_tags.forEach(tag => {
               careTags.push({
                 name: tag.name,
-                // Map tag names to lucide icon names
                 iconName: getLucideIconForTag(tag.name),
               });
             });
           }
           
-          console.log(`Plant ${plant.id} (${plant.common_name}): ${careTags.length} care tags found`, careTags);
+          console.log(`Plant ${plant.id} (${plant.common_name}): ${careTags.length} tags, ${Object.keys(finalGuides).length} guides`);
 
           return {
             id: plant.id,
-            name: plant.common_name || plant.scientific_name || 'Unknown',
+            name: plant.common_name || plant.scientific_name?.[0] || 'Unknown',
             scientific_name: details.scientific_name?.[0] || '',
             wateringDays,
             watering_description: watering,
-            watering_guide: finalGuides.watering || '', // Detailed watering guide
+            watering_guide: finalGuides.watering || '', 
             sunlight: details.sunlight || ['indirect'],
-            sunlight_guide: finalGuides.sunlight || '', // Detailed sunlight guide
-            humidity: details.humidity || 'medium',
-            tempMin: details.min_temp || 15,
-            tempMax: details.max_temp || 27,
+            sunlight_guide: finalGuides.sunlight || '',
+            humidity: details.watering_general_benchmark?.value || 'medium',
+            tempMin,
+            tempMax,
             soil: details.soil || [],
             toxicity: details.poisonous_to_humans ? '⚠️ Toxic to humans' : '✓ Safe',
             toxicity_pets: details.poisonous_to_pets ? '⚠️ Toxic to pets' : '✓ Safe for pets',
             description: details.description || '',
             image_url: details.default_image?.medium_url || '',
             growth_rate: details.growth_rate || 'medium',
-            hardiness: details.hardiness || [],
-            care_guides: finalGuides, // Full care guides object
-            care_tags: careTags, // Tags with icons
+            hardiness: details.hardiness || {},
+            care_guides: finalGuides,
+            care_tags: careTags,
             maintenance: details.maintenance || '',
             pruning_month: details.pruning_month || [],
           };
         } catch (err) {
-          console.warn(`Could not fetch details for ${plant.id}:`, err);
+          console.warn(`Could not fetch details for ${plant.id}:`, err.message);
           return {
             id: plant.id,
-            name: plant.common_name || plant.scientific_name,
+            name: plant.common_name || plant.scientific_name?.[0] || 'Unknown',
             wateringDays: 7,
             humidity: 'medium',
             sunlight: ['indirect'],
             tempMin: 15,
             tempMax: 27,
             care_tags: [],
+            care_guides: {},
           };
         }
       })
