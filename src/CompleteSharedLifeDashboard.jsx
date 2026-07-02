@@ -3066,7 +3066,6 @@ export default function CompleteSharedLifeDashboard() {
         )}
       </div>
     );
-  };
 
   const currentTraveler = getCurrentTraveler();
 
