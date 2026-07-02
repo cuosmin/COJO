@@ -669,7 +669,6 @@ export default function CompleteSharedLifeDashboard() {
       setNewPlantType('');
       setNewPlantLocation('Living Room');
       setNewPlantPhoto(null);
-      setShowPlantLibrary(false);
       setPerenualPlants([]);
       setUnsplashPlantResults([]);
       
@@ -4077,7 +4076,6 @@ export default function CompleteSharedLifeDashboard() {
                     setNewPlantType('');
                     setNewPlantLocation('Living Room');
                     setNewPlantPhoto(null);
-                    setShowPlantLibrary(false);
                   } catch (error) {
                     console.error('Error deleting plant:', error);
                   }
