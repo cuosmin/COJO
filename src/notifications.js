@@ -171,50 +171,71 @@ export const checkMonthlyBudgetSummary = (expenses) => {
 
 // 4-7. Travel notifications
 export const checkTravelNotifications = (travels, currentUserUid, users, getFirstName) => {
+  // CRITICAL: wait until users are loaded from Firebase.
+  // If we can't resolve names yet, skip entirely — dedupe keys are NOT set,
+  // so the check retries on the next cycle with proper names.
+  if (!users || users.length === 0) {
+    console.log('[Notif] Users not loaded yet, skipping travel checks');
+    return;
+  }
+
   const now = new Date();
   const today = todayStr();
   const hour = now.getHours();
 
   travels.forEach(travel => {
     const userIds = travel.userIds || [travel.userId].filter(Boolean);
-    const isCouple = userIds.length >= 2;
+    
+    // Couple travel = BOTH assigned (2+ people including me)
+    const isCouple = userIds.length >= 2 && userIds.includes(currentUserUid);
+    // Partner solo = exactly 1 person assigned, and it's NOT me
     const isPartnerOnly = userIds.length === 1 && userIds[0] !== currentUserUid;
     const isBusiness = travel.category === 'Business';
-    
-    const partnerUid = userIds.find(uid => uid !== currentUserUid);
-    const partnerUser = users.find(u => u.uid === partnerUid);
-    const partnerName = getFirstName(partnerUser?.displayName) || 'Your partner';
 
     const startsToday = travel.startDate === today;
     const endsToday = travel.endDate === today;
 
-    // --- Partner business travel: departure at 9:00 ---
-    if (isPartnerOnly && isBusiness && startsToday && hour >= 9) {
-      const key = `travel-start-${travel.id}-${today}`;
-      if (!wasNotified(key)) {
-        sendNotification(
-          '✈️ Business trip',
-          `${partnerName} is out for ${travel.location} today!`,
-          key
-        );
-        markNotified(key);
+    // --- Partner solo business travel ---
+    if (isPartnerOnly && isBusiness && (startsToday || endsToday)) {
+      // Resolve the ASSIGNED person's name from the travel entry
+      const partnerUid = userIds[0];
+      const partnerUser = users.find(u => u.uid === partnerUid);
+      
+      // If we can't resolve their real name, skip (retry next cycle) — never say "You"
+      if (!partnerUser?.displayName) {
+        console.warn(`[Notif] Cannot resolve name for uid ${partnerUid}, skipping travel ${travel.id}`);
+        return;
+      }
+      const partnerName = getFirstName(partnerUser.displayName);
+
+      // Departure at 9:00
+      if (startsToday && hour >= 9) {
+        const key = `travel-start-${travel.id}-${today}`;
+        if (!wasNotified(key)) {
+          sendNotification(
+            '✈️ Business trip',
+            `${partnerName} is out for ${travel.location} today!`,
+            key
+          );
+          markNotified(key);
+        }
+      }
+
+      // Return at 15:00
+      if (endsToday && hour >= 15) {
+        const key = `travel-end-${travel.id}-${today}`;
+        if (!wasNotified(key)) {
+          sendNotification(
+            '🏠 Coming home',
+            `${partnerName} is coming back today from ${travel.location}!`,
+            key
+          );
+          markNotified(key);
+        }
       }
     }
 
-    // --- Partner business travel: return at 15:00 ---
-    if (isPartnerOnly && isBusiness && endsToday && hour >= 15) {
-      const key = `travel-end-${travel.id}-${today}`;
-      if (!wasNotified(key)) {
-        sendNotification(
-          '🏠 Coming home',
-          `${partnerName} is coming back today from ${travel.location}!`,
-          key
-        );
-        markNotified(key);
-      }
-    }
-
-    // --- Couple travel: start date ---
+    // --- Couple travel (both of us assigned) ---
     if (isCouple && startsToday) {
       const key = `couple-start-${travel.id}-${today}`;
       if (!wasNotified(key)) {
@@ -227,7 +248,6 @@ export const checkTravelNotifications = (travels, currentUserUid, users, getFirs
       }
     }
 
-    // --- Couple travel: end date ---
     if (isCouple && endsToday) {
       const key = `couple-end-${travel.id}-${today}`;
       if (!wasNotified(key)) {
