@@ -223,7 +223,7 @@ const AddModal = ({ isOpen, title, onClose, children }) => {
   if (!isOpen) return null;
   return (
     <div style={{ position: 'fixed', top: '0', left: '0', right: '0', bottom: '0', background: `rgba(0, 0, 0, 0.6)`, backdropFilter: 'blur(10px)', zIndex: 300, display: 'flex', alignItems: 'flex-end' }} onClick={onClose}>
-      <div style={{ width: '100%', background: BG_COLOR, borderTop: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '24px 24px 0 0', padding: '24px', maxHeight: '80vh', overflowY: 'auto' }} onClick={(e) => e.stopPropagation()}>
+      <div style={{ width: '100%', background: BG_COLOR, borderTop: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '24px 24px 0 0', padding: '24px', paddingBottom: 'calc(24px + env(safe-area-inset-bottom))', maxHeight: '85dvh', overflowY: 'auto', WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }} onClick={(e) => e.stopPropagation()}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <h3 style={{ fontSize: '20px', fontWeight: '600', margin: 0 }}>{title}</h3>
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '24px' }}>
@@ -4152,7 +4152,7 @@ export default function CompleteSharedLifeDashboard() {
 
           <div>
             <label style={{ fontSize: '14px', color: '#666', marginBottom: '8px', display: 'block' }}>Date</label>
-            <input type="date" value={newExpenseDate} onChange={(e) => setNewExpenseDate(e.target.value)} style={{ width: '100%', minWidth: '100%', maxWidth: '100%', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px', boxSizing: 'border-box', lineHeight: '1.5', WebkitAppearance: 'none', MozAppearance: 'textfield', display: 'block' }} />
+            <input type="date" value={newExpenseDate} onChange={(e) => setNewExpenseDate(e.target.value)} style={{ width: '100%', height: '48px', minHeight: '48px', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '0 12px', color: '#fff', fontSize: '16px', boxSizing: 'border-box', display: 'flex', alignItems: 'center', colorScheme: 'dark' }} />
           </div>
 
           <div>
@@ -4276,12 +4276,12 @@ export default function CompleteSharedLifeDashboard() {
           
           <div>
             <label style={{ fontSize: '12px', color: '#666', marginBottom: '6px', display: 'block' }}>Start date</label>
-            <input type="date" value={newTravelStart} onChange={(e) => setNewTravelStart(e.target.value)} style={{ width: '100%', minWidth: '100%', maxWidth: '100%', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px', boxSizing: 'border-box', lineHeight: '1.5', WebkitAppearance: 'none', MozAppearance: 'textfield', display: 'block' }} />
+            <input type="date" value={newTravelStart} onChange={(e) => setNewTravelStart(e.target.value)} style={{ width: '100%', height: '48px', minHeight: '48px', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '0 12px', color: '#fff', fontSize: '16px', boxSizing: 'border-box', display: 'flex', alignItems: 'center', colorScheme: 'dark' }} />
           </div>
 
           <div>
             <label style={{ fontSize: '12px', color: '#666', marginBottom: '6px', display: 'block' }}>End date</label>
-            <input type="date" value={newTravelEnd} onChange={(e) => setNewTravelEnd(e.target.value)} style={{ width: '100%', minWidth: '100%', maxWidth: '100%', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '12px', color: '#fff', fontSize: '16px', boxSizing: 'border-box', lineHeight: '1.5', WebkitAppearance: 'none', MozAppearance: 'textfield', display: 'block' }} />
+            <input type="date" value={newTravelEnd} onChange={(e) => setNewTravelEnd(e.target.value)} style={{ width: '100%', height: '48px', minHeight: '48px', background: `rgba(255, 255, 255, 0.05)`, border: `1px solid rgba(18, 52, 255, 0.2)`, borderRadius: '12px', padding: '0 12px', color: '#fff', fontSize: '16px', boxSizing: 'border-box', display: 'flex', alignItems: 'center', colorScheme: 'dark' }} />
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
