@@ -1502,95 +1502,7 @@ export default function CompleteSharedLifeDashboard() {
                     </div>
                   </div>
 
-                  {/* Plant Details from Perenual */}
-                  {selectedPlant.details && (
-                    <div style={{ display: 'grid', gap: '12px' }}>
-                      <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#fff', margin: '8px 0 0' }}>Plant Information</h3>
-                    
-                      {selectedPlant.details.sunlight && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '8px' }}>
-                          <Wind size={16} color={ACCENT_COLOR} />
-                          <div style={{ flex: 1 }}>
-                            <div style={{ fontSize: '11px', color: '#999', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Sunlight</div>
-                            <div style={{ fontSize: '14px', color: '#ccc', fontWeight: '500' }}>
-                              {Array.isArray(selectedPlant.details.sunlight) ? selectedPlant.details.sunlight.join(', ') : selectedPlant.details.sunlight}
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {selectedPlant.details.watering && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '8px' }}>
-                          <Droplet size={16} color={ACCENT_COLOR} />
-                          <div style={{ flex: 1 }}>
-                            <div style={{ fontSize: '11px', color: '#999', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Watering</div>
-                            <div style={{ fontSize: '14px', color: '#ccc', fontWeight: '500' }}>{selectedPlant.details.watering}</div>
-                          </div>
-                        </div>
-                      )}
-
-                      {selectedPlant.details.maintenance && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '8px' }}>
-                          <Briefcase size={16} color={ACCENT_COLOR} />
-                          <div style={{ flex: 1 }}>
-                            <div style={{ fontSize: '11px', color: '#999', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Maintenance</div>
-                            <div style={{ fontSize: '14px', color: '#ccc', fontWeight: '500' }}>{selectedPlant.details.maintenance}</div>
-                          </div>
-                        </div>
-                      )}
-
-                      {selectedPlant.details.growth_rate && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '8px' }}>
-                          <Leaf size={16} color={ACCENT_COLOR} />
-                          <div style={{ flex: 1 }}>
-                            <div style={{ fontSize: '11px', color: '#999', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Growth Rate</div>
-                            <div style={{ fontSize: '14px', color: '#ccc', fontWeight: '500' }}>{selectedPlant.details.growth_rate}</div>
-                          </div>
-                        </div>
-                      )}
-
-                      {selectedPlant.details.care_level && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '8px' }}>
-                          <Heart size={16} color={ACCENT_COLOR} />
-                          <div style={{ flex: 1 }}>
-                            <div style={{ fontSize: '11px', color: '#999', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Care Level</div>
-                            <div style={{ fontSize: '14px', color: '#ccc', fontWeight: '500' }}>{selectedPlant.details.care_level}</div>
-                          </div>
-                        </div>
-                      )}
-
-                      {selectedPlant.details.pruning_month && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '8px' }}>
-                          <Palmtree size={16} color={ACCENT_COLOR} />
-                          <div style={{ flex: 1 }}>
-                            <div style={{ fontSize: '11px', color: '#999', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Pruning Month</div>
-                            <div style={{ fontSize: '14px', color: '#ccc', fontWeight: '500' }}>{selectedPlant.details.pruning_month}</div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Care History */}
-                  {careLogs.filter(log => log.plantId === selectedPlant.id).length > 0 && (
-                    <div>
-                      <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '12px', color: '#fff' }}>Care History</h3>
-                      <div style={{ display: 'grid', gap: '8px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '12px', padding: '16px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
-                        {careLogs
-                          .filter(log => log.plantId === selectedPlant.id)
-                          .reverse()
-                          .slice(0, 10)
-                          .map(log => (
-                            <div key={log.id} style={{ fontSize: '14px', color: '#ccc', display: 'flex', gap: '12px' }}>
-                              <span style={{ color: ACCENT_COLOR }}>•</span>
-                              <span>{log.careType === 'water' ? '💧' : '🌱'} {log.userName} • {new Date(log.timestamp).toLocaleDateString()}</span>
-                            </div>
-                          ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Action Buttons */}
+                  {/* Action Buttons - MOVED UP */}
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                     <button
                       onClick={() => logCare(selectedPlant.id, 'water')}
@@ -1633,6 +1545,123 @@ export default function CompleteSharedLifeDashboard() {
                       <Leaf size={20} /> Fertilize
                     </button>
                   </div>
+
+                  {/* Detailed Care Guides */}
+                  {selectedPlant.details && (
+                    <div style={{ display: 'grid', gap: '20px' }}>
+                      {/* Sunlight Guide */}
+                      {selectedPlant.details.sunlight && (
+                        <div style={{ padding: '16px', background: 'rgba(255, 255, 255, 0.03)', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                            <Wind size={18} color={ACCENT_COLOR} />
+                            <h4 style={{ fontSize: '16px', fontWeight: '600', color: '#fff', margin: 0 }}>Sunlight</h4>
+                          </div>
+                          <p style={{ fontSize: '14px', color: '#ccc', lineHeight: '1.6', margin: 0 }}>
+                            {Array.isArray(selectedPlant.details.sunlight) ? selectedPlant.details.sunlight.join(', ') : selectedPlant.details.sunlight}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Watering Guide */}
+                      {selectedPlant.details.watering && (
+                        <div style={{ padding: '16px', background: 'rgba(255, 255, 255, 0.03)', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                            <Droplet size={18} color={ACCENT_COLOR} />
+                            <h4 style={{ fontSize: '16px', fontWeight: '600', color: '#fff', margin: 0 }}>Watering</h4>
+                          </div>
+                          <p style={{ fontSize: '14px', color: '#ccc', lineHeight: '1.6', margin: 0 }}>
+                            {selectedPlant.details.watering}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* General Description/Guide */}
+                      {selectedPlant.details.description && (
+                        <div style={{ padding: '16px', background: 'rgba(255, 255, 255, 0.03)', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
+                          <h4 style={{ fontSize: '16px', fontWeight: '600', color: '#fff', margin: '0 0 12px 0' }}>Care Guide</h4>
+                          <p style={{ fontSize: '14px', color: '#ccc', lineHeight: '1.6', margin: 0 }}>
+                            {selectedPlant.details.description}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Quick Info Summary */}
+                  {selectedPlant.details && (
+                    <div style={{ display: 'grid', gap: '12px' }}>
+                      <h3 style={{ fontSize: '14px', fontWeight: '600', color: '#999', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '8px 0 0' }}>Quick Info</h3>
+                    
+                      {selectedPlant.details.growth_rate && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '8px' }}>
+                          <Leaf size={14} color={ACCENT_COLOR} />
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: '11px', color: '#999', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Growth Rate</div>
+                            <div style={{ fontSize: '13px', color: '#ccc', fontWeight: '500' }}>{selectedPlant.details.growth_rate}</div>
+                          </div>
+                        </div>
+                      )}
+
+                      {selectedPlant.details.humidity && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '8px' }}>
+                          <Wind size={14} color={ACCENT_COLOR} />
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: '11px', color: '#999', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Humidity</div>
+                            <div style={{ fontSize: '13px', color: '#ccc', fontWeight: '500' }}>{selectedPlant.details.humidity}</div>
+                          </div>
+                        </div>
+                      )}
+
+                      {selectedPlant.details.tempMin && selectedPlant.details.tempMax && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '8px' }}>
+                          <Smile size={14} color={ACCENT_COLOR} />
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: '11px', color: '#999', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Temperature</div>
+                            <div style={{ fontSize: '13px', color: '#ccc', fontWeight: '500' }}>{selectedPlant.details.tempMin}°C - {selectedPlant.details.tempMax}°C</div>
+                          </div>
+                        </div>
+                      )}
+
+                      {selectedPlant.details.toxicity && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '8px' }}>
+                          <Heart size={14} color={ACCENT_COLOR} />
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: '11px', color: '#999', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Humans</div>
+                            <div style={{ fontSize: '13px', color: '#ccc', fontWeight: '500' }}>{selectedPlant.details.toxicity}</div>
+                          </div>
+                        </div>
+                      )}
+
+                      {selectedPlant.details.toxicity_pets && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '8px' }}>
+                          <Palmtree size={14} color={ACCENT_COLOR} />
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: '11px', color: '#999', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Pets</div>
+                            <div style={{ fontSize: '13px', color: '#ccc', fontWeight: '500' }}>{selectedPlant.details.toxicity_pets}</div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Care History */}
+                  {careLogs.filter(log => log.plantId === selectedPlant.id).length > 0 && (
+                    <div>
+                      <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '12px', color: '#fff' }}>Care History</h3>
+                      <div style={{ display: 'grid', gap: '8px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '12px', padding: '16px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
+                        {careLogs
+                          .filter(log => log.plantId === selectedPlant.id)
+                          .reverse()
+                          .slice(0, 10)
+                          .map(log => (
+                            <div key={log.id} style={{ fontSize: '14px', color: '#ccc', display: 'flex', gap: '12px' }}>
+                              <span style={{ color: ACCENT_COLOR }}>•</span>
+                              <span>{log.careType === 'water' ? '💧' : '🌱'} {log.userName} • {new Date(log.timestamp).toLocaleDateString()}</span>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  )}
 
                   <button
                     onClick={() => openEditModal(selectedPlant)}
