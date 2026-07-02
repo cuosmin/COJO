@@ -2468,7 +2468,7 @@ export default function CompleteSharedLifeDashboard() {
                     onClick={() => {
                       setSelectedRecipe(randomMeal);
                       setShowRecipeDetail(true);
-                      setActiveTab('recipes');
+                      setActiveTab('food');
                     }}
                     style={{
                       backgroundImage: `url(${randomMeal.photo}?w=800&h=600&fit=crop&q=90)`,
@@ -2586,17 +2586,17 @@ export default function CompleteSharedLifeDashboard() {
                 } else {
                   return (
                     <div
-                      onClick={() => setActiveTab('travels')}
+                      onClick={() => setActiveTab('travel')}
                       style={{
                         background: `linear-gradient(135deg, rgba(255, 149, 0, 0.15) 0%, rgba(0, 0, 0, 0.8) 100%)`,
                         borderRadius: '16px',
                         padding: '20px',
                         border: `1px solid rgba(255, 149, 0, 0.12)`,
                         cursor: 'pointer',
-                        transition: 'transform 0.2s',
+                        transition: 'all 0.2s',
                       }}
-                      onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
-                      onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                      onMouseEnter={(e) => e.currentTarget.style.borderColor = 'rgba(255, 149, 0, 0.3)'}
+                      onMouseLeave={(e) => e.currentTarget.style.borderColor = 'rgba(255, 149, 0, 0.12)'}
                     >
                       <div style={{ fontSize: '14px', color: '#999', marginBottom: '12px' }}>This Week</div>
                       <div style={{ display: 'grid', gap: '8px' }}>
