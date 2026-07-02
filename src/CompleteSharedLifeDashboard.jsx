@@ -1803,7 +1803,9 @@ export default function CompleteSharedLifeDashboard() {
                             id: result.id,
                             scientific_name: result.scientific_name,
                             watering: result.watering_description,
+                            watering_guide: result.watering_guide,
                             sunlight: result.sunlight,
+                            sunlight_guide: result.sunlight_guide,
                             humidity: result.humidity,
                             tempMin: result.tempMin,
                             tempMax: result.tempMax,
@@ -1814,6 +1816,8 @@ export default function CompleteSharedLifeDashboard() {
                             image_url: result.image_url,
                             growth_rate: result.growth_rate,
                             hardiness: result.hardiness,
+                            care_guides: result.care_guides || {},
+                            care_tags: result.care_tags || [],
                           };
                           
                           setSelectedPlantDetails(plantDetails);
