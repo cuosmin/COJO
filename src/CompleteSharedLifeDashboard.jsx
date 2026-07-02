@@ -411,14 +411,6 @@ export default function CompleteSharedLifeDashboard() {
   // 🌱 PLANTS REDESIGN STATES
   const [careLogs, setCareLogs] = useState([]);
   const [weatherData, setWeatherData] = useState(null);
-  const [newPlantName, setNewPlantName] = useState('');
-  const [newPlantType, setNewPlantType] = useState('peace-lily');
-  const [newPlantLocation, setNewPlantLocation] = useState('Living Room');
-  const [perenualPlants, setPerenualPlants] = useState([]);
-  const [showPlantDetail, setShowPlantDetail] = useState(false);
-  const [newPlantPhoto, setNewPlantPhoto] = useState(null);
-  const [editingPlantId, setEditingPlantId] = useState(null);
-  const [unsplashPlantResults, setUnsplashPlantResults] = useState([]);
 
   // Auth
   useEffect(() => {
@@ -558,26 +550,6 @@ export default function CompleteSharedLifeDashboard() {
   };
 
   // 🌱 UNSPLASH - search for plant photos
-  const searchUnsplashPlants = async (query) => {
-    try {
-      if (query.length < 2) return;
-      const response = await axios.get('https://api.unsplash.com/search/photos', {
-        params: {
-          query: query,
-          per_page: 9,
-          client_id: 'NxL6pf3u0YFLp2JWZVSX4p8OxwJFQKg_4a8Y4c_1Dqg',
-        },
-      });
-      setUnsplashPlantResults(response.data.results);
-    } catch (error) {
-      console.error('Unsplash error:', error);
-    }
-  };
-
-  // Load popular plants on mount
-  useEffect(() => {
-    searchPerenualPlants();
-  }, []);
 
   // 🌱 INTELLIGENT WATERING STATUS
   const getWateringStatus = (plant) => {
@@ -610,73 +582,6 @@ export default function CompleteSharedLifeDashboard() {
     }
   };
 
-  // 🌱 LOG PLANT CARE (watering, fertilizing)
-  const logPlantCare = async (plantId, careType) => {
-    try {
-      const careLog = {
-        id: Date.now().toString(),
-        plantId: plantId,
-        careType: careType, // 'water', 'fertilize', 'mist'
-        userId: user?.uid,
-        displayName: user?.displayName || 'User',
-        timestamp: new Date().toISOString(),
-      };
-
-      const careLogsRef = ref(database, `shared-data/careLogs/${careLog.id}`);
-      await set(careLogsRef, careLog);
-
-      // Update plant's lastWatered/lastFertilized
-      const updateKey = careType === 'water' ? 'lastWatered' : careType === 'fertilize' ? 'lastFertilized' : 'lastMisted';
-      const plantRef = ref(database, `shared-data/default/plants/${plantId}/${updateKey}`);
-      await set(plantRef, new Date().toISOString());
-
-      setCareLogs([...careLogs, careLog]);
-      console.log(`✅ ${careType} logged for plant`);
-    } catch (error) {
-      console.error('Error logging care:', error);
-    }
-  };
-
-  // 🌱 ADD OR UPDATE PLANT
-  const addPlantFromLibrary = async () => {
-    if (!newPlantName) return;
-
-    try {
-      const plantId = editingPlantId || Date.now().toString();
-      const newPlant = {
-        id: plantId,
-        name: newPlantName,
-        type: newPlantType,
-        location: newPlantLocation || 'Home',
-        dateAdded: editingPlantId ? plants.find(p => p.id === editingPlantId)?.dateAdded : new Date().toISOString(),
-        lastWatered: editingPlantId ? plants.find(p => p.id === editingPlantId)?.lastWatered : new Date().toISOString(),
-        photo: newPlantPhoto || 'https://images.unsplash.com/photo-1517457373614-b7152f800fd1?w=400&h=300&fit=crop',
-        addedBy: user?.uid,
-      };
-
-      const plantRef = ref(database, `shared-data/default/plants/${plantId}`);
-      await set(plantRef, newPlant);
-
-      if (editingPlantId) {
-        const updated = plants.map(p => p.id === editingPlantId ? newPlant : p);
-        setPlants(updated);
-        setEditingPlantId(null);
-      } else {
-        setPlants([...plants, newPlant]);
-      }
-
-      setNewPlantName('');
-      setNewPlantType('');
-      setNewPlantLocation('Living Room');
-      setNewPlantPhoto(null);
-      setPerenualPlants([]);
-      setUnsplashPlantResults([]);
-      
-      console.log('✅ Plant ' + (editingPlantId ? 'updated' : 'added'));
-    } catch (error) {
-      console.error('Error saving plant:', error);
-    }
-  };
 
   const checkNotificationPermission = () => {
     if ('Notification' in window) {
