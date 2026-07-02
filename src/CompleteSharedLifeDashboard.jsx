@@ -415,7 +415,6 @@ export default function CompleteSharedLifeDashboard() {
   const [newPlantName, setNewPlantName] = useState('');
   const [newPlantType, setNewPlantType] = useState('peace-lily');
   const [newPlantLocation, setNewPlantLocation] = useState('Living Room');
-  const [searchPlantQuery, setSearchPlantQuery] = useState('');
   const [perenualPlants, setPerenualPlants] = useState([]);
   const [selectedPlantDetail, setSelectedPlantDetail] = useState(null);
   const [showPlantDetail, setShowPlantDetail] = useState(false);
@@ -2762,7 +2761,6 @@ export default function CompleteSharedLifeDashboard() {
                 type="text"
                 placeholder="Search plants (e.g., monstera, rose, fern)..."
                 onChange={(e) => {
-                  setSearchPlantQuery(e.target.value);
                   if (e.target.value.length > 2) {
                     searchPerenualPlants(e.target.value);
                   }
