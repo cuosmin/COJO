@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Home, Leaf, UtensilsCrossed, Wallet, LogOut,
-  X, Bell, Plus, Plane, Edit2, MapPin, Droplet, Archive, ChevronDown, Briefcase, Palmtree,
+  X, Bell, Plus, Plane, Edit2, MapPin, Droplet, Archive, ChevronDown, Briefcase, Palmtree, Check,
   ShoppingCart as ShoppingBag, Heart, Wind, Smile, Clock, Shuffle, MessageCircle, Send,
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
@@ -3027,66 +3027,37 @@ export default function CompleteSharedLifeDashboard() {
               </button>
             </div>
 
-            {/* Edit & Delete Buttons */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '16px' }}>
-              <button
-                onClick={() => {
-                  setNewPlantName(selectedPlantDetail.name);
-                  setNewPlantType(selectedPlantDetail.type);
-                  setNewPlantLocation(selectedPlantDetail.location);
-                  setNewPlantPhoto(selectedPlantDetail.photo);
-                  setEditingPlantId(selectedPlantDetail.id);
-                  setShowPlantDetail(false);
-                  setShowPlantLibrary(true);
-                }}
-                style={{
-                  background: ACCENT_COLOR,
-                  border: 'none',
-                  borderRadius: '12px',
-                  padding: '12px',
-                  color: '#fff',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '6px',
-                }}
-              >
-                <Edit2 size={18} /> Edit
-              </button>
-              <button
-                onClick={async () => {
-                  try {
-                    // Delete from Firebase first
-                    await ref(database, `shared-data/default/plants/${selectedPlantDetail.id}`).set(null);
-                    // Then update local state
-                    const updated = plants.filter(p => p.id !== selectedPlantDetail.id);
-                    setPlants(updated);
-                    setShowPlantDetail(false);
-                  } catch (error) {
-                    console.error('Error deleting plant:', error);
-                  }
-                }}
-                style={{
-                  background: '#ff3b30',
-                  border: 'none',
-                  borderRadius: '12px',
-                  padding: '12px',
-                  color: '#fff',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '6px',
-                }}
-              >
-                <X size={18} /> Delete
-              </button>
-            </div>
+            {/* Edit Button */}
+            <button
+              onClick={() => {
+                setNewPlantName(selectedPlantDetail.name);
+                setNewPlantType(selectedPlantDetail.type);
+                setNewPlantLocation(selectedPlantDetail.location);
+                setNewPlantPhoto(selectedPlantDetail.photo);
+                setEditingPlantId(selectedPlantDetail.id);
+                setShowPlantDetail(false);
+                setShowPlantLibrary(true);
+              }}
+              style={{
+                width: '100%',
+                background: ACCENT_COLOR,
+                border: 'none',
+                borderRadius: '12px',
+                padding: '12px',
+                color: '#fff',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: '600',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                marginTop: '12px',
+              }}
+            >
+              <Edit2 size={18} /> Edit
+            </button>
+
 
             {/* Recent Care */}
             {careLogs.filter(log => log.plantId === selectedPlantDetail.id).length > 0 && (
@@ -3486,53 +3457,30 @@ export default function CompleteSharedLifeDashboard() {
                 </a>
               )}
 
-              {/* Edit/Delete Actions */}
-              <div style={{ display: 'grid', gap: '8px', gridTemplateColumns: '1fr 1fr' }}>
-                <button
-                  onClick={() => {
-                    setShowRecipeDetail(false);
-                    openEditModal('meal', selectedRecipe);
-                  }}
-                  style={{
-                    background: ACCENT_COLOR,
-                    border: 'none',
-                    borderRadius: '12px',
-                    padding: '14px',
-                    color: '#fff',
-                    cursor: 'pointer',
-                    fontSize: '16px',
-                    fontWeight: '600',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px',
-                  }}
-                >
-                  <Edit2 size={18} /> Edit
-                </button>
-                <button
-                  onClick={() => {
-                    deleteMeal(selectedRecipe.id);
-                    setShowRecipeDetail(false);
-                  }}
-                  style={{
-                    background: '#ff3b30',
-                    border: 'none',
-                    borderRadius: '12px',
-                    padding: '14px',
-                    color: '#fff',
-                    cursor: 'pointer',
-                    fontSize: '16px',
-                    fontWeight: '600',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px',
-                  }}
-                >
-                  <X size={18} /> Delete
-                </button>
-              </div>
+              {/* Edit Button */}
+              <button
+                onClick={() => {
+                  setShowRecipeDetail(false);
+                  openEditModal('meal', selectedRecipe);
+                }}
+                style={{
+                  width: '100%',
+                  background: ACCENT_COLOR,
+                  border: 'none',
+                  borderRadius: '12px',
+                  padding: '14px',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                }}
+              >
+                <Edit2 size={18} /> Edit
+              </button>
             </div>
           </div>
         </div>
@@ -3614,26 +3562,32 @@ export default function CompleteSharedLifeDashboard() {
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-            <button onClick={addPlant} style={{ background: ACCENT_COLOR, border: 'none', borderRadius: '12px', padding: '14px', color: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-              <Leaf size={20} /> {editingPlantId ? 'Update' : 'Add'}
-            </button>
-            {editingPlantId && (
-              <button onClick={async () => { 
-                try {
-                  await ref(database, `shared-data/default/plants/${editingPlantId}`).set(null);
-                  const updated = plants.filter(p => p.id !== editingPlantId);
-                  setPlants(updated);
-                  setEditingPlantId(null);
-                  setNewPlantName('');
-                  setNewPlantType('');
-                  setNewPlantLocation('Living Room');
-                  setNewPlantPhoto(null);
-                  setShowPlantLibrary(false);
-                } catch (error) {
-                  console.error('Error deleting plant:', error);
-                }
-              }} style={{ background: '#ff3b30', border: 'none', borderRadius: '12px', padding: '14px', color: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                <X size={20} /> Delete
+            {editingPlantId ? (
+              <>
+                <button onClick={addPlant} style={{ background: ACCENT_COLOR, border: 'none', borderRadius: '12px', padding: '14px', color: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                  <Check size={20} /> Save
+                </button>
+                <button onClick={async () => { 
+                  try {
+                    await ref(database, `shared-data/default/plants/${editingPlantId}`).set(null);
+                    const updated = plants.filter(p => p.id !== editingPlantId);
+                    setPlants(updated);
+                    setEditingPlantId(null);
+                    setNewPlantName('');
+                    setNewPlantType('');
+                    setNewPlantLocation('Living Room');
+                    setNewPlantPhoto(null);
+                    setShowPlantLibrary(false);
+                  } catch (error) {
+                    console.error('Error deleting plant:', error);
+                  }
+                }} style={{ background: '#ff3b30', border: 'none', borderRadius: '12px', padding: '14px', color: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                  <X size={20} /> Delete
+                </button>
+              </>
+            ) : (
+              <button onClick={addPlant} style={{ background: ACCENT_COLOR, border: 'none', borderRadius: '12px', padding: '14px', color: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', gridColumn: '1 / -1' }}>
+                <Check size={20} /> Save
               </button>
             )}
           </div>
@@ -3725,17 +3679,18 @@ export default function CompleteSharedLifeDashboard() {
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-            <button onClick={addMeal} style={{ background: ACCENT_COLOR, border: 'none', borderRadius: '12px', padding: '14px', color: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-              <UtensilsCrossed size={20} /> Edit
-            </button>
-            {editingId && (
-              <button onClick={() => { deleteMeal(editingId); resetModal(); }} style={{ background: '#ff3b30', border: 'none', borderRadius: '12px', padding: '14px', color: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                <X size={20} /> Delete
-              </button>
-            )}
-            {!editingId && (
+            {editingId ? (
+              <>
+                <button onClick={addMeal} style={{ background: ACCENT_COLOR, border: 'none', borderRadius: '12px', padding: '14px', color: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                  <Check size={20} /> Save
+                </button>
+                <button onClick={() => { deleteMeal(editingId); resetModal(); }} style={{ background: '#ff3b30', border: 'none', borderRadius: '12px', padding: '14px', color: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                  <X size={20} /> Delete
+                </button>
+              </>
+            ) : (
               <button onClick={addMeal} style={{ background: ACCENT_COLOR, border: 'none', borderRadius: '12px', padding: '14px', color: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', gridColumn: '1 / -1' }}>
-                <UtensilsCrossed size={20} /> Add Recipe
+                <Check size={20} /> Save
               </button>
             )}
           </div>
@@ -3772,17 +3727,18 @@ export default function CompleteSharedLifeDashboard() {
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-            <button onClick={addExpense} style={{ background: ACCENT_COLOR, border: 'none', borderRadius: '12px', padding: '14px', color: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-              <Plus size={20} /> Edit
-            </button>
-            {editingId && (
-              <button onClick={() => { deleteExpense(editingId); resetModal(); }} style={{ background: '#ff3b30', border: 'none', borderRadius: '12px', padding: '14px', color: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                <X size={20} /> Delete
-              </button>
-            )}
-            {!editingId && (
+            {editingId ? (
+              <>
+                <button onClick={addExpense} style={{ background: ACCENT_COLOR, border: 'none', borderRadius: '12px', padding: '14px', color: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                  <Check size={20} /> Save
+                </button>
+                <button onClick={() => { deleteExpense(editingId); resetModal(); }} style={{ background: '#ff3b30', border: 'none', borderRadius: '12px', padding: '14px', color: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                  <X size={20} /> Delete
+                </button>
+              </>
+            ) : (
               <button onClick={addExpense} style={{ background: ACCENT_COLOR, border: 'none', borderRadius: '12px', padding: '14px', color: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', gridColumn: '1 / -1' }}>
-                <Plus size={20} /> Add Expense
+                <Check size={20} /> Save
               </button>
             )}
           </div>
@@ -3895,17 +3851,18 @@ export default function CompleteSharedLifeDashboard() {
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-            <button onClick={addTravel} style={{ background: ACCENT_COLOR, border: 'none', borderRadius: '12px', padding: '14px', color: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-              <Plane size={20} /> Edit
-            </button>
-            {editingId && (
-              <button onClick={() => { deleteTravel(editingId); resetModal(); }} style={{ background: '#ff3b30', border: 'none', borderRadius: '12px', padding: '14px', color: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                <X size={20} /> Delete
-              </button>
-            )}
-            {!editingId && (
+            {editingId ? (
+              <>
+                <button onClick={addTravel} style={{ background: ACCENT_COLOR, border: 'none', borderRadius: '12px', padding: '14px', color: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                  <Check size={20} /> Save
+                </button>
+                <button onClick={() => { deleteTravel(editingId); resetModal(); }} style={{ background: '#ff3b30', border: 'none', borderRadius: '12px', padding: '14px', color: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                  <X size={20} /> Delete
+                </button>
+              </>
+            ) : (
               <button onClick={addTravel} style={{ background: ACCENT_COLOR, border: 'none', borderRadius: '12px', padding: '14px', color: '#fff', cursor: 'pointer', fontSize: '16px', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', gridColumn: '1 / -1' }}>
-                <Plane size={20} /> Add Travel
+                <Check size={20} /> Save
               </button>
             )}
           </div>
