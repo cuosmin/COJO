@@ -12,6 +12,7 @@ import { signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
 import { ref, onValue, set, update } from 'firebase/database';
 import { getDatabase } from 'firebase/database';
 import axios from 'axios';
+import { requestNotificationPermission, sendNotification, runAllNotificationChecks, cleanupOldNotifications } from './notifications';
 
 const provider = new GoogleAuthProvider();
 const database = getDatabase();
@@ -170,28 +171,6 @@ const MAJOR_CITIES = [
   { name: 'Rennes', country: 'France' },
   { name: 'Annecy', country: 'France' },
 ];
-
-// Request notification permission
-const requestNotificationPermission = async () => {
-  if (!('Notification' in window)) return false;
-  if (Notification.permission === 'granted') return true;
-  if (Notification.permission !== 'denied') {
-    const permission = await Notification.requestPermission();
-    return permission === 'granted';
-  }
-  return false;
-};
-
-// Send notification
-const sendNotification = (title, options = {}) => {
-  if ('Notification' in window && Notification.permission === 'granted') {
-    new Notification(title, {
-      icon: '/cojo_icon.png',
-      badge: '/cojo_icon.png',
-      ...options,
-    });
-  }
-};
 
 // Export to iOS Calendar
 const exportToCalendar = (title, date) => {
@@ -903,6 +882,46 @@ export default function CompleteSharedLifeDashboard() {
     if (!fullName) return 'You';
     return fullName.split(' ')[0];
   };
+
+  // ============ NOTIFICATION SYSTEM ============
+  // Requests permission on login, then checks every 15 min while app is open
+  useEffect(() => {
+    if (!user) return;
+
+    let intervalId;
+
+    const initNotifications = async () => {
+      const granted = await requestNotificationPermission();
+      if (!granted) {
+        console.log('[Notif] Permission not granted');
+        return;
+      }
+
+      cleanupOldNotifications();
+
+      const runChecks = () => {
+        runAllNotificationChecks({
+          plants,
+          expenses,
+          travels,
+          currentUserUid: user.uid,
+          users,
+          getFirstName,
+        });
+      };
+
+      // Run immediately, then every 15 minutes
+      runChecks();
+      intervalId = setInterval(runChecks, 15 * 60 * 1000);
+    };
+
+    initNotifications();
+
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, plants, expenses, travels, users]);
 
   const getExpensesForMonth = (date) => {
     const year = date.getFullYear();
